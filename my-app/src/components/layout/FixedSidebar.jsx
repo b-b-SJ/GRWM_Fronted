@@ -8,7 +8,10 @@ import {
     Sun,
     LogOut,
     UserCircle,
-    Shield
+    Shield,
+    Palette,
+    Edit3,
+    Users
 } from 'lucide-react';
 
 const FixedSidebar = ({ currentUser }) => {
@@ -30,7 +33,7 @@ const FixedSidebar = ({ currentUser }) => {
     };
 
     return (
-        <div className="w-16 bg-white border-b px-4 flex flex-col items-center py-4 shadow-lg">
+        <div className="w-16 bg-white flex flex-col items-center py-4 shadow-lg">
             {/* 프로필 섹션 */}
             <div className="relative mb-6">
                 <button
@@ -42,27 +45,55 @@ const FixedSidebar = ({ currentUser }) => {
 
                 {/* 프로필 드롭다운 메뉴 */}
                 {showProfileMenu && (
-                    <div className="absolute left-16 top-0 ml-2 bg-white rounded-lg shadow-xl border py-2 w-48 z-50">
-                        <div className="px-4 py-2 border-b">
-                            <p className="font-medium text-gray-800">{currentUser.username}</p>
-                            <p className="text-sm text-gray-500">온라인</p>
+                    <div className="absolute left-16 top-0 ml-2 bg-white rounded-lg shadow-xl border py-3 w-72 z-50">
+                        {/* 기본 프로필 */}
+                        <div className="px-4 py-3 border-b">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">기본 프로필</h3>
+                                <button className="p-1 hover:bg-gray-100 rounded">
+                                    <Edit3 size={14} className="text-gray-500" />
+                                </button>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                                    <User size={20} className="text-white" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="font-medium text-gray-800">{currentUser.username}</p>
+
+                                </div>
+                            </div>
                         </div>
-                        <button className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center space-x-2">
-                            <UserCircle size={16} className="text-gray-600" />
-                            <span className="text-gray-700">프로필 수정</span>
-                        </button>
-                        <button className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center space-x-2">
-                            <Shield size={16} className="text-gray-600" />
-                            <span className="text-gray-700">계정 설정</span>
-                        </button>
+
+                        {/* 커뮤니티 프로필 */}
+                        <div className="px-4 py-3 border-b">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">커뮤니티 프로필</h3>
+                                <button className="p-1 hover:bg-gray-100 rounded">
+                                    <Edit3 size={14} className="text-gray-500" />
+                                </button>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                                    <Users size={20} className="text-white" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="font-medium text-gray-800">{currentUser.communityNickname || '스터디러버'}</p>
+                                    <p className="text-sm text-gray-500">커뮤니티 활동 중</p>
+                                </div>
+                            </div>
+                        </div>
+
                         <hr className="my-2" />
-                        <button
-                            onClick={handleLogout}
-                            className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center space-x-2 text-red-600"
-                        >
-                            <LogOut size={16} />
-                            <span>로그아웃</span>
-                        </button>
+                        <div className="px-2">
+                            <button
+                                onClick={handleLogout}
+                                className="w-full px-4 py-2 text-left hover:bg-red-50 rounded-lg flex items-center space-x-2 text-red-600"
+                            >
+                                <LogOut size={16} />
+                                <span>로그아웃</span>
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>
