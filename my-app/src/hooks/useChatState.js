@@ -1,32 +1,61 @@
-import { useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
-export const useChatState = () => {
+const ChatStateContext = createContext();
+
+export const ChatStateProvider = ({ children }) => {
     const [selectedRoom, setSelectedRoom] = useState(null);
-    // 채팅방 목록 데이터 (실제에서는 API에서 가져올 데이터)
-    const [chatRooms, setChatRooms] = useState([
-        { id: 1, name: "컴공 정보 공유방", members: 45, isPrivate: false, hasNotification: true, isOwner: true },
-        { id: 2, name: "아무거나", members: 12, isPrivate: false, hasNotification: false, isOwner: false },
-        { id: 3, name: "졸업 프로젝트", members: 3, isPrivate: true, hasNotification: true, isOwner: false },
-    ]);
-    const [currentUser, setCurrentUser] = useState({
-        id: 'user1',
-        username: '나',
-        avatar: null
+    const [currentUser] = useState({
+        id: 1,
+        username: '김사용자',
+        communityNickname: '스터디러버',
+        email: 'user@example.com'
     });
 
-    // 웹소켓 연결 및 실시간 데이터 처리는 여기서
-    useEffect(() => {
-        // WebSocket 연결 로직
-        // 채팅방 목록 fetch
-        // 실시간 메시지 수신 처리
-    }, []);
+    const [chatRooms] = useState([
+        {
+            id: 'room1',
+            name: '프론트엔드 스터디',
+            members: 12,
+            isPrivate: false,
+            isOwner: true,
+            hasNotification: true
+        },
+        {
+            id: 'room2',
+            name: '알고리즘 문제풀이',
+            members: 8,
+            isPrivate: false,
+            isOwner: false,
+            hasNotification: false
+        },
+        {
+            id: 'room3',
+            name: '팀 프로젝트',
+            members: 4,
+            isPrivate: true,
+            isOwner: false,
+            hasNotification: true
+        }
+    ]);
 
-    return {
+    const value = {
         selectedRoom,
         setSelectedRoom,
         chatRooms,
-        setChatRooms,
-        currentUser,
-        setCurrentUser
+        currentUser
     };
+
+    return (
+        <ChatStateContext.Provider value={value}>
+            {children}
+        </ChatStateContext.Provider>
+    );
+};
+
+export const useChatState = () => {
+    const context = useContext(ChatStateContext);
+    if (!context) {
+        throw new Error('useChatState must be used within a ChatStateProvider');
+    }
+    return context;
 };

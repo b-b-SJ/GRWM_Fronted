@@ -1,6 +1,10 @@
 import React from 'react';
 import { X, Search, Hash, Lock, Crown, MessageCircle, BookOpen } from 'lucide-react';
 
+/**
+ * 사이드바 컴포넌트
+ * 채팅방과 스터디룸을 전환할 수 있는 협업공간 사이드바
+ */
 const Sidebar = ({
                      sidebarOpen,
                      toggleSidebar,
@@ -17,13 +21,13 @@ const Sidebar = ({
 
     return (
         <div className={`
-      ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
       lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-40
       w-80 bg-white border-r shadow-lg lg:shadow-none
       transition-transform duration-300 ease-in-out
       flex flex-col
     `}>
-            {/* Sidebar Header */}
+            {/* 헤더 */}
             <div className="p-4 border-b">
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold text-gray-800">협업공간</h2>

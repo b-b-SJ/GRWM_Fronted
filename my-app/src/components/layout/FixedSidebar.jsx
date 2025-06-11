@@ -7,9 +7,6 @@ import {
     Moon,
     Sun,
     LogOut,
-    UserCircle,
-    Shield,
-    Palette,
     Edit3,
     Users
 } from 'lucide-react';
@@ -20,7 +17,7 @@ const FixedSidebar = ({ currentUser }) => {
 
     const toggleDarkMode = () => {
         setDarkMode(!darkMode);
-        // 다크모드 토글 로직 구현
+        // 다크모드 토글 로직 구현해야
     };
 
     const handleProfileClick = () => {
@@ -28,7 +25,7 @@ const FixedSidebar = ({ currentUser }) => {
     };
 
     const handleLogout = () => {
-        // 로그아웃 로직 구현
+        // 로그아웃 로직 구현해야
         console.log('로그아웃');
     };
 

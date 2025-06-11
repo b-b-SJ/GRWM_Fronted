@@ -1,4 +1,3 @@
-// components/chat/ChatMessages.jsx - 메시지 표시 영역
 import React from 'react';
 import { Crown } from 'lucide-react';
 
