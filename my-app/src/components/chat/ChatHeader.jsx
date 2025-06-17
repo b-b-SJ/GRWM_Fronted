@@ -29,7 +29,7 @@ const ChatHeader = ({ room, onBack }) => {
                     ) : (
                         <WifiOff size={14} className="text-red-500" />
                     )}
-                </div>
+                </div>z
             </div>
 
             <div className="flex items-center space-x-2">

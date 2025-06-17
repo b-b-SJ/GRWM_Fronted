@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
+import { Send, Paperclip, Smile, X } from 'lucide-react';
 
-const MessageInput = ({ roomId }) => {
+const MessageInput = ({ onSendMessage, replyingTo, onCancelReply }) => {
     const [message, setMessage] = useState('');
 
-    const handleSend = () => {
+    const handleSendMessage = (e) => {
+        e.preventDefault();
         if (message.trim()) {
-            // 여기서 웹소켓으로 메시지 전송
-            console.log('메시지 전송:', message);
+            onSendMessage(message, replyingTo?.id);
             setMessage('');
         }
     };
@@ -14,27 +15,79 @@ const MessageInput = ({ roomId }) => {
     const handleKeyPress = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            handleSend();
+            handleSendMessage(e);
         }
     };
 
+    const formatReplyPreview = (content) => {
+        return content.length > 60 ? content.substring(0, 60) + '...' : content;
+    };
+
     return (
-        <div className="bg-white border-t p-4">
-            <div className="flex items-center space-x-3">
-                <input
-                    type="text"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="메시지를 입력하세요..."
-                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <button
-                    onClick={handleSend}
-                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                    전송
-                </button>
+        <div className="bg-white border-t">
+            {/* 답장 미리보기 */}
+            {replyingTo && (
+                <div className="px-4 py-2 bg-gray-50 border-b">
+                    <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                                <div className="w-1 h-8 bg-blue-500 rounded"></div>
+                                <div>
+                                    <div className="text-sm font-medium text-gray-700">
+                                        {replyingTo.username}에게 답장
+                                    </div>
+                                    <div className="text-sm text-gray-600">
+                                        {formatReplyPreview(replyingTo.content)}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button
+                            onClick={onCancelReply}
+                            className="p-1 hover:bg-gray-200 rounded-full transition-colors"
+                        >
+                            <X size={16} className="text-gray-500" />
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* 메시지 입력 영역 */}
+            <div className="p-4">
+                <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
+                    <button
+                        type="button"
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="파일 첨부"
+                    >
+                        <Paperclip size={20} className="text-gray-600" />
+                    </button>
+                    <div className="flex-1 relative">
+                        <input
+                            type="text"
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                            placeholder={replyingTo ? "답장을 입력하세요..." : "메시지를 입력하세요..."}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-12"
+                        />
+                        <button
+                            type="button"
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+                            title="이모지"
+                        >
+                            <Smile size={18} className="text-gray-600" />
+                        </button>
+                    </div>
+                    <button
+                        type="submit"
+                        disabled={!message.trim()}
+                        className="p-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-full transition-colors"
+                        title="메시지 보내기"
+                    >
+                        <Send size={20} />
+                    </button>
+                </form>
             </div>
         </div>
     );
