@@ -1,3 +1,4 @@
+//components/layout/WorkspaceSidebar.jsx
 import React from 'react';
 import { X, Search, Hash, Lock, Crown, MessageCircle, BookOpen, Plus } from 'lucide-react';
 
@@ -12,7 +13,9 @@ const WorkspaceSidebar = ({
                      selectedRoom,
                      setSelectedRoom,
                      workspaceMode,
-                     setWorkspaceMode
+                     setWorkspaceMode,
+                     currentView,
+                     setCurrentView
                  }) => {
     const workspaceModes = [
         { id: '채팅방', label: '채팅방', icon: MessageCircle },
@@ -47,7 +50,11 @@ const WorkspaceSidebar = ({
                             return (
                                 <button
                                     key={mode.id}
-                                    onClick={() => setWorkspaceMode(mode.id)}
+                                    onClick={() => {
+                                        setWorkspaceMode(mode.id);
+                                        setCurrentView('rooms');
+                                        setSelectedRoom(null);
+                                    }}
                                     className={`
                                     flex-1 flex items-center justify-center space-x-2 py-2 px-3 rounded-md transition-all
                                     ${workspaceMode === mode.id
@@ -65,12 +72,15 @@ const WorkspaceSidebar = ({
                 </div>
 
                 <button
-                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 mb-2">
+                    onClick={() => setCurrentView('explore')}
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 mb-2"
+                >
                     <Search size={16}/>
                     <span>{workspaceMode} 탐색</span>
                 </button>
 
                 <button
+                    onClick={() => setCurrentView('create')}
                     className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
                 >
                     <Plus size={16}/>
@@ -86,7 +96,10 @@ const WorkspaceSidebar = ({
                         chatRooms.map((room) => (
                             <div
                                 key={room.id}
-                                onClick={() => setSelectedRoom(room.id)}
+                                onClick={() => {
+                                    setSelectedRoom(room.id);
+                                    setCurrentView('chat');
+                                }}
                                 className={`
                   p-3 rounded-lg cursor-pointer transition-colors mb-1
                   ${selectedRoom === room.id
@@ -125,7 +138,10 @@ const WorkspaceSidebar = ({
                         ].map((room) => (
                             <div
                                 key={room.id}
-                                onClick={() => setSelectedRoom(room.id)}
+                                onClick={() => {
+                                    setSelectedRoom(room.id);
+                                    setCurrentView('chat');
+                                }}
                                 className={`
                   p-3 rounded-lg cursor-pointer transition-colors mb-1
                   ${selectedRoom === room.id
