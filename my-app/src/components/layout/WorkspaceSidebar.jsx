@@ -133,8 +133,6 @@ const WorkspaceSidebar = ({
                         // 스터디룸 목록 (예시 데이터)
                         [
                             { id: 's1', name: '코딩테스트 스터디', members: 8, subject: 'Algorithm', status: 'active' },
-                            { id: 's2', name: 'React 심화 학습', members: 12, subject: 'Frontend', status: 'active' },
-                            { id: 's3', name: '데이터베이스 기초', members: 15, subject: 'Database', status: 'scheduled' }
                         ].map((room) => (
                             <div
                                 key={room.id}

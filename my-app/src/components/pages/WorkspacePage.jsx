@@ -94,6 +94,10 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
             });
 
             alert('채팅방이 성공적으로 생성되었습니다!');
+            // 임의로 이동!!!!!!!!!!
+            if (onRoomCreated) {
+                onRoomCreated('room1'); // 실제라면 chatRoomId
+            }
 
         } catch (error) {
             console.error('채팅방 생성 오류:', error);
@@ -317,7 +321,7 @@ const WorkspacePage = () => {
     const handleRoomCreated = (chatRoomId) => {
         console.log('새 채팅방 생성됨:', chatRoomId);
 
-        // 새로 생성된 채팅방을 목록에 추가 (실제로는 서버에서 채팅방 정보를 다시 가져올 수 있습니다)
+        // 새로 생성된 채팅방을 목록에 추가
         // addChatRoom 함수가 useChatState에 있다고 가정
 
         // 생성 후 채팅방 목록 화면으로 돌아가기
@@ -348,7 +352,16 @@ const WorkspacePage = () => {
                     setCurrentView={setCurrentView}
                 />
 
-                {/* 채팅 or Welcome 메시지 */}
+                {/* 오버레이: 사이드바 바깥 클릭 시 닫힘 */}
+                {workspaceSidebarOpen && (
+                    <div
+                        className="fixed inset-0 z-10 bg-black bg-opacity-0"
+                        onClick={() => toggleWorkspaceSidebar(false)}
+                    />
+                )}
+
+
+                {/* 메인 컨텐츠 컨테이너 */}
                 <div className="flex-1 flex flex-col">
                     {currentView === 'create' ? (
                         <ChatRoomCreator

@@ -38,21 +38,21 @@ export const ChatStateProvider = ({ children }) => {
                 setChatRooms([
                     {
                         roomId: 'room1',
-                        roomName: '프론트엔드 스터디',
-                        members: 12,
+                        roomName: '졸업 프로젝트',
+                        members: 3,
                         isPrivate: false,
                         isOwner: true,
-                        hasNotification: true,
-                        category: '스터디'
+                        hasNotification: false,
+                        category: '프로젝트'
                     },
                     {
                         roomId: 'room2',
-                        roomName: '팀 프로젝트',
-                        members: 4,
+                        roomName: '소공 스터디',
+                        members: 10,
                         isPrivate: true,
                         isOwner: false,
-                        hasNotification: true,
-                        category: '프로젝트'
+                        hasNotification: false,
+                        category: '스터디'
                     }
                 ]);
             }
@@ -62,21 +62,21 @@ export const ChatStateProvider = ({ children }) => {
             setChatRooms([
                 {
                     roomId: 'room1',
-                    roomName: '프론트엔드 스터디',
-                    members: 12,
+                    roomName: '졸업 프로젝트',
+                    members: 3,
                     isPrivate: false,
                     isOwner: true,
-                    hasNotification: true,
-                    category: '스터디'
+                    hasNotification: false,
+                    category: '프로젝트'
                 },
                 {
                     roomId: 'room2',
-                    roomName: '팀 프로젝트',
-                    members: 4,
+                    roomName: '소공 스터디',
+                    members: 10,
                     isPrivate: true,
                     isOwner: false,
-                    hasNotification: true,
-                    category: '프로젝트'
+                    hasNotification: false,
+                    category: '스터디'
                 }
             ]);
         } finally {
@@ -131,7 +131,7 @@ export const ChatStateProvider = ({ children }) => {
                 password: password
             };
 
-            const response = await fetch('/api/chat-room/join', {
+            const response = await fetch('/api/chat-room/{chatRoomId}/join', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

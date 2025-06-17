@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, MoreVertical, Users } from 'lucide-react';
+import { MoreVertical, Users } from 'lucide-react';
 import ChatMessages from './ChatMessages';
 import MessageInput from './MessageInput';
 
@@ -8,7 +8,7 @@ const ChatRoom = ({ roomId, chatRooms, onBack }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [replyingTo, setReplyingTo] = useState(null);
-    const currentRoom = chatRooms.find(room => room.id === roomId);
+    const currentRoom = chatRooms.find(room => room.roomId === roomId);
 
     // 메시지 조회 API - 컴포넌트 마운트 시 & roomId 변경 시 호출
     useEffect(() => {
@@ -22,28 +22,96 @@ const ChatRoom = ({ roomId, chatRooms, onBack }) => {
                 // setMessages(response.data);
 
                 // 임시 더미 데이터 (API 연결 전)
-                const dummyMessages = [
-                    {
-                        id: 1,
-                        userId: 'user123',
-                        username: '김철수',
-                        content: '안녕하세요!',
-                        timestamp: '오후 2:30',
-                        createdAt: new Date(Date.now() - 10 * 60 * 1000),
-                        isOwn: false,
-                        isOwner: false
-                    },
-                    {
-                        id: 2,
-                        userId: 'currentUser',
-                        username: '나',
-                        content: '안녕하세요! 반갑습니다.',
-                        timestamp: '오후 2:31',
-                        createdAt: new Date(Date.now() - 2 * 60 * 1000),
-                        isOwn: true,
-                        isOwner: false
-                    }
-                ];
+                let dummyMessages = [];
+
+                if (roomId === 'room1') {
+                    dummyMessages = [
+                        {
+                            id: 1,
+                            userId: 'user123',
+                            username: '농담곰',
+                            content: '안녕하세요!',
+                            timestamp: '오전 12:30',
+                            createdAt: new Date(Date.now() - 10 * 60 * 1000),
+                            isOwn: false,
+                            isOwner: false
+                        },
+                    ];
+                } else if (roomId === 'room2') {
+                    dummyMessages = [
+                        {
+                            id: 3,
+                            userId: 'user456',
+                            username: '기린이',
+                            content: '다들 소공 시험 잘 보셨나요?',
+                            timestamp: '오후 3:00',
+                            createdAt: new Date(Date.now() - 15 * 60 * 1000),
+                            isOwn: false,
+                            isOwner: true
+                        },
+                        {
+                            id: 4,
+                            userId: 'currentUser',
+                            username: '나',
+                            content: 'ㅜㅜ!',
+                            timestamp: '오후 3:02',
+                            createdAt: new Date(Date.now() - 13 * 60 * 1000),
+                            isOwn: true,
+                            isOwner: false
+                        },
+                        {
+                            id: 5,
+                            userId: 'currentUser',
+                            username: '염소',
+                            content: '그런 거 물어보지 말아주세요.',
+                            timestamp: '오후 3:05',
+                            createdAt: new Date(Date.now() - 13 * 60 * 1000),
+                            isOwn: false,
+                            isOwner: false
+                        },
+                        {
+                            id: 6,
+                            userId: 'currentUser',
+                            username: '염소',
+                            content: '채팅이 많은 경우',
+                            timestamp: '오후 3:08',
+                            createdAt: new Date(Date.now() - 13 * 60 * 1000),
+                            isOwn: false,
+                            isOwner: false
+                        },
+                        {
+                            id: 7,
+                            userId: 'currentUser',
+                            username: '염소',
+                            content: '스크롤바가 생기고.',
+                            timestamp: '오후 3:05',
+                            createdAt: new Date(Date.now() - 13 * 60 * 1000),
+                            isOwn: false,
+                            isOwner: false
+                        },
+                        {
+                            id: 8,
+                            userId: 'currentUser',
+                            username: '염소',
+                            content: '컨테이너 구역에서 스크롤이 가능합니다.',
+                            timestamp: '오후 3:05',
+                            createdAt: new Date(Date.now() - 13 * 60 * 1000),
+                            isOwn: false,
+                            isOwner: false
+                        },
+                        {
+                            id: 9,
+                            userId: 'currentUser',
+                            username: '기린이',
+                            content: '채팅이 많은 환경',
+                            timestamp: '오후 3:05',
+                            createdAt: new Date(Date.now() - 13 * 60 * 1000),
+                            isOwn: false,
+                            isOwner: true
+                        }
+                    ];
+                }
+
                 setMessages(dummyMessages);
 
             } catch (err) {
@@ -58,6 +126,7 @@ const ChatRoom = ({ roomId, chatRooms, onBack }) => {
             fetchMessages();
         }
     }, [roomId]);
+
 
     // 메시지 전송 API 호출
     const handleSendMessage = (content, replyToId = null) => {
@@ -159,17 +228,11 @@ const ChatRoom = ({ roomId, chatRooms, onBack }) => {
     return (
         <div className="flex-1 flex flex-col bg-white h-full relative">
             {/* 채팅방 헤더 */}
-            <div className="bg-white border-b px-4 py-3 flex items-center justify-between">
+            <div className="bg-white border-b px-8 py-3 flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                    <button
-                        onClick={onBack}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                        <ArrowLeft size={20} className="text-gray-600"/>
-                    </button>
                     <div>
-                        <h2 className="text-lg font-semibold text-gray-800">{currentRoom.name}</h2>
-                        <div className="flex items-center space-x-2 text-sm text-gray-500">
+                        <h2 className="text-lg font-semibold text-gray-800">{currentRoom.roomName}</h2>
+                        <div className="flex items-center space-x-4 text-sm text-gray-500">
                             <Users size={14}/>
                             <span>{currentRoom.members}명 참여</span>
                             {currentRoom.isPrivate && <span>• 비공개</span>}
@@ -182,6 +245,7 @@ const ChatRoom = ({ roomId, chatRooms, onBack }) => {
             </div>
             <div className="overflow-y-scroll" style={{minHeight: '560px', maxHeight: '560px'}}>
                 {/* 스크롤이 필요한 컨텐츠 */}
+                {/* 메시지 영역 */}
                 <div className="flex-1 overflow-y-auto">
                     <ChatMessages
                         messages={messages}
@@ -189,12 +253,9 @@ const ChatRoom = ({ roomId, chatRooms, onBack }) => {
                         onDelete={handleDeleteMessage}
                     />
                 </div>
-                {/* 메시지 영역 */}
-
             </div>
 
             {/* 메시지 입력 영역 */}
-
             <div className="sticky bottom-0 bg-white border-t z-20">
                 <MessageInput
                     onSendMessage={handleSendMessage}
