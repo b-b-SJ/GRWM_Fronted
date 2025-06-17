@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Search, Hash, Lock, Crown, MessageCircle, BookOpen } from 'lucide-react';
+import { X, Search, Hash, Lock, Crown, MessageCircle, BookOpen, Plus } from 'lucide-react';
 
 /**
  * 사이드바 컴포넌트
@@ -35,7 +35,7 @@ const WorkspaceSidebar = ({
                         onClick={toggleSidebar}
                         className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
                     >
-                        <X size={18} />
+                        <X size={18}/>
                     </button>
                 </div>
 
@@ -49,14 +49,14 @@ const WorkspaceSidebar = ({
                                     key={mode.id}
                                     onClick={() => setWorkspaceMode(mode.id)}
                                     className={`
-                    flex-1 flex items-center justify-center space-x-2 py-2 px-3 rounded-md transition-all
-                    ${workspaceMode === mode.id
+                                    flex-1 flex items-center justify-center space-x-2 py-2 px-3 rounded-md transition-all
+                                    ${workspaceMode === mode.id
                                         ? 'bg-white text-blue-600 shadow-sm font-medium'
                                         : 'text-gray-600 hover:text-gray-800'
                                     }
                   `}
                                 >
-                                    <IconComponent size={16} />
+                                    <IconComponent size={16}/>
                                     <span className="text-sm">{mode.label}</span>
                                 </button>
                             );
@@ -64,9 +64,17 @@ const WorkspaceSidebar = ({
                     </div>
                 </div>
 
-                <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2">
-                    <Search size={16} />
+                <button
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 mb-2">
+                    <Search size={16}/>
                     <span>{workspaceMode} 탐색</span>
+                </button>
+
+                <button
+                    className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
+                >
+                    <Plus size={16}/>
+                    <span>{workspaceMode} 개설하기</span>
                 </button>
             </div>
 
