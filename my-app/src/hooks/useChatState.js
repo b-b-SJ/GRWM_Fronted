@@ -13,8 +13,8 @@ export const ChatStateProvider = ({ children }) => {
 
     const [currentUser] = useState({
         id: 1,
-        username: '김사용자',
-        communityNickname: '스터디러버',
+        username: '박사용자',
+        communityNickname: '농담곰러버',
         email: 'user@example.com'
     });
 

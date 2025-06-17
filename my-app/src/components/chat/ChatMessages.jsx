@@ -29,16 +29,16 @@ const ChatMessages = ({ messages, onReply, onDelete }) => {
         setShowMenuForId(null);
     };
 
-    const handleDeleteMessage = (messageId, canDeleteForEveryone) => {
+    const handleDeleteMessage = (message, canDeleteForEveryone) => {
         if (canDeleteForEveryone) {
             const confirmDelete = window.confirm('모든 사용자에게서 이 메시지를 삭제하시겠습니까?');
             if (confirmDelete) {
-                onDelete(messageId, true);
+                onDelete(message, true);
             }
         } else {
             const confirmDelete = window.confirm('나에게서만 이 메시지를 삭제하시겠습니까?');
             if (confirmDelete) {
-                onDelete(messageId, false);
+                onDelete(message, false);
             }
         }
         setShowMenuForId(null);
@@ -46,8 +46,11 @@ const ChatMessages = ({ messages, onReply, onDelete }) => {
 
     const canDeleteForEveryone = (message) => {
         if (!message.isOwn) return false;
+
         const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-        return message.createdAt > fiveMinutesAgo;
+        const messageDate = new Date(message.createdAt); // 문자열 -> Date 객체 변환
+
+        return messageDate > fiveMinutesAgo;
     };
 
     const formatReplyPreview = (content) => {
