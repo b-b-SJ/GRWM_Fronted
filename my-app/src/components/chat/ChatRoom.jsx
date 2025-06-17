@@ -87,17 +87,19 @@ const ChatRoom = ({ roomId, chatRooms, onBack }) => {
     // API 연결 시 수정 필요: 메시지 삭제 API 호출
     const handleDeleteMessage = (messageId, deleteForEveryone = false) => {
         if (deleteForEveryone) {
-            // 전체 삭제 - 메시지를 완전히 제거
-            setMessages(messages.filter(msg => msg.id !== messageId));
-            // TODO: API 호출 - 전체 삭제
-            // await deleteMessageForEveryone(messageId);
-        } else {
-            // 나에게서만 삭제 - 메시지를 "삭제된 메시지입니다"로 변경
+            // 전체 삭제 - 메시지를 "삭제된 메시지입니다"로 변경
             setMessages(messages.map(msg =>
                 msg.id === messageId
                     ? { ...msg, content: '삭제된 메시지입니다.', isDeleted: true }
                     : msg
             ));
+
+            // TODO: API 호출 - 전체 삭제
+            // await deleteMessageForEveryone(messageId);
+        } else {
+            // 나에게서만 삭제 - 메시지를 완전히 제거
+            setMessages(messages.filter(msg => msg.id !== messageId));
+            
             // TODO: API 호출 - 개인 삭제
             // await deleteMessageForMe(messageId);
         }

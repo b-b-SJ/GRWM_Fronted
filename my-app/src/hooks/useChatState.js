@@ -37,8 +37,8 @@ export const ChatStateProvider = ({ children }) => {
                 // 실패 시 기본 목록 사용
                 setChatRooms([
                     {
-                        id: 'room1',
-                        name: '프론트엔드 스터디',
+                        roomId: 'room1',
+                        roomName: '프론트엔드 스터디',
                         members: 12,
                         isPrivate: false,
                         isOwner: true,
@@ -46,8 +46,8 @@ export const ChatStateProvider = ({ children }) => {
                         category: '스터디'
                     },
                     {
-                        id: 'room2',
-                        name: '팀 프로젝트',
+                        roomId: 'room2',
+                        roomName: '팀 프로젝트',
                         members: 4,
                         isPrivate: true,
                         isOwner: false,
@@ -61,8 +61,8 @@ export const ChatStateProvider = ({ children }) => {
             // 에러 시 기본 목록 사용
             setChatRooms([
                 {
-                    id: 'room1',
-                    name: '프론트엔드 스터디',
+                    roomId: 'room1',
+                    roomName: '프론트엔드 스터디',
                     members: 12,
                     isPrivate: false,
                     isOwner: true,
@@ -70,17 +70,8 @@ export const ChatStateProvider = ({ children }) => {
                     category: '스터디'
                 },
                 {
-                    id: 'room2',
-                    name: '알고리즘 문제풀이',
-                    members: 8,
-                    isPrivate: false,
-                    isOwner: false,
-                    hasNotification: false,
-                    category: '스터디'
-                },
-                {
-                    id: 'room3',
-                    name: '팀 프로젝트',
+                    roomId: 'room2',
+                    roomName: '팀 프로젝트',
                     members: 4,
                     isPrivate: true,
                     isOwner: false,

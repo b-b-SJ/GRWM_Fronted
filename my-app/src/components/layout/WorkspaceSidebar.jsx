@@ -95,14 +95,14 @@ const WorkspaceSidebar = ({
                         // 채팅방 목록
                         chatRooms.map((room) => (
                             <div
-                                key={room.id}
+                                key={room.roomId}
                                 onClick={() => {
-                                    setSelectedRoom(room.id);
+                                    setSelectedRoom(room.roomId);
                                     setCurrentView('chat');
                                 }}
                                 className={`
                   p-3 rounded-lg cursor-pointer transition-colors mb-1
-                  ${selectedRoom === room.id
+                  ${selectedRoom === room.roomId
                                     ? 'bg-blue-50 border-l-4 border-blue-600'
                                     : 'hover:bg-gray-50'
                                 }
@@ -119,7 +119,7 @@ const WorkspaceSidebar = ({
                                             {room.isOwner && <Crown size={14} className="text-yellow-500" />}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="font-medium text-gray-800 truncate">{room.name}</h3>
+                                            <h3 className="font-medium text-gray-800 truncate">{room.roomName}</h3>
                                             <p className="text-sm text-gray-500">{room.members}명 참여중</p>
                                         </div>
                                     </div>
