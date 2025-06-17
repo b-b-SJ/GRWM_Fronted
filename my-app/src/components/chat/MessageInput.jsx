@@ -24,21 +24,19 @@ const MessageInput = ({ onSendMessage, replyingTo, onCancelReply }) => {
     };
 
     return (
-        <div className="bg-white border-t">
+        <div className="relative bg-white border-t">
             {/* 답장 미리보기 */}
             {replyingTo && (
-                <div className="px-4 py-2 bg-gray-50 border-b">
+                <div className="absolute -top-[70px] left-0 right-0 mx-4 mb-2 px-4 py-2 bg-gray-100 border rounded-md shadow z-10">
                     <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                            <div className="flex items-center space-x-2">
-                                <div className="w-1 h-8 bg-blue-500 rounded"></div>
-                                <div>
-                                    <div className="text-sm font-medium text-gray-700">
-                                        {replyingTo.username}에게 답장
-                                    </div>
-                                    <div className="text-sm text-gray-600">
-                                        {formatReplyPreview(replyingTo.content)}
-                                    </div>
+                        <div className="flex items-center space-x-2">
+                            <div className="w-1 h-8 bg-blue-500 rounded"></div>
+                            <div>
+                                <div className="text-sm font-medium text-gray-700">
+                                    {replyingTo.username}에게 답장
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                    {formatReplyPreview(replyingTo.content)}
                                 </div>
                             </div>
                         </div>

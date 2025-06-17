@@ -155,7 +155,7 @@ const ChatRoom = ({ roomId, chatRooms, onBack }) => {
     }
 
     return (
-        <div className="flex-1 flex flex-col bg-white">
+        <div className="flex-1 flex flex-col bg-white h-full relative">
             {/* 채팅방 헤더 */}
             <div className="bg-white border-b px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center space-x-4">
@@ -178,22 +178,28 @@ const ChatRoom = ({ roomId, chatRooms, onBack }) => {
                     <MoreVertical size={20} className="text-gray-600"/>
                 </button>
             </div>
-            <div className="overflow-y-scroll" style={{minHeight: '570px', maxHeight: '570px'}}>
+            <div className="overflow-y-scroll" style={{minHeight: '560px', maxHeight: '560px'}}>
                 {/* 스크롤이 필요한 컨텐츠 */}
+                <div className="flex-1 overflow-y-auto">
+                    <ChatMessages
+                        messages={messages}
+                        onReply={handleReplyToMessage}
+                        onDelete={handleDeleteMessage}
+                    />
+                </div>
                 {/* 메시지 영역 */}
-                <ChatMessages
-                    messages={messages}
-                    onReply={handleReplyToMessage}
-                    onDelete={handleDeleteMessage}
-                />
+
             </div>
 
             {/* 메시지 입력 영역 */}
-            <MessageInput
-                onSendMessage={handleSendMessage}
-                replyingTo={replyingTo}
-                onCancelReply={handleCancelReply}
-            />
+
+            <div className="sticky bottom-0 bg-white border-t z-20">
+                <MessageInput
+                    onSendMessage={handleSendMessage}
+                    replyingTo={replyingTo}
+                    onCancelReply={handleCancelReply}
+                />
+            </div>
         </div>
     );
 };
