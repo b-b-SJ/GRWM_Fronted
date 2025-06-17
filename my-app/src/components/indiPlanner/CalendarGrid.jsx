@@ -2,7 +2,7 @@ import React from "react";
 import { Clock, MapPin } from "lucide-react";
 
 /**
- * CalendarBoard.jsx
+ * CalendarGrid
  * - 요일 헤더 & 날짜 그리드(셀 클릭 시 일정 선택)
  */
 
@@ -13,7 +13,7 @@ const CalendarGrid = ({
   viewMode,
   onSelectEvent,
 }) => {
-  const dayNames = [, "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   //날짜
   const isToday = (date) => date.toDateString() === new Date().toDateString();
   const isCurrentMonth = (date) => date.getMonth() === currentDate.getMonth();

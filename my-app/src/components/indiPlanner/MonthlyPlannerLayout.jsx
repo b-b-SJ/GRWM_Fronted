@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import PlannerHeader from "./PlannerHeader";
-import CalendarBoard from "./CalendarGrid";
-import SidebarContent from "./SidebarContent";
+import CalendarGrid from "./CalendarGrid";
 
 /**
  * MonthlyPlanner/index.jsx
@@ -51,6 +50,16 @@ const MonthlyPlannerLayout = () => {
   ]);
 
   // 날짜 목록 생성
+
+  {
+    /*
+    먼슬리 -> 위클리로 바꾸면서 해야될? 일
+
+    1. 년도 적는 거 빼기
+    
+    
+    */
+  }
   const generateCalendarDates = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -111,7 +120,7 @@ const MonthlyPlannerLayout = () => {
       </div>
 
       {/* 사이드바 + 투두/오늘 일정 */}
-      <SidebarContent
+      <PlannerSideBar
         todos={todos}
         onToggleTodo={toggleTodo}
         events={events}
@@ -120,7 +129,7 @@ const MonthlyPlannerLayout = () => {
 
       {/* 일정 상세 모달 */}
       {selectedEvent && (
-        <SidebarContent.EventModal
+        <PlannerSideBar.EventModal
           event={selectedEvent}
           onClose={() => setSelectedEvent(null)}
         />
