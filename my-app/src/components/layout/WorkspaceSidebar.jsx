@@ -5,7 +5,7 @@ import { X, Search, Hash, Lock, Crown, MessageCircle, BookOpen } from 'lucide-re
  * 사이드바 컴포넌트
  * 채팅방과 스터디룸을 전환할 수 있는 협업공간 사이드바
  */
-const Sidebar = ({
+const WorkspaceSidebar = ({
                      sidebarOpen,
                      toggleSidebar,
                      chatRooms,
@@ -152,4 +152,4 @@ const Sidebar = ({
     );
 };
 
-export default Sidebar;
+export default WorkspaceSidebar;

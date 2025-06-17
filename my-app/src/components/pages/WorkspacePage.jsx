@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import Sidebar from '../layout/Sidebar';
+import WorkspaceSidebar from '../layout/WorkspaceSidebar';
 import ChatRoom from '../chat/ChatRoom';
 import { useChatState } from '../../hooks/useChatState';
 import { MessageCircle, BookOpen } from 'lucide-react';
@@ -21,7 +21,7 @@ const WorkspacePage = () => {
     return (
         <div className="flex-1 flex flex-col">
             <div className="flex flex-1 overflow-hidden">
-                <Sidebar
+                <WorkspaceSidebar
                     sidebarOpen={workspaceSidebarOpen}
                     toggleSidebar={toggleWorkspaceSidebar}
                     chatRooms={chatRooms}
