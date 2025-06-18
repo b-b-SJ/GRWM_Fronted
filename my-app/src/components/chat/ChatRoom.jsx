@@ -3,6 +3,11 @@ import { MoreVertical, Users } from 'lucide-react';
 import ChatMessages from './ChatMessages';
 import MessageInput from './MessageInput';
 
+/**
+ * ChatRoom 컴포넌트
+ * - 채팅 메시지조회, 전송, 삭제  관리
+ * - 채팅방 전체 레이아웃
+ */
 const ChatRoom = ({ roomId, chatRooms, onBack }) => {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -174,14 +179,17 @@ const ChatRoom = ({ roomId, chatRooms, onBack }) => {
         }
     };
 
+    // 메시지에 답장
     const handleReplyToMessage = (message) => {
         setReplyingTo(message);
     };
 
+    // 메시지에 답장 취소
     const handleCancelReply = () => {
         setReplyingTo(null);
     };
 
+    // 채팅방이 존재하지 않는 경우
     if (!currentRoom) {
         return (
             <div className="flex-1 flex items-center justify-center">
@@ -198,6 +206,7 @@ const ChatRoom = ({ roomId, chatRooms, onBack }) => {
         );
     }
 
+    // 로딩 중 처리
     if (loading) {
         return (
             <div className="flex-1 flex items-center justify-center">
@@ -209,6 +218,7 @@ const ChatRoom = ({ roomId, chatRooms, onBack }) => {
         );
     }
 
+    // 에러 처리
     if (error) {
         return (
             <div className="flex-1 flex items-center justify-center">
@@ -243,7 +253,7 @@ const ChatRoom = ({ roomId, chatRooms, onBack }) => {
                     <MoreVertical size={20} className="text-gray-600"/>
                 </button>
             </div>
-            <div className="overflow-y-scroll" style={{minHeight: '560px', maxHeight: '560px'}}>
+            <div className="overflow-y-scroll" style={{minHeight: '450px', maxHeight: '450px'}}>
                 {/* 스크롤이 필요한 컨텐츠 */}
                 {/* 메시지 영역 */}
                 <div className="flex-1 overflow-y-auto">

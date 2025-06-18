@@ -1,7 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 
+/**
+ * useChatStae 커스텀 훅
+ * - ChatStateProvider 컴포넌트
+ * - 이후 WebSocket 관리는 분리할 예정
+ */
+
+// 채팅 상태를 전역에서 관리할 Context 생성
 const ChatStateContext = createContext();
 
+// Chat 상태를 제공하는 Provider 컴포넌트
 export const ChatStateProvider = ({ children }) => {
     const [selectedRoom, setSelectedRoom] = useState(null);
     const [messages, setMessages] = useState({});
@@ -11,6 +19,7 @@ export const ChatStateProvider = ({ children }) => {
     const [isLoadingRooms, setIsLoadingRooms] = useState(false);
     const websocketRef = useRef(null);
 
+    // 유저 정보, 이후에 API 연결 필요
     const [currentUser] = useState({
         id: 1,
         username: '박사용자',
@@ -188,6 +197,10 @@ export const ChatStateProvider = ({ children }) => {
         }
     }, [currentUser.id, selectedRoom, fetchChatRooms]);
 
+    /**
+     * WebSocket 연결 관련 함수들. 시도했으나 실패하여 이후 수정 필수.
+     * 또한 WebSocket 핸들러 분리할 예정
+     */
     // WebSocket 연결
     const connectWebSocket = useCallback((roomId) => {
         if (websocketRef.current) {
@@ -364,12 +377,12 @@ export const ChatStateProvider = ({ children }) => {
         setConnectionStatus('disconnected');
     }, []);
 
-    // 초기 채팅방 목록 로드
+    // 초기 채팅방 목록 불러오기
     useEffect(() => {
         fetchChatRooms();
     }, [fetchChatRooms]);
 
-    // 컴포넌트 언마운트 시 연결 종료
+    // 언마운트 시 WebSocket 정리
     useEffect(() => {
         return () => {
             if (websocketRef.current) {
@@ -378,6 +391,7 @@ export const ChatStateProvider = ({ children }) => {
         };
     }, []);
 
+    // Context 값
     const value = {
         // 상태
         selectedRoom,
@@ -414,6 +428,7 @@ export const ChatStateProvider = ({ children }) => {
     );
 };
 
+// 커스텀 훅: 컴포넌트에서 ChatState 쉽게 사용
 export const useChatState = () => {
     const context = useContext(ChatStateContext);
     if (!context) {

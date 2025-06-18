@@ -11,6 +11,11 @@ import {
     Users
 } from 'lucide-react';
 
+/**
+ * FixedSidebar 컴포넌트
+ * - 모든 페이지에서 공통으로 사용되는 고정된 사이드바 레이아웃
+ * - 사용자 프로필, 알림, 모드(베타), 설정, 도움말
+ */
 const FixedSidebar = ({ currentUser }) => {
     const [darkMode, setDarkMode] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -20,6 +25,7 @@ const FixedSidebar = ({ currentUser }) => {
         // 다크모드 토글 로직 구현해야
     };
 
+    // 프로필 메뉴 확인
     const handleProfileClick = () => {
         setShowProfileMenu(!showProfileMenu);
     };
@@ -80,9 +86,9 @@ const FixedSidebar = ({ currentUser }) => {
                                 </div>
                             </div>
                         </div>
-
                         <hr className="my-2" />
                         <div className="px-2">
+                            {/* 로그아웃 버튼 */}
                             <button
                                 onClick={handleLogout}
                                 className="w-full px-4 py-2 text-left hover:bg-red-50 rounded-lg flex items-center space-x-2 text-red-600"
@@ -103,7 +109,7 @@ const FixedSidebar = ({ currentUser }) => {
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
                 </button>
 
-                {/* 다크모드 토글 */}
+                {/* 다크모드 토글 버튼 */}
                 <button
                     onClick={toggleDarkMode}
                     className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors group"

@@ -1,10 +1,15 @@
-//components/pages/WorkspacePage.jsx
 import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import WorkspaceSidebar from '../layout/WorkspaceSidebar';
 import ChatRoom from '../chat/ChatRoom';
 import { useChatState } from '../../hooks/useChatState';
 import { MessageCircle, BookOpen, Eye, EyeOff, Key, Search } from 'lucide-react';
+
+/**
+ * WorkSpacePage UI 및 기능
+ * - 채팅방 : 채팅방 디테일 페이지, 채팅방 생성 페이지, 탐색 페이지를 관리
+ * - 스터디룸 구현 시 위와 같은 페이지 관리
+ */
 
 // 채팅방 생성 컴포넌트
 const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
@@ -303,6 +308,7 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
     );
 };
 
+// 채팅방 화면의 컨테이너 관리
 const WorkspacePage = () => {
     const [workspaceMode, setWorkspaceMode] = useState('채팅방'); // '채팅방' 또는 '스터디룸'
     const {workspaceSidebarOpen, toggleWorkspaceSidebar } = useOutletContext();
@@ -340,6 +346,7 @@ const WorkspacePage = () => {
     return (
         <div className="flex-1 flex flex-col">
             <div className="flex flex-1 overflow-hidden">
+                {/* 사이드바 정보 */}
                 <WorkspaceSidebar
                     sidebarOpen={workspaceSidebarOpen}
                     toggleSidebar={toggleWorkspaceSidebar}
@@ -359,7 +366,6 @@ const WorkspacePage = () => {
                         onClick={() => toggleWorkspaceSidebar(false)}
                     />
                 )}
-
 
                 {/* 메인 컨텐츠 컨테이너 */}
                 <div className="flex-1 flex flex-col">

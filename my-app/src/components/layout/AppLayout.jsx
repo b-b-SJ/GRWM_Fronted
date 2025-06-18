@@ -31,7 +31,7 @@ const AppLayout = () => {
         return path || 'main';
     };
 
-    // workspace 페이지인지 확인하고 하는 건데 일단 보류
+    // workspace 페이지인지 확인하고 WorkSpace 사이드바 제어 시 사용
     const isWorkspacePage = location.pathname.startsWith('/workspace');
 
     return (

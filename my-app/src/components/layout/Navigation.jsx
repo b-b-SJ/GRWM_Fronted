@@ -2,12 +2,18 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, Calendar, BarChart3, Users, MessageSquare, ChevronDown } from 'lucide-react';
 
+/**
+ * Navigation 컴포넌트
+ * - 모든 페이지에서 공통으로 사용되는 고정된 내비게이션 바 레이아웃
+ * - 플래너, 트래커, 협업공간, 커뮤니티로 이동
+ */
 const Navigation = ({ toggleSidebar, currentUser, currentPage }) => {
     const location = useLocation();  // 현재 URL 경로 정보
     const navigate = useNavigate();  // 프로그래밍 방식 페이지 이동
     const [openDropdown, setOpenDropdown] = useState(null); // 열린 드롭다운 메뉴 인덱스
     const dropdownRefs = useRef({}); // 드롭다운 DOM 요소 참조를 위한 ref 객체
 
+    // 메뉴 - 서브메뉴 관리
     const navItems = [
         {
             icon: Calendar,
@@ -44,6 +50,7 @@ const Navigation = ({ toggleSidebar, currentUser, currentPage }) => {
         }
     ];
 
+    // workspace의 경우 페이지 구현이 되어 있으므로 이동 가능 (나머지 기능은 추후 수정)
     const isActivePath = (path) => {
         if (path === '/workspace') {
             return location.pathname.startsWith('/workspace');
@@ -51,12 +58,14 @@ const Navigation = ({ toggleSidebar, currentUser, currentPage }) => {
         return location.pathname === path;
     };
 
+    // 서브메뉴 드롭다운 메뉴
     const handleDropdownToggle = (index, e) => {
         e.preventDefault();
         e.stopPropagation();
         setOpenDropdown(openDropdown === index ? null : index);
     };
 
+    // 서브메뉴 클릭 시 이동
     const handleSubMenuClick = (path) => {
         if (path === '/workspace') {
             navigate('/workspace');
@@ -87,14 +96,16 @@ const Navigation = ({ toggleSidebar, currentUser, currentPage }) => {
     return (
         <nav className="bg-white shadow-sm border-b px-4 py-3 flex items-center justify-between">
             <div className="flex items-center space-x-4">
+                {/* 사이드바 토글 버튼 */}
                 {toggleSidebar && (
                     <button
                         onClick={toggleSidebar}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors" // lg:hidden 제거
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                     >
                         <Menu size={20} />
                     </button>
                 )}
+                {/* 메인 로고 : 클릭 시 메인 페이지로 이동 */}
                 <Link to="/main" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
                     <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                         <span className="text-white font-bold text-sm">G</span>
@@ -103,6 +114,7 @@ const Navigation = ({ toggleSidebar, currentUser, currentPage }) => {
                 </Link>
             </div>
 
+            {/* 메뉴 배치 */}
             <div className="hidden md:flex items-center space-x-2">
                 {navItems.map((item, index) => (
                     <div key={index} className="relative" ref={el => dropdownRefs.current[index] = el}>
