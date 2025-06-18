@@ -1,7 +1,9 @@
 import React from 'react';
 import { MessageSquare, Users } from 'lucide-react';
 
-// 임시 커뮤니티 페이지
+/**
+ * 임시 CommunityPage UI
+ */
 const CommunityPage = () => {
     return (
         <div className="flex-1 overflow-y-auto bg-gray-50">

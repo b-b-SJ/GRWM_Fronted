@@ -1,6 +1,9 @@
 import React from 'react';
 import { BarChart3, TrendingUp } from 'lucide-react';
 
+/**
+ * 임시 TrackerPage UI
+ */
 const TrackerPage = () => {
     return (
         <div className="flex-1 overflow-y-auto bg-gray-50">
