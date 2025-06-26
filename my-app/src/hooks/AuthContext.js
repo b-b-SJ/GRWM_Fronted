@@ -1,6 +1,7 @@
 // src/hooks/AuthContext.js
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
+// 로그인, 회원가입 관리
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -14,9 +15,9 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(!!token);
     }, []);
 
-    const login = async (email, password) => {
-        if (!email || !password) {
-            setError('이메일과 비밀번호를 모두 입력해주세요.');
+    const login = async (loginId, password) => {
+        if (!loginId || !password) {
+            setError('아이디와 비밀번호를 모두 입력해주세요.');
             return { success: false };
         }
 
@@ -24,17 +25,17 @@ export const AuthProvider = ({ children }) => {
         setError('');
 
         // 하드코딩 유저 (개발용)
-        if (email === 'test' && password === '1234') {
+        if (loginId === 'test' && password === '1234') {
             localStorage.setItem('authToken', 'dummy-token');
             setIsAuthenticated(true);
-            return { success: true, data: { email, username: 'Test User' } };
+            return { success: true, data: { loginId, username: 'Test User' } };
         }
 
         try {
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({ loginId, password })
             });
 
             if (response.ok) {

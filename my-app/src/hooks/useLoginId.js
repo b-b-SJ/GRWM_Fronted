@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+// 중복 id 체크
 const useLoginId = () => {
     const [isChecking, setIsChecking] = useState(false);
     const [isAvailable, setIsAvailable] = useState(null);
