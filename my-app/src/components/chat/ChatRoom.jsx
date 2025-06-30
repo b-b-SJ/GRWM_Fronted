@@ -254,6 +254,7 @@ const ChatRoom = ({ roomId, chatRooms, onBack }) => {
                 </button>
             </div>
 
+            {/* 메시지 영역 */}
             <div className="flex-1 overflow-y-auto max-h-[calc(100vh-220px)]">
                 <ChatMessages
                     messages={messages}
