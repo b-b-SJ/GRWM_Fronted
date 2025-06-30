@@ -253,16 +253,14 @@ const ChatRoom = ({ roomId, chatRooms, onBack }) => {
                     <MoreVertical size={20} className="text-gray-600"/>
                 </button>
             </div>
-            <div className="overflow-y-scroll" style={{minHeight: '450px', maxHeight: '450px'}}>
-                {/* 스크롤이 필요한 컨텐츠 */}
-                {/* 메시지 영역 */}
-                <div className="flex-1 overflow-y-auto">
-                    <ChatMessages
-                        messages={messages}
-                        onReply={handleReplyToMessage}
-                        onDelete={handleDeleteMessage}
-                    />
-                </div>
+
+            {/* 메시지 영역 - flex-1로 남은 공간 모두 사용 */}
+            <div className="flex-1 overflow-y-auto">
+                <ChatMessages
+                    messages={messages}
+                    onReply={handleReplyToMessage}
+                    onDelete={handleDeleteMessage}
+                />
             </div>
 
             {/* 메시지 입력 영역 */}
