@@ -254,8 +254,7 @@ const ChatRoom = ({ roomId, chatRooms, onBack }) => {
                 </button>
             </div>
 
-            {/* 메시지 영역 - flex-1로 남은 공간 모두 사용 */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto max-h-[calc(100vh-220px)]">
                 <ChatMessages
                     messages={messages}
                     onReply={handleReplyToMessage}
