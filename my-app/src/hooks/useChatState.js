@@ -31,7 +31,8 @@ export const ChatStateProvider = ({ children }) => {
     const fetchChatRooms = useCallback(async () => {
         setIsLoadingRooms(true);
         try {
-            const response = await fetch(`/api/chat-room/show/{userId}/joinlist`, {
+            const { id: userId } = currentUser;
+            const response = await fetch(`/api/chat-room/show/${userId}/joinlist`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -39,8 +40,8 @@ export const ChatStateProvider = ({ children }) => {
             });
 
             if (response.ok) {
-                const rooms = await response.json();
-                setChatRooms(rooms);
+                const room = await response.json();
+                setChatRooms(room);
             } else {
                 console.error('채팅방 목록 조회 실패');
                 // 실패 시 기본 목록 사용
