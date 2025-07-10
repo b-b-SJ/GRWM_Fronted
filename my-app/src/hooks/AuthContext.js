@@ -67,7 +67,7 @@ export const AuthProvider = ({ children }) => {
         setError('');
 
         try {
-            const response = await fetch('/api/user/create', {
+            const response = await fetch('/api/auth/signup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, loginId, password, email })

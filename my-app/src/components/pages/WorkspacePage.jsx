@@ -25,7 +25,7 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const categories = ['일반', '프로젝트', '스터디', '취미', '게임'];
+    const categories = ['일반', '프로젝트', '스터디', '취미', '기타'];
 
     const handleSubmit = async (e) => {
         e.preventDefault();
