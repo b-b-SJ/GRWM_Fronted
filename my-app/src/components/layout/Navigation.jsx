@@ -38,8 +38,8 @@ const Navigation = ({ toggleSidebar, currentUser, currentPage }) => {
             label: '협업공간',
             path: '/workspace',
             subMenus: [
-                { label: '채팅방', path: '/workspace' },
-                { label: '스터디룸', path: '/workspace/study' }
+                { label: '채팅방', path: '/workspace?mode=chat' },
+                { label: '스터디룸', path: '/workspace?mode=study' }
             ]
         },
         {
@@ -67,8 +67,9 @@ const Navigation = ({ toggleSidebar, currentUser, currentPage }) => {
 
     // 서브메뉴 클릭 시 이동
     const handleSubMenuClick = (path) => {
-        if (path === '/workspace') {
-            navigate('/workspace');
+        // workspace 관련 서브메뉴는 구현되어 있으므로 이동 허용
+        if (path.startsWith('/workspace')) {
+            navigate(path);
         } else {
             // 다른 서브메뉴는 아직 구현되지 않음을 알림
             alert('해당 기능은 준비 중입니다.');

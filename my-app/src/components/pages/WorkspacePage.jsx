@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useOutletContext, useLocation, useSearchParams } from 'react-router-dom';
 import WorkspaceSidebar from '../layout/WorkspaceSidebar';
 import ChatRoom from '../chat/ChatRoom';
 import { useChatState } from '../../hooks/useChatState';
@@ -202,7 +202,6 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
                         </p>
                     </div>
 
-
                     {/* 공개/비공개 설정 */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -265,7 +264,6 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
                                     maxLength={10}
                                 />
                             </div>
-
                         </div>
                     )}
 
@@ -310,8 +308,15 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
 
 // 채팅방 화면의 컨테이너 관리
 const WorkspacePage = () => {
-    const [workspaceMode, setWorkspaceMode] = useState('채팅방'); // '채팅방' 또는 '스터디룸'
-    const {workspaceSidebarOpen, toggleWorkspaceSidebar } = useOutletContext();
+    const location = useLocation();
+    const [searchParams] = useSearchParams();
+    const { workspaceSidebarOpen, toggleWorkspaceSidebar } = useOutletContext();
+
+    // URL 쿼리 파라미터로부터 모드 결정
+    const modeFromUrl = searchParams.get('mode');
+    const [workspaceMode, setWorkspaceMode] = useState(
+        modeFromUrl === 'study' ? '스터디룸' : '채팅방'
+    );
 
     const [currentView, setCurrentView] = useState('rooms'); // 'rooms', 'explore', 'create', 'chat'
 
@@ -322,6 +327,16 @@ const WorkspacePage = () => {
     } = useChatState();
 
     const isStudyRoom = workspaceMode === '스터디룸';
+
+    // URL 파라미터 변경 감지하여 모드 업데이트
+    useEffect(() => {
+        const modeParam = searchParams.get('mode');
+        if (modeParam === 'study') {
+            setWorkspaceMode('스터디룸');
+        } else {
+            setWorkspaceMode('채팅방');
+        }
+    }, [searchParams]);
 
     // 채팅방 생성 성공 시 호출되는 함수
     const handleRoomCreated = (chatRoomId) => {
@@ -375,7 +390,7 @@ const WorkspacePage = () => {
                             onRoomCreated={handleRoomCreated}
                             onCancel={handleCreateCancel}
                         />
-                        ) : currentView === 'explore' ? (
+                    ) : currentView === 'explore' ? (
                         // 채팅방 탐색 페이지 (향후 구현)
                         <div className="flex-1 flex items-center justify-center">
                             <div className="text-center">
