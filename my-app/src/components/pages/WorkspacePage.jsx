@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useOutletContext, useLocation, useSearchParams } from 'react-router-dom';
 import WorkspaceSidebar from '../layout/WorkspaceSidebar';
 import ChatRoom from '../chat/ChatRoom';
+import ChatRoomExplorer from '../chat/ChatRoomExplorer';
 import { useChatState } from '../../hooks/useChatState';
-import { MessageCircle, BookOpen, Eye, EyeOff, Key, Search } from 'lucide-react';
+import { MessageCircle, BookOpen, Eye, EyeOff, Key } from 'lucide-react';
 
 /**
  * WorkSpacePage UI 및 기능
@@ -353,6 +354,13 @@ const WorkspacePage = () => {
         // setCurrentView('chat');
     };
 
+    // 채팅방 입장 처리
+    const handleJoinRoom = (roomId) => {
+        console.log('채팅방 입장:', roomId);
+        setSelectedRoom(roomId);
+        setCurrentView('chat');
+    };
+
     // 채팅방 생성 취소 시 호출되는 함수
     const handleCreateCancel = () => {
         setCurrentView('rooms');
@@ -391,21 +399,10 @@ const WorkspacePage = () => {
                             onCancel={handleCreateCancel}
                         />
                     ) : currentView === 'explore' ? (
-                        // 채팅방 탐색 페이지 (향후 구현)
-                        <div className="flex-1 flex items-center justify-center">
-                            <div className="text-center">
-                                <Search size={64} className="text-gray-400 mx-auto mb-4" />
-                                <h2 className="text-xl font-semibold text-gray-600 mb-2">
-                                    {workspaceMode} 탐색
-                                </h2>
-                                <p className="text-gray-500">
-                                    다양한 {workspaceMode}을 찾아보세요.
-                                </p>
-                                <p className="text-sm text-gray-400 mt-2">
-                                    (탐색 기능은 개발 중입니다)
-                                </p>
-                            </div>
-                        </div>
+                        <ChatRoomExplorer
+                            workspaceMode={workspaceMode}
+                            onJoinRoom={handleJoinRoom}
+                        />
                     ): selectedRoom ? (
                         <ChatRoom
                             roomId={selectedRoom}
