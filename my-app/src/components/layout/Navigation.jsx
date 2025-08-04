@@ -27,10 +27,11 @@ const Navigation = ({ toggleSidebar, currentUser, currentPage }) => {
         {
             icon: BarChart3,
             label: '트래커',
-            path: '/tracker',
+            path: '/tracker?mode=todo', // 메인 트래커는 To-do 모드
+            mainPath: '/tracker', // 경로 확인용
             subMenus: [
-                { label: '회고일기', path: '/tracker/journal' },
-                { label: 'TODO 리스트', path: '/tracker/todo' }
+                { label: 'TO-DO', path: '/tracker?mode=todo' },
+                { label: '회고일기', path: '/tracker' } // 기본값은 diary 모드
             ]
         },
         {
@@ -50,12 +51,20 @@ const Navigation = ({ toggleSidebar, currentUser, currentPage }) => {
         }
     ];
 
-    // workspace의 경우 페이지 구현이 되어 있으므로 이동 가능 (나머지 기능은 추후 수정)
-    const isActivePath = (path) => {
-        if (path === '/workspace') {
+    // 활성 경로 확인 함수
+    const isActivePath = (item) => {
+        // 트래커의 경우 특별 처리
+        if (item.mainPath === '/tracker') {
+            return location.pathname.startsWith('/tracker');
+        }
+
+        // workspace의 경우
+        if (item.path === '/workspace') {
             return location.pathname.startsWith('/workspace');
         }
-        return location.pathname === path;
+
+        // 일반적인 경우
+        return location.pathname === item.path;
     };
 
     // 서브메뉴 드롭다운 메뉴
@@ -65,10 +74,21 @@ const Navigation = ({ toggleSidebar, currentUser, currentPage }) => {
         setOpenDropdown(openDropdown === index ? null : index);
     };
 
+    // 메인 메뉴 클릭 핸들러
+    const handleMainMenuClick = (item, e) => {
+        // 트래커나 워크스페이스인 경우 직접 이동
+        if (item.mainPath === '/tracker' || item.path.startsWith('/workspace')) {
+            e.preventDefault();
+            navigate(item.path);
+            setOpenDropdown(null);
+        }
+        // 다른 메뉴는 기본 Link 동작 사용
+    };
+
     // 서브메뉴 클릭 시 이동
     const handleSubMenuClick = (path) => {
-        // workspace 관련 서브메뉴는 구현되어 있으므로 이동 허용
-        if (path.startsWith('/workspace')) {
+        // workspace와 tracker 관련 서브메뉴는 구현되어 있으므로 이동 허용
+        if (path.startsWith('/workspace') || path.startsWith('/tracker')) {
             navigate(path);
         } else {
             // 다른 서브메뉴는 아직 구현되지 않음을 알림
@@ -120,24 +140,39 @@ const Navigation = ({ toggleSidebar, currentUser, currentPage }) => {
                 {navItems.map((item, index) => (
                     <div key={index} className="relative" ref={el => dropdownRefs.current[index] = el}>
                         <div className="flex items-center">
-                            <Link
-                                to={item.path}
-                                className={`flex items-center space-x-2 transition-colors px-3 py-2 rounded-lg ${
-                                    isActivePath(item.path)
-                                        ? 'text-blue-600 bg-blue-50'
-                                        : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
-                                }`}
-                            >
-                                <item.icon size={18} />
-                                <span>{item.label}</span>
-                            </Link>
+                            {/* 트래커나 워크스페이스는 특별 처리, 나머지는 일반 Link */}
+                            {(item.mainPath === '/tracker' || item.path.startsWith('/workspace')) ? (
+                                <button
+                                    onClick={(e) => handleMainMenuClick(item, e)}
+                                    className={`flex items-center space-x-2 transition-colors px-3 py-2 rounded-lg ${
+                                        isActivePath(item)
+                                            ? 'text-blue-600 bg-blue-50'
+                                            : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                                    }`}
+                                >
+                                    <item.icon size={18} />
+                                    <span>{item.label}</span>
+                                </button>
+                            ) : (
+                                <Link
+                                    to={item.path}
+                                    className={`flex items-center space-x-2 transition-colors px-3 py-2 rounded-lg ${
+                                        isActivePath(item)
+                                            ? 'text-blue-600 bg-blue-50'
+                                            : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                                    }`}
+                                >
+                                    <item.icon size={18} />
+                                    <span>{item.label}</span>
+                                </Link>
+                            )}
 
                             {/* 드롭다운 화살표 (서브메뉴가 있는 경우에만) */}
                             {item.subMenus.length > 0 && (
                                 <button
                                     onClick={(e) => handleDropdownToggle(index, e)}
                                     className={`ml-1 p-1 rounded transition-colors ${
-                                        isActivePath(item.path)
+                                        isActivePath(item)
                                             ? 'text-blue-600 hover:bg-blue-100'
                                             : 'text-gray-600 hover:text-blue-600 hover:bg-gray-100'
                                     }`}
