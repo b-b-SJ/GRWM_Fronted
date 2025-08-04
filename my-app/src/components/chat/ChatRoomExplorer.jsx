@@ -202,7 +202,7 @@ const ChatRoomExplorer = ({ workspaceMode = '채팅룸', onJoinRoom = (roomId) =
                     {
                         id: 'room3',
                         roomName: '개발 스터디',
-                        description: '개발 학습을 함께 하는 스터디룸입니다. 초보자부터 고급자까지 환영!',
+                        description: '개발 학습을 함께 하는 스터디룸',
                         category: '스터디',
                         isPrivate: false,
                         currentMembers: 15,
@@ -211,12 +211,12 @@ const ChatRoomExplorer = ({ workspaceMode = '채팅룸', onJoinRoom = (roomId) =
                     },
                     {
                         id: 'room4',
-                        roomName: '게임 이야기방',
+                        roomName: '게임 좀 하고 삽시다',
                         description: '다양한 게임에 대해 이야기하는 공간입니다. 게임 추천, 공략, 리뷰 등 자유롭게!',
                         category: '취미',
                         isPrivate: false,
                         currentMembers: 23,
-                        maxMembers: 40,
+                        maxMembers: 30,
                         createdAt: '2024-01-12T14:15:00Z'
                     },
                     {
@@ -239,6 +239,7 @@ const ChatRoomExplorer = ({ workspaceMode = '채팅룸', onJoinRoom = (roomId) =
             } catch (error) {
                 console.error('채팅방 목록 로딩 오류:', error);
                 // Mock 데이터를 사용하므로 오류 처리 제거
+                // setError('채팅방 목록을 불러올 수 없습니다. 다시 시도해주세요.');
             } finally {
                 setLoading(false);
             }
@@ -319,7 +320,7 @@ const ChatRoomExplorer = ({ workspaceMode = '채팅룸', onJoinRoom = (roomId) =
             // Mock 비밀번호 검증 (실제로는 서버에서 검증)
             const correctPassword = '1234'; // Mock 비밀번호
             if (password !== correctPassword) {
-                throw new Error('비밀번호가 일치하지 않습니다. (힌트: 1234)');
+                throw new Error('비밀번호가 일치하지 않습니다. (비번: 1234)');
             }
 
             // 입장 성공 시 모달 닫고 채팅방으로 이동
