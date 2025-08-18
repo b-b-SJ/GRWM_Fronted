@@ -339,6 +339,21 @@ const WorkspacePage = () => {
         }
     }, [searchParams]);
 
+    // Navigation의 toggleSidebar와 연결하기 위한 useEffect
+    useEffect(() => {
+        // 전역 이벤트 리스너로 네비게이션의 햄버거 버튼 클릭 감지
+        const handleToggleSidebar = () => {
+            toggleWorkspaceSidebar();
+        };
+
+        // 커스텀 이벤트 리스너 등록
+        window.addEventListener('toggleWorkspaceSidebar', handleToggleSidebar);
+
+        return () => {
+            window.removeEventListener('toggleWorkspaceSidebar', handleToggleSidebar);
+        };
+    }, [toggleWorkspaceSidebar]);
+
     // 채팅방 생성 성공 시 호출되는 함수
     const handleRoomCreated = (chatRoomId) => {
         console.log('새 채팅방 생성됨:', chatRoomId);

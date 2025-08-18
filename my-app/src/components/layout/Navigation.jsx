@@ -53,7 +53,7 @@ const Navigation = ({ toggleSidebar, currentUser, currentPage }) => {
 
     // 활성 경로 확인 함수
     const isActivePath = (item) => {
-        // 트래커의 경우 특별 처리
+        // 트래커의 경우
         if (item.mainPath === '/tracker') {
             return location.pathname.startsWith('/tracker');
         }
@@ -97,6 +97,21 @@ const Navigation = ({ toggleSidebar, currentUser, currentPage }) => {
         setOpenDropdown(null);
     };
 
+    // 현재 페이지에 따른 햄버거 버튼 클릭 처리
+    const handleSidebarToggle = () => {
+        const currentPath = location.pathname;
+
+        if (currentPath.startsWith('/tracker')) {
+            // 트래커 페이지인 경우 커스텀 이벤트 발생
+            window.dispatchEvent(new Event('toggleTrackerSidebar'));
+        } else if (currentPath.startsWith('/workspace')) {
+            // 워크스페이스 페이지인 경우 커스텀 이벤트 발생
+            window.dispatchEvent(new Event('toggleWorkspaceSidebar'));
+        } else if (toggleSidebar) {
+            // 다른 페이지에서 toggleSidebar가 제공된 경우
+            toggleSidebar();
+        }
+    };
     // 외부 클릭 감지
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -117,15 +132,14 @@ const Navigation = ({ toggleSidebar, currentUser, currentPage }) => {
     return (
         <nav className="bg-white shadow-sm border-b px-4 py-3 flex items-center justify-between">
             <div className="flex items-center space-x-4">
-                {/* 사이드바 토글 버튼 */}
-                {toggleSidebar && (
-                    <button
-                        onClick={toggleSidebar}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                        <Menu size={20} />
-                    </button>
-                )}
+                {/* 사이드바 토글 버튼 - 항상 표시 */}
+                <button
+                    onClick={handleSidebarToggle}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                    <Menu size={20} />
+                </button>
+
                 {/* 메인 로고 : 클릭 시 메인 페이지로 이동 */}
                 <Link to="/main" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
                     <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">

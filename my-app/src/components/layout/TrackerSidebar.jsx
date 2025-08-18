@@ -17,7 +17,6 @@ import {
 /**
  * 트래커 페이지의 사이드바 컴포넌트
  * To-do와 회고일기를 전환할 수 있는 트래커 사이드바
- * URL 기반으로 모드 변경을 처리합니다.
  */
 const TrackerSidebar = ({
                             sidebarOpen,

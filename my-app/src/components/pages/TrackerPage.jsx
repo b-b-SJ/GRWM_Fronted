@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import TrackerSidebar from '../layout/TrackerSidebar';
 import DiaryView from '../../components/tracker/DiaryView';
+import TomorrowMessage from '../../components/tracker/TomorrowMessage'; // 새로 추가
 
 /**
  * 트래커 페이지 - 회고일기 관리
@@ -25,6 +26,10 @@ const TrackerPage = () => {
 
     const [currentView, setCurrentView] = useState('diary-calendar');
 
+    const toggleSidebar = () => {
+        setSidebarOpen(!sidebarOpen);
+    };
+
     // URL 파라미터 변경 감지하여 모드 업데이트
     useEffect(() => {
         const modeParam = searchParams.get('mode');
@@ -35,9 +40,20 @@ const TrackerPage = () => {
         }
     }, [searchParams]);
 
-    const toggleSidebar = () => {
-        setSidebarOpen(!sidebarOpen);
-    };
+    // Navigation의 toggleSidebar와 연결하기 위한 useEffect
+    useEffect(() => {
+        // 전역 이벤트 리스너로 네비게이션의 햄버거 버튼 클릭 감지
+        const handleToggleSidebar = () => {
+            setSidebarOpen(prev => !prev);
+        };
+
+        // 커스텀 이벤트 리스너 등록
+        window.addEventListener('toggleTrackerSidebar', handleToggleSidebar);
+
+        return () => {
+            window.removeEventListener('toggleTrackerSidebar', handleToggleSidebar);
+        };
+    }, []);
 
     // To-do 빈 화면
     const TodoEmptyView = () => (
@@ -46,42 +62,6 @@ const TrackerPage = () => {
                 <div className="text-6xl text-gray-200 mb-4">📝</div>
                 <h3 className="text-xl font-medium text-gray-500 mb-2">To-do 기능</h3>
                 <p className="text-gray-400">준비 중입니다</p>
-            </div>
-        </div>
-    );
-
-    // 메시지 뷰
-    const DiaryMessageView = () => (
-        <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white rounded-xl shadow-sm border p-6">
-                    <h3 className="text-lg font-semibold mb-4">메시지 작성</h3>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                전달 날짜
-                            </label>
-                            <input
-                                type="date"
-                                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                메시지
-                            </label>
-                            <textarea
-                                rows={6}
-                                placeholder="미래의 나에게 전하고 싶은 말을 적어보세요..."
-                                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                            />
-                        </div>
-                        <button className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors">
-                            메시지 예약 전송
-                        </button>
-                    </div>
-                </div>
-
             </div>
         </div>
     );
@@ -181,7 +161,7 @@ const TrackerPage = () => {
             case 'diary-calendar':
                 return <DiaryView showHeader={false} />;
             case 'diary-message':
-                return <DiaryMessageView />;
+                return <TomorrowMessage />; // 새로운 컴포넌트 사용
             case 'diary-hashtag':
                 return <DiaryHashtagView />;
             default:
@@ -206,16 +186,10 @@ const TrackerPage = () => {
             {/* 메인 콘텐츠 */}
             <div className="flex-1 overflow-y-auto">
                 <div className="max-w-6xl mx-auto p-6">
-                    {/* 헤더 */}
-                    <div className="mb-8">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                                <button
-                                    onClick={toggleSidebar}
-                                    className="lg:hidden mr-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                                >
-                                    <BarChart3 size={24} />
-                                </button>
+                    {/* 헤더 - diary-message 뷰에서는 TomorrowMessage 컴포넌트 내부에서 처리 */}
+                    {currentView !== 'diary-message' && (
+                        <div className="mb-8">
+                            <div className="flex items-center justify-between">
                                 <div>
                                     <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center">
                                         {currentViewInfo.icon}
@@ -225,30 +199,24 @@ const TrackerPage = () => {
                                         {currentViewInfo.description}
                                     </p>
                                 </div>
-                            </div>
 
-                            {/* 새 일기 작성 버튼 - diary-calendar 뷰에서만 표시 */}
-                            {currentViewInfo.showButton && (
-                                <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 shadow-sm">
-                                    <Plus size={16} />
-                                    <span>새 일기 작성</span>
-                                </button>
-                            )}
+                                {/* 새 일기 작성 버튼 - diary-calendar 뷰에서만 표시 */}
+                                {currentViewInfo.showButton && (
+                                    <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 shadow-sm">
+                                        <Plus size={16} />
+                                        <span>새 일기 작성</span>
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* 현재 뷰 렌더링 */}
                     {renderCurrentView()}
                 </div>
             </div>
 
-            {/* 모바일에서 사이드바가 열렸을 때 오버레이 */}
-            {sidebarOpen && (
-                <div
-                    className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
-                    onClick={toggleSidebar}
-                />
-            )}
+
         </div>
     );
 };
