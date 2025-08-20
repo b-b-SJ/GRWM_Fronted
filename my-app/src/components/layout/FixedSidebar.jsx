@@ -39,7 +39,7 @@ const FixedSidebar = ({ currentUser }) => {
     };
 
     return (
-        <div className="w-16 bg-white flex flex-col items-center py-4 shadow-lg">
+        <div className="w-16 bg-white flex flex-col items-center py-4">
             {/* 프로필 섹션 */}
             <div className="relative mb-6">
                 <button
