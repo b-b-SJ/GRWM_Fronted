@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Mail, Clock, Edit3, Trash2, X } from 'lucide-react';
+import { Clock, Edit3, Trash2, X } from 'lucide-react';
 
 const TomorrowMessage = () => {
     const [messages, setMessages] = useState([]);
@@ -127,9 +127,9 @@ const TomorrowMessage = () => {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-start py-8">
+        <div className="max-h-screen flex flex-col items-center justify-start py-4">
             {/* 헤더 */}
-            <div className="text-center mb-12">
+            <div className="text-center mt-8 mb-12">
                 <h2 className="text-3xl font-bold text-gray-800">내일의 나에게</h2>
                 <p className="text-gray-600 mt-2 text-lg">미래의 나에게 전하고 싶은 메시지를 보내보세요</p>
             </div>
@@ -168,10 +168,10 @@ const TomorrowMessage = () => {
                                     내일의 나에게 전하고 싶은 말
                                 </label>
                                 <textarea
-                                    rows={8}
+                                    rows={5}
                                     value={formData.content}
                                     onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                                    placeholder="내일의 나에게 전하고 싶은 말을 적어보세요...&#10;&#10;오늘 힘들었던 일, 응원의 메시지, 내일 기대되는 일 등&#10;무엇이든 좋아요 ✨"
+                                    placeholder="        ✨ 내일의 나에게 전하고 싶은 말을 무엇이든 적어보세요! ✨"
                                     className="w-full p-4 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-lg leading-relaxed"
                                     required
                                 />
@@ -262,7 +262,7 @@ const TomorrowMessage = () => {
                                                     </span>
                                                 </div>
                                                 <p className="text-gray-500 text-lg">
-                                                    소중한 메시지가 안전하게 보관되고 있어요 ✨
+                                                    메시지가 날아오는 중 . . .
                                                 </p>
                                                 <div className="text-sm text-gray-400 pt-4">
                                                     {new Date(message.createdAt).toLocaleDateString('ko-KR')}에 작성됨
@@ -274,17 +274,6 @@ const TomorrowMessage = () => {
                             </div>
                         );
                     })}
-
-                    {/* 새 메시지 작성 버튼 - 메시지가 있을 때만 표시 */}
-                    <div className="text-center pt-4">
-                        <button
-                            onClick={() => setShowForm(true)}
-                            className="bg-green-600 text-white px-8 py-3 rounded-xl hover:bg-green-700 transition-colors flex items-center space-x-2 mx-auto text-lg"
-                        >
-                            <Plus size={18} />
-                            <span>또 다른 메시지 보내기</span>
-                        </button>
-                    </div>
                 </div>
             )}
 

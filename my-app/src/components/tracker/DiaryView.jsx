@@ -31,7 +31,8 @@ const sampleDiaries = [
         mood: '😌',
         tags: ['#취미'],
         hasImage: false
-    }
+    },
+
 ];
 
 const DiaryView = ({ showHeader = false }) => {

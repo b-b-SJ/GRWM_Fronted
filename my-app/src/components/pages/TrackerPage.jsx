@@ -155,19 +155,6 @@ const TrackerPage = () => {
     // 내일의 나에게 메시지 뷰 (TomorrowMessage 래퍼)
     const TomorrowMessageView = () => (
         <div className="flex-1 flex flex-col p-6">
-            <div className="mb-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-800 mb-2">
-                            내일의 나에게
-                        </h1>
-                        <p className="text-gray-600">
-                            미래의 나에게 메시지를 전송하세요
-                        </p>
-                    </div>
-                </div>
-            </div>
-
             <div className="flex-1 overflow-auto">
                 <TomorrowMessage showHeader={false} />
             </div>
