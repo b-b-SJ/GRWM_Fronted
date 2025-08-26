@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
     BarChart3,
@@ -16,6 +16,7 @@ import TomorrowMessage from '../../components/tracker/TomorrowMessage';
 const TrackerPage = () => {
     const [searchParams] = useSearchParams();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [writeMode, setWriteMode] = useState(false);
 
     // URL 쿼리 파라미터로부터 모드 결정
     const modeFromUrl = searchParams.get('mode');
@@ -27,6 +28,11 @@ const TrackerPage = () => {
 
     const toggleSidebar = () => {
         setSidebarOpen(!sidebarOpen);
+    };
+
+    // 새 일기 작성 버튼 클릭 핸들러
+    const handleWriteNewDiary = () => {
+        setWriteMode(true);
     };
 
     // URL 파라미터 변경 감지하여 모드 업데이트
@@ -129,25 +135,8 @@ const TrackerPage = () => {
     // 일기 캘린더 뷰 (DiaryView 래퍼)
     const DiaryCalendarView = () => (
         <div className="flex-1 flex flex-col p-6">
-            <div className="mb-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-800 mb-2">
-                            회고일기
-                        </h1>
-                        <p className="text-gray-600">
-                            하루를 돌아보고 기록하세요
-                        </p>
-                    </div>
-                    <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 shadow-sm">
-                        <Plus size={16} />
-                        <span>새 일기 작성</span>
-                    </button>
-                </div>
-            </div>
-
             <div className="flex-1 overflow-auto">
-                <DiaryView showHeader={false} />
+                <DiaryView showHeader={false} writeMode={writeMode} setWriteMode={setWriteMode} />
             </div>
         </div>
     );
