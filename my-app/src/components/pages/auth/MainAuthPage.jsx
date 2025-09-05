@@ -17,13 +17,13 @@ const MainAuthPage = ({ setCurrentPage }) => {
 
     // 컴포넌트 마운트 시 실행되는 효과
     useEffect(() => {
-        // 평창평화체 웹폰트 CSS 추가
+        // 웹폰트 CSS 추가
         const style = document.createElement('style');
         style.textContent = `
-            @font-face {
-                font-family: 'PyeongchangPeace';
-                src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2206-02@1.0/PyeongChangPeace-Light.woff2') format('woff2');
-                font-weight: 300;
+           @font-face {
+                font-family: 'RomanticGumi';
+                src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2410-1@1.0/GumiRomanceTTF.woff2') format('woff2');
+                font-weight: normal;
                 font-display: swap;
             }
         `;
@@ -63,12 +63,27 @@ const MainAuthPage = ({ setCurrentPage }) => {
                     </div>
 
                     {/* 임시 앱 타이틀 */}
-                    <h1 className="text-4xl mb-8"
-                        style={{fontFamily: "'PyeongchangPeace', sans-serif", fontWeight: 500}}>
-                        <span className="bg-gradient-to-r from-blue-600 to-sky-600 bg-clip-text text-transparent">
-                            GRWM
+                    <h1
+                        className="text-3xl mb-8 whitespace-nowrap"
+                        style={{fontFamily: "'RomanticGumi', sans-serif", fontWeight: 100}}
+                    >
+                        {/* GRWM - 각 글자 둥둥 */}
+                        <span className="text-5xl inline-flex space-x-0">
+                        {"GRWM".split("").map((char, idx) => (
+                            <span
+                                key={idx}
+                                className="animate-float inline-block bg-gradient-to-r from-blue-600 to-sky-600 bg-clip-text text-transparent"
+                                style={{animationDelay: `${idx * 0.3}s`}}
+                            >
+                            {char}
+                          </span>
+                        ))}
+                      </span>
+
+                        {/* 본문 - 은은하게 */}
+                        <span className="ml-2 inline-block animate-gentle text-gray-700">
+                        에 오신 걸 환영합니다
                         </span>
-                        에 오신걸 환영합니다
                     </h1>
 
                     {/* 기능 소개 로테이션 섹션*/}

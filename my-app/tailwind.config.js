@@ -27,6 +27,8 @@ module.exports = {
       animation: {
         'fade-in': 'fadeIn 0.2s ease-in-out',
         'slide-up': 'slideUp 0.3s ease-out',
+        'float': 'float 3s ease-in-out infinite',   // 🔹 추가
+        'gentle': 'gentle 4s ease-in-out infinite', // 🔹 추가
       },
       keyframes: {
         fadeIn: {
@@ -36,7 +38,15 @@ module.exports = {
         slideUp: {
           '0%': { transform: 'translateY(10px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
-        }
+        },
+        float: { // 메인 페이지 GRWM용 둥둥 효과
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+        gentle: { // 메인 페이지 본문 텍스트용 은은한 효과
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-4px)' },
+        },
       }
     },
   },
