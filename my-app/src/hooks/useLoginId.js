@@ -17,7 +17,7 @@ const useLoginId = () => {
         setError('');
 
         try {
-            const response = await fetch(`api/auth/check-id/{loginId}`);
+            const response = await fetch(`api/auth/check-id/${loginId}`);
             const isDuplicate = await response.json();
             const available = !isDuplicate; // API가 중복이면 true, 사용가능하면 false 반환
 

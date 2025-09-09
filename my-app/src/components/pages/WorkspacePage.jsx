@@ -100,9 +100,9 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
             });
 
             alert('채팅방이 성공적으로 생성되었습니다!');
-            // 임의로 이동!!!!!!!!!!
+
             if (onRoomCreated) {
-                onRoomCreated('room1'); // 실제라면 chatRoomId
+                onRoomCreated(chatRoomId); // 실제라면 chatRoomId
             }
 
         } catch (error) {
