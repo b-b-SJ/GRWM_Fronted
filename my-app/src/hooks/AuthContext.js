@@ -8,11 +8,25 @@ export const AuthProvider = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [user, setUser] = useState(null); // 사용자 정보 상태 추가
 
-    // 처음 렌더 시 토큰 확인
+    // 처음 렌더 시 토큰 확인 및 사용자 정보 복원
     useEffect(() => {
-        const token = localStorage.getItem('authToken');
-        setIsAuthenticated(!!token);
+        const accessToken = localStorage.getItem('accessToken');
+        const userData = localStorage.getItem('userData');
+
+        if (accessToken && userData) {
+            try {
+                const parsedUserData = JSON.parse(userData);
+                setIsAuthenticated(true);
+                setUser(parsedUserData);
+            } catch (error) {
+                console.error('사용자 데이터 파싱 오류:', error);
+                // 잘못된 데이터가 있다면 정리
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('userData');
+            }
+        }
     }, []);
 
     const login = async (loginId, password) => {
@@ -24,11 +38,36 @@ export const AuthProvider = ({ children }) => {
         setIsLoading(true);
         setError('');
 
-        // 하드코딩 유저 (개발용)
+        // 하드코딩 유저 (개발용) - JWT 형식으로 수정
         if (loginId === 'test' && password === '1234') {
-            localStorage.setItem('authToken', 'dummy-token');
+            const mockResponse = {
+                tokenType: 'Bearer',
+                accessToken: 'dummy-jwt-token',
+                username: 'Test User'
+            };
+
+            // 토큰과 사용자 정보 저장
+            localStorage.setItem('accessToken', mockResponse.accessToken);
+            localStorage.setItem('userData', JSON.stringify({
+                username: mockResponse.username,
+                loginId: loginId
+            }));
+
             setIsAuthenticated(true);
-            return { success: true, data: { loginId, username: 'Test User' } };
+            setUser({
+                username: mockResponse.username,
+                loginId: loginId
+            });
+
+            setIsLoading(false);
+            return {
+                success: true,
+                data: {
+                    tokenType: mockResponse.tokenType,
+                    accessToken: mockResponse.accessToken,
+                    username: mockResponse.username
+                }
+            };
         }
 
         try {
@@ -40,9 +79,37 @@ export const AuthProvider = ({ children }) => {
 
             if (response.ok) {
                 const data = await response.json();
-                localStorage.setItem('authToken', data.token);
+
+                // API 응답에서 tokenType, accessToken, username 추출
+                const { tokenType, accessToken, username } = data;
+
+                if (!accessToken) {
+                    setError('서버 응답에 토큰이 없습니다.');
+                    return { success: false, error: '서버 응답 오류' };
+                }
+
+                // 토큰과 사용자 정보를 localStorage에 저장
+                localStorage.setItem('accessToken', accessToken);
+                localStorage.setItem('userData', JSON.stringify({
+                    username: username,
+                    loginId: loginId
+                }));
+
+                // 상태 업데이트
                 setIsAuthenticated(true);
-                return { success: true, data };
+                setUser({
+                    username: username,
+                    loginId: loginId
+                });
+
+                return {
+                    success: true,
+                    data: {
+                        tokenType,
+                        accessToken,
+                        username
+                    }
+                };
             } else {
                 const errorData = await response.json();
                 setError(errorData.message || '로그인에 실패했습니다.');
@@ -91,8 +158,52 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = () => {
-        localStorage.removeItem('authToken');
+        // 토큰과 사용자 정보 모두 제거
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('userData');
         setIsAuthenticated(false);
+        setUser(null);
+    };
+
+    // API 호출 시 사용할 인증 헤더를 가져오는 헬퍼 함수
+    const getAuthHeaders = () => {
+        const accessToken = localStorage.getItem('accessToken');
+        if (accessToken) {
+            return {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            };
+        }
+        return {
+            'Content-Type': 'application/json'
+        };
+    };
+
+    // 토큰이 유효한지 확인하는 함수 (옵션)
+    const validateToken = async () => {
+        const accessToken = localStorage.getItem('accessToken');
+        if (!accessToken) {
+            logout();
+            return false;
+        }
+
+        try {
+            const response = await fetch('/api/auth/validate', {
+                method: 'GET',
+                headers: getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                logout();
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('토큰 검증 오류:', error);
+            logout();
+            return false;
+        }
     };
 
     const clearError = () => setError('');
@@ -102,10 +213,13 @@ export const AuthProvider = ({ children }) => {
             isAuthenticated,
             isLoading,
             error,
+            user, // 사용자 정보 제공
             login,
             signup,
             logout,
-            clearError
+            clearError,
+            getAuthHeaders, // API 호출용 헤더 함수 제공
+            validateToken // 토큰 검증 함수 제공
         }}>
             {children}
         </AuthContext.Provider>

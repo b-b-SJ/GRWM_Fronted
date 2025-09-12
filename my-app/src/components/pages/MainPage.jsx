@@ -1,13 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, BarChart3, Users, MessageSquare} from 'lucide-react';
+import { useAuth } from '../../hooks/AuthContext';
 
 /**
  * MainPage UI
  * - 빠른 액션 메뉴 기능
- * - 이후 회원가입, 로그인 버튼 추가
+ * - 로그인한 사용자 환영 메시지 표시
  */
 const MainPage = () => {
+    const { user } = useAuth(); // 사용자 정보 가져오기
+
     const quickActions = [
         { icon: Calendar, label: '플래너', path: '/planner', color: 'from-blue-500 to-blue-600', description: '일정과 할 일을 관리하세요' },
         { icon: BarChart3, label: '트래커', path: '/tracker', color: 'from-green-500 to-green-600', description: '하루를 기록하세요' },
@@ -23,7 +26,9 @@ const MainPage = () => {
                 <div className="bg-gradient-to-r from-blue-600 via-sky-600 to-sky-200 rounded-2xl p-8 text-white mb-8">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-3xl font-bold mb-2">안녕하세요! 👋</h1>
+                            <h1 className="text-3xl font-bold mb-2">
+                                {user?.username ? `${user.username}님, 환영합니다!` : '환영합니다!'} 👋
+                            </h1>
                             <p className="text-blue-100 text-lg">GRWM</p>
                         </div>
                     </div>

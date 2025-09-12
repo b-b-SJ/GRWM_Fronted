@@ -23,7 +23,7 @@ const AuthPage = () => {
     });
 
     // Hooks
-    const { login, signup, isLoading, error, clearError } = useAuth();
+    const { login, signup, isLoading, error, clearError, user } = useAuth();
     const {
         checkLoginId,
         isChecking: loginIdChecking,
@@ -49,7 +49,12 @@ const AuthPage = () => {
     const handleLogin = async () => {
         const result = await login(formData.loginId, formData.password);
         if (result.success) {
-            alert('로그인 성공! 메인 페이지로 이동합니다.');
+            // 로그인 성공 시 사용자 정보 표시
+            const welcomeMessage = result.data.username
+                ? `환영합니다, ${result.data.username}님! 메인 페이지로 이동합니다.`
+                : '로그인 성공! 메인 페이지로 이동합니다.';
+
+            alert(welcomeMessage);
             navigate('/main');
         }
     };
