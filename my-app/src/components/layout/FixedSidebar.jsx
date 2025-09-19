@@ -10,6 +10,7 @@ import {
     Edit3,
     Users
 } from 'lucide-react';
+import {useNavigate} from "react-router-dom";
 
 /**
  * FixedSidebar 컴포넌트
@@ -30,13 +31,15 @@ const FixedSidebar = ({ currentUser }) => {
         setShowProfileMenu(!showProfileMenu);
     };
 
+    const navigate = useNavigate();
     const handleLogout = () => {
         // 로그아웃 로직 구현해야
         console.log('로그아웃');
+        navigate('/auth');
     };
 
     return (
-        <div className="w-16 bg-white flex flex-col items-center py-4 shadow-lg">
+        <div className="w-16 bg-white flex flex-col items-center py-4">
             {/* 프로필 섹션 */}
             <div className="relative mb-6">
                 <button

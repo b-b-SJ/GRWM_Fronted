@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useOutletContext, useLocation, useSearchParams } from 'react-router-dom';
 import WorkspaceSidebar from '../layout/WorkspaceSidebar';
 import ChatRoom from '../chat/ChatRoom';
+import ChatRoomExplorer from '../chat/ChatRoomExplorer';
 import { useChatState } from '../../hooks/useChatState';
-import { MessageCircle, BookOpen, Eye, EyeOff, Key, Search } from 'lucide-react';
+import { MessageCircle, BookOpen, Eye, EyeOff, Key } from 'lucide-react';
 
 /**
  * WorkSpacePage UI 및 기능
@@ -25,7 +26,7 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const categories = ['일반', '프로젝트', '스터디', '취미', '게임'];
+    const categories = ['일반', '프로젝트', '스터디', '취미', '기타'];
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -99,9 +100,9 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
             });
 
             alert('채팅방이 성공적으로 생성되었습니다!');
-            // 임의로 이동!!!!!!!!!!
+
             if (onRoomCreated) {
-                onRoomCreated('room1'); // 실제라면 chatRoomId
+                onRoomCreated(chatRoomId); // 실제라면 chatRoomId
             }
 
         } catch (error) {
@@ -202,7 +203,6 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
                         </p>
                     </div>
 
-
                     {/* 공개/비공개 설정 */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -265,7 +265,6 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
                                     maxLength={10}
                                 />
                             </div>
-
                         </div>
                     )}
 
@@ -310,8 +309,15 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
 
 // 채팅방 화면의 컨테이너 관리
 const WorkspacePage = () => {
-    const [workspaceMode, setWorkspaceMode] = useState('채팅방'); // '채팅방' 또는 '스터디룸'
-    const {workspaceSidebarOpen, toggleWorkspaceSidebar } = useOutletContext();
+    const location = useLocation();
+    const [searchParams] = useSearchParams();
+    const { workspaceSidebarOpen, toggleWorkspaceSidebar } = useOutletContext();
+
+    // URL 쿼리 파라미터로부터 모드 결정
+    const modeFromUrl = searchParams.get('mode');
+    const [workspaceMode, setWorkspaceMode] = useState(
+        modeFromUrl === 'study' ? '스터디룸' : '채팅방'
+    );
 
     const [currentView, setCurrentView] = useState('rooms'); // 'rooms', 'explore', 'create', 'chat'
 
@@ -322,6 +328,31 @@ const WorkspacePage = () => {
     } = useChatState();
 
     const isStudyRoom = workspaceMode === '스터디룸';
+
+    // URL 파라미터 변경 감지하여 모드 업데이트
+    useEffect(() => {
+        const modeParam = searchParams.get('mode');
+        if (modeParam === 'study') {
+            setWorkspaceMode('스터디룸');
+        } else {
+            setWorkspaceMode('채팅방');
+        }
+    }, [searchParams]);
+
+    // Navigation의 toggleSidebar와 연결하기 위한 useEffect
+    useEffect(() => {
+        // 전역 이벤트 리스너로 네비게이션의 햄버거 버튼 클릭 감지
+        const handleToggleSidebar = () => {
+            toggleWorkspaceSidebar();
+        };
+
+        // 커스텀 이벤트 리스너 등록
+        window.addEventListener('toggleWorkspaceSidebar', handleToggleSidebar);
+
+        return () => {
+            window.removeEventListener('toggleWorkspaceSidebar', handleToggleSidebar);
+        };
+    }, [toggleWorkspaceSidebar]);
 
     // 채팅방 생성 성공 시 호출되는 함수
     const handleRoomCreated = (chatRoomId) => {
@@ -336,6 +367,13 @@ const WorkspacePage = () => {
         // 선택적으로 생성된 채팅방으로 바로 이동
         // setSelectedRoom(chatRoomId);
         // setCurrentView('chat');
+    };
+
+    // 채팅방 입장 처리
+    const handleJoinRoom = (roomId) => {
+        console.log('채팅방 입장:', roomId);
+        setSelectedRoom(roomId);
+        setCurrentView('chat');
     };
 
     // 채팅방 생성 취소 시 호출되는 함수
@@ -375,22 +413,11 @@ const WorkspacePage = () => {
                             onRoomCreated={handleRoomCreated}
                             onCancel={handleCreateCancel}
                         />
-                        ) : currentView === 'explore' ? (
-                        // 채팅방 탐색 페이지 (향후 구현)
-                        <div className="flex-1 flex items-center justify-center">
-                            <div className="text-center">
-                                <Search size={64} className="text-gray-400 mx-auto mb-4" />
-                                <h2 className="text-xl font-semibold text-gray-600 mb-2">
-                                    {workspaceMode} 탐색
-                                </h2>
-                                <p className="text-gray-500">
-                                    다양한 {workspaceMode}을 찾아보세요.
-                                </p>
-                                <p className="text-sm text-gray-400 mt-2">
-                                    (탐색 기능은 개발 중입니다)
-                                </p>
-                            </div>
-                        </div>
+                    ) : currentView === 'explore' ? (
+                        <ChatRoomExplorer
+                            workspaceMode={workspaceMode}
+                            onJoinRoom={handleJoinRoom}
+                        />
                     ): selectedRoom ? (
                         <ChatRoom
                             roomId={selectedRoom}
