@@ -1,8 +1,7 @@
-import { Target } from "lucide-react";
 import { useState } from "react";
 
-export function useCalendar(baseDate = new Date()) {
-  const [currentDate, setCurrentDate] = useState(baseDate);
+export function useCalendar() {
+  const [currentDate, setCurrentDate] = useState(new Date());
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const day = currentDate.getDate();
@@ -24,7 +23,33 @@ export function useCalendar(baseDate = new Date()) {
     "December",
   ];
   const currentMonthName = monthNames[month];
-  console.log(currentMonthName);
+  const timeNameEn = [
+    "12am",
+    "1am",
+    "2am",
+    "3am",
+    "4am",
+    "5am",
+    "6am",
+    "7am",
+    "8am",
+    "9am",
+    "10am",
+    "11am",
+    "12pm",
+    "1pm",
+    "2pm",
+    "3pm",
+    "4pm",
+    "5pm",
+    "6pm",
+    "7pm",
+    "8pm",
+    "9pm",
+    "10pm",
+    "11pm",
+  ];
+  //console.log(currentMonthName);
   //주차
   const weekNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const weekNums = ["week 1", "week 2", "week 3", "week 4", "week 5"];
@@ -141,6 +166,15 @@ export function useCalendar(baseDate = new Date()) {
     */
   }
 
+  const getTimeTable = () => {
+    const timeTb = [];
+    for (let t = 0; t < 24; t++) {
+      timeTb.push(t);
+    }
+    return timeTb;
+  };
+  const timeTable = getTimeTable(currentDate);
+
   //플래너 날짜?달?을 왔다갔다
   const STEP = {
     monthly: {
@@ -177,5 +211,6 @@ export function useCalendar(baseDate = new Date()) {
     //getWeek,
     //currentWeek,
     groupDatesByWeek, //사이드바에서 씀
+    timeTable,
   };
 }
