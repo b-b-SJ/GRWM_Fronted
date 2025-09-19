@@ -5,10 +5,9 @@ import WeeklyPlanner from "./WeeklyPlanner";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import DailyPlanner from "./DailyPlanner";
 import dummyImg from "../../img/dummy02.jpg"; //캘린더 사진
+import { useScheduleFilter } from "../../hooks/useScheduleFilter";
 
 const PlannerHeaderWM = ({
-  //  wmToggle,
-  //inviteUser,
   year,
   month,
   // getDate,
@@ -23,14 +22,20 @@ const PlannerHeaderWM = ({
   currentMonthName,
   currentWeekNum,
   weekFound,
-  //weekNames,
-  // currentMonthName,
+  openScModal,
+  setOpenScModal,
+  setSelectedSc,
+  selectedSc,
+  nowPlanner,
+  setNowPlanner,
 }) => {
-  console.log("rrrrr", viewMode);
+  console.log("rrrrr", currentDate);
   //플래너 바꾸는 파트는 일단 뺌
+  console.log("지금 플래너", nowPlanner);
 
-  const [choosePlanner, setChoosePlanner] = useState("default");
+  //const [choosePlanner, setChoosePlanner] = useState("default");
   const [viewDate, setViewDate] = useState(new Date());
+  const scFilter = useScheduleFilter({ nowPlanner, currentDate });
 
   const goPrev = () => setCurrentDate((prev) => STEP[viewMode].prev(prev));
   const goNext = () => setCurrentDate((prev) => STEP[viewMode].next(prev));
@@ -58,6 +63,7 @@ const PlannerHeaderWM = ({
             <div
               className="absolute left-0 top-full mt-2 w-48 bg-white border rounded-lg shadow-lg hidden group-hover:block"
               //달력 바꾸는 hover 창 -> 영역 좀 벗어나도 작동해야됨+클릭하면 hover일 때 보이는 거 고정으로 보여야됨
+              //setNowPlanner 써서 캘린더 변경, plannerList map으로 보여줘야함
             >
               달력 바꾸미
             </div>
@@ -122,7 +128,9 @@ const PlannerHeaderWM = ({
             setViewMode={setViewMode}
             viewMode={viewMode}
             setCurrentDate={setCurrentDate}
+            currentDate={currentDate}
             year={year}
+            scFilter={scFilter}
           />
         )}
         {viewMode === "weekly" && (
@@ -132,6 +140,11 @@ const PlannerHeaderWM = ({
             setViewMode={setViewMode}
             viewMode={viewMode}
             setCurrentDate={setCurrentDate}
+            openScModal={openScModal}
+            setOpenScModal={setOpenScModal}
+            setSelectedSc={setSelectedSc}
+            selectedSc={selectedSc}
+            scFilter={scFilter}
             onDateClick={(day) => {
               setViewMode("daily");
               setCurrentDate(day);
@@ -139,7 +152,14 @@ const PlannerHeaderWM = ({
           />
         )}
 
-        {viewMode === "daily" && <DailyPlanner />}
+        {viewMode === "daily" && (
+          <DailyPlanner
+            openScModal={openScModal}
+            setOpenScModal={setOpenScModal}
+            currentDate={new Date(currentDate)}
+            scFilter={scFilter}
+          />
+        )}
       </div>
     </div>
   );

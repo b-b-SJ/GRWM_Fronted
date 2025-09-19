@@ -1,7 +1,7 @@
 import React from "react";
 import { useCalendar } from "../../hooks/useCalendar";
 import MonthlyGrid from "./MonthlyGrid";
-
+import { useScheduleFilter } from "../../hooks/useScheduleFilter";
 const MonthlyPlanner = ({
   weeks,
   month,
@@ -9,10 +9,12 @@ const MonthlyPlanner = ({
   viewMode,
   setCurrentDate,
   year,
+  scFilter,
 }) => {
   console.log("저 여기에 잇어요");
   const calendar = useCalendar();
-
+  //  const scFilter = useScheduleFilter(currentDate, nowPlanner);
+  //얘를 보내야됨
   return (
     //플래너 페이지 전체
     <div className="mt-4 mx-8">
@@ -28,7 +30,11 @@ const MonthlyPlanner = ({
       <MonthlyGrid
         weeks={weeks}
         month={month}
-        totalDateStyle={"p-3 border-2 border-white pb-16 hover:bg-gray-400"}
+        totalDateStyle={`
+    relative p-4 border border-gray-100 min-h-[120px] 
+    hover:bg-gray-100
+    bg-white shadow-sm
+  `}
         setViewMode={setViewMode}
         roleofClick={() => setViewMode("daily")}
         setCurrentDate={setCurrentDate}
@@ -36,9 +42,14 @@ const MonthlyPlanner = ({
           setViewMode("daily");
           setCurrentDate(day);
         }}
-        currentMonthStyle={"text-black bg-gray-200"}
-        ncMonthStyle={"bg-gray-300 text-gray-700"}
+        currentMonthStyle={`text-gray-900 bg-white`}
+        ncMonthStyle={`
+    text-gray-400 bg-gray-50 
+    hover:bg-gray-100 
+    opacity-70
+  `}
         weekNames={calendar.weekNames}
+        previewMap={scFilter.groupedDate}
       />
     </div>
   );

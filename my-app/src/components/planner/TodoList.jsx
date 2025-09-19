@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Square, Check, EllipsisVertical, Plus } from "lucide-react";
-import AddTodo from "./AddTodo";
 
 const TodoList = ({ className = "" }) => {
   const [todos, setTodos] = useState([
