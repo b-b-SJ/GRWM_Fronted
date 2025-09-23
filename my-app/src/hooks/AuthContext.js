@@ -38,23 +38,26 @@ export const AuthProvider = ({ children }) => {
         setIsLoading(true);
         setError('');
 
-        // 하드코딩 유저 (개발용) - JWT 형식으로 수정
+        // 하드코딩 유저 (개발용) - JWT 형식으로 수정 + userId 추가
         if (loginId === 'test' && password === '1234') {
             const mockResponse = {
                 tokenType: 'Bearer',
                 accessToken: 'dummy-jwt-token',
-                username: 'Test User'
+                username: 'Test User',
+                userId: 1 // userId 추가
             };
 
-            // 토큰과 사용자 정보 저장
+            // 토큰과 사용자 정보 저장 (userId 포함)
             localStorage.setItem('accessToken', mockResponse.accessToken);
             localStorage.setItem('userData', JSON.stringify({
+                userId: mockResponse.userId,
                 username: mockResponse.username,
                 loginId: loginId
             }));
 
             setIsAuthenticated(true);
             setUser({
+                userId: mockResponse.userId,
                 username: mockResponse.username,
                 loginId: loginId
             });
@@ -65,7 +68,8 @@ export const AuthProvider = ({ children }) => {
                 data: {
                     tokenType: mockResponse.tokenType,
                     accessToken: mockResponse.accessToken,
-                    username: mockResponse.username
+                    username: mockResponse.username,
+                    userId: mockResponse.userId
                 }
             };
         }
@@ -80,17 +84,23 @@ export const AuthProvider = ({ children }) => {
             if (response.ok) {
                 const data = await response.json();
 
-                // API 응답에서 tokenType, accessToken, username 추출
-                const { tokenType, accessToken, username } = data;
+                // API 응답에서 tokenType, accessToken, username, userId 추출
+                const { tokenType, accessToken, username, userId } = data;
 
                 if (!accessToken) {
                     setError('서버 응답에 토큰이 없습니다.');
                     return { success: false, error: '서버 응답 오류' };
                 }
 
-                // 토큰과 사용자 정보를 localStorage에 저장
+                if (!userId) {
+                    setError('서버 응답에 사용자 ID가 없습니다.');
+                    return { success: false, error: '서버 응답 오류' };
+                }
+
+                // 토큰과 사용자 정보를 localStorage에 저장 (userId 포함)
                 localStorage.setItem('accessToken', accessToken);
                 localStorage.setItem('userData', JSON.stringify({
+                    userId: userId,
                     username: username,
                     loginId: loginId
                 }));
@@ -98,6 +108,7 @@ export const AuthProvider = ({ children }) => {
                 // 상태 업데이트
                 setIsAuthenticated(true);
                 setUser({
+                    userId: userId,
                     username: username,
                     loginId: loginId
                 });
@@ -107,7 +118,8 @@ export const AuthProvider = ({ children }) => {
                     data: {
                         tokenType,
                         accessToken,
-                        username
+                        username,
+                        userId
                     }
                 };
             } else {
@@ -179,7 +191,7 @@ export const AuthProvider = ({ children }) => {
         };
     };
 
-    // 토큰이 유효한지 확인하는 함수 (옵션)
+    // 토큰이 유효한지 확인하는 함수 (옵션으로)
     const validateToken = async () => {
         const accessToken = localStorage.getItem('accessToken');
         if (!accessToken) {
