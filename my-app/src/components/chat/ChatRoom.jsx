@@ -1,192 +1,189 @@
-import React, { useState, useEffect } from 'react';
-import { MoreVertical, Users } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { MoreVertical, Users, ArrowLeft, Settings, LogOut, Edit, Trash2, MessageSquare } from 'lucide-react';
+import { useChatState } from '../../hooks/useChatState';
 import ChatMessages from './ChatMessages';
 import MessageInput from './MessageInput';
 
 /**
- * ChatRoom 컴포넌트
- * - 채팅 메시지조회, 전송, 삭제  관리
+ * ChatRoom 컴포넌트 - useChatState 연동, 하드코딩 제거
+ * - useChatState의 메시지 상태와 함수들을 활용
+ * - WebSocket을 통한 실시간 메시지 처리
  * - 채팅방 전체 레이아웃
  */
-const ChatRoom = ({ roomId, chatRooms, onBack }) => {
-    const [messages, setMessages] = useState([]);
+const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
+    const {
+        messages,
+        connectionStatus,
+        currentUser,
+        sendMessage,
+        requestDeleteMessage,
+        replyTo,
+        setReplyTo,
+        leaveChatRoom,
+        editChatRoomName,
+        deleteChatRoom,
+        createAnnouncement
+    } = useChatState();
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [replyingTo, setReplyingTo] = useState(null);
-    const currentRoom = chatRooms.find(room => room.roomId === roomId);
+    const [showMenu, setShowMenu] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+    const [editRoomName, setEditRoomName] = useState('');
+    const [editDescription, setEditDescription] = useState('');
+    const [announcementContent, setAnnouncementContent] = useState('');
 
-    // 메시지 조회 API - 컴포넌트 마운트 시 & roomId 변경 시 호출
+    const menuRef = useRef(null);
+
+    // 현재 채팅방 정보 찾기 (다양한 필드명 대응)
+    const currentRoom = chatRooms.find(room =>
+        room.roomId == chatRoomId ||
+        room.chatRoomId == chatRoomId
+    );
+
+    // 사용자가 방장인지 확인
+    const isOwner = currentRoom?.isOwner || currentRoom?.ownerId === currentUser.userId;
+
+    // chatRoomId에 해당하는 메시지들 (useChatState에서 관리)
+    const roomMessages = messages[chatRoomId] || [];
+
+    console.log('ChatRoom rendered:', {
+        chatRoomId,
+        currentRoom,
+        messageCount: roomMessages.length,
+        connectionStatus,
+        isOwner
+    });
+
+    // 메뉴 외부 클릭 시 닫기
     useEffect(() => {
-        const fetchMessages = async () => {
-            try {
-                setLoading(true);
-                setError(null);
-
-                // TODO: API 호출 - 메시지 목록 조회
-                // const response = await getMessages(roomId);
-                // setMessages(response.data);
-
-                // 임시 더미 데이터 (API 연결 전)
-                let dummyMessages = [];
-
-                if (roomId === 'room1') {
-                    dummyMessages = [
-                        {
-                            id: 1,
-                            userId: 'user123',
-                            username: '농담곰',
-                            content: '안녕하세요!',
-                            timestamp: '오전 12:30',
-                            createdAt: new Date(Date.now() - 10 * 60 * 1000),
-                            isOwn: false,
-                            isOwner: false
-                        },
-                    ];
-                } else if (roomId === 'room2') {
-                    dummyMessages = [
-                        {
-                            id: 3,
-                            userId: 'user456',
-                            username: '기린이',
-                            content: '다들 소공 시험 잘 보셨나요?',
-                            timestamp: '오후 3:00',
-                            createdAt: new Date(Date.now() - 15 * 60 * 1000),
-                            isOwn: false,
-                            isOwner: true
-                        },
-                        {
-                            id: 4,
-                            userId: 'currentUser',
-                            username: '나',
-                            content: 'ㅜㅜ!',
-                            timestamp: '오후 3:02',
-                            createdAt: new Date(Date.now() - 13 * 60 * 1000),
-                            isOwn: true,
-                            isOwner: false
-                        },
-                        {
-                            id: 5,
-                            userId: 'currentUser',
-                            username: '염소',
-                            content: '그런 거 물어보지 말아주세요.',
-                            timestamp: '오후 3:05',
-                            createdAt: new Date(Date.now() - 13 * 60 * 1000),
-                            isOwn: false,
-                            isOwner: false
-                        },
-                        {
-                            id: 6,
-                            userId: 'currentUser',
-                            username: '염소',
-                            content: '채팅이 많은 경우',
-                            timestamp: '오후 3:08',
-                            createdAt: new Date(Date.now() - 13 * 60 * 1000),
-                            isOwn: false,
-                            isOwner: false
-                        },
-                        {
-                            id: 7,
-                            userId: 'currentUser',
-                            username: '염소',
-                            content: '스크롤바가 생기고.',
-                            timestamp: '오후 3:05',
-                            createdAt: new Date(Date.now() - 13 * 60 * 1000),
-                            isOwn: false,
-                            isOwner: false
-                        },
-                        {
-                            id: 8,
-                            userId: 'currentUser',
-                            username: '염소',
-                            content: '컨테이너 구역에서 스크롤이 가능합니다.',
-                            timestamp: '오후 3:05',
-                            createdAt: new Date(Date.now() - 13 * 60 * 1000),
-                            isOwn: false,
-                            isOwner: false
-                        },
-                        {
-                            id: 9,
-                            userId: 'currentUser',
-                            username: '기린이',
-                            content: '채팅이 많은 환경',
-                            timestamp: '오후 3:05',
-                            createdAt: new Date(Date.now() - 13 * 60 * 1000),
-                            isOwn: false,
-                            isOwner: true
-                        }
-                    ];
-                }
-
-                setMessages(dummyMessages);
-
-            } catch (err) {
-                setError('메시지를 불러오는데 실패했습니다.');
-                console.error('메시지 조회 실패:', err);
-            } finally {
-                setLoading(false);
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setShowMenu(false);
             }
         };
 
-        if (roomId) {
-            fetchMessages();
-        }
-    }, [roomId]);
-
-
-    // 메시지 전송 API 호출
-    const handleSendMessage = (content, replyToId = null) => {
-        const newMessage = {
-            id: messages.length + 1,
-            userId: 'currentUser',
-            username: '나',
-            content: content,
-            timestamp: new Date().toLocaleTimeString('ko-KR', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true
-            }),
-            createdAt: new Date(),
-            isOwn: true,
-            isOwner: false,
-            replyTo: replyToId ? messages.find(msg => msg.id === replyToId) : null
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
         };
+    }, []);
 
-        setMessages([...messages, newMessage]);
-        setReplyingTo(null);
-
-        // TODO: API 호출 - 메시지 전송
-        // await sendMessage({ roomId, content, replyToId });
+    // 편집 모달 열기
+    const handleEditRoom = () => {
+        setEditRoomName(currentRoom.chatRoomName || currentRoom.roomName || currentRoom.name || '');
+        setEditDescription(currentRoom.description || '');
+        setShowEditModal(true);
+        setShowMenu(false);
     };
 
-    // API 연결 시 수정 필요: 메시지 삭제 API 호출
-    const handleDeleteMessage = (messageId, deleteForEveryone = false) => {
-        if (deleteForEveryone) {
-            // 전체 삭제 - 메시지를 "삭제된 메시지입니다"로 변경
-            setMessages(messages.map(msg =>
-                msg.id === messageId
-                    ? { ...msg, content: '삭제된 메시지입니다.', isDeleted: true }
-                    : msg
-            ));
+    // 채팅방 이름/설명 수정
+    const handleSaveEdit = async () => {
+        try {
+            await editChatRoomName(chatRoomId, editRoomName, editDescription);
+            setShowEditModal(false);
+            alert('채팅방 정보가 수정되었습니다.');
+        } catch (error) {
+            alert(`수정 실패: ${error.message}`);
+        }
+    };
 
-            // TODO: API 호출 - 전체 삭제
-            // await deleteMessageForEveryone(messageId);
-        } else {
-            // 나에게서만 삭제 - 메시지를 완전히 제거
-            setMessages(messages.filter(msg => msg.id !== messageId));
-            
-            // TODO: API 호출 - 개인 삭제
-            // await deleteMessageForMe(messageId);
+    // 채팅방 삭제
+    const handleDeleteRoom = async () => {
+        if (window.confirm('정말로 이 채팅방을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+            try {
+                await deleteChatRoom(chatRoomId);
+                alert('채팅방이 삭제되었습니다.');
+                onBack();
+            } catch (error) {
+                alert(`삭제 실패: ${error.message}`);
+            }
+        }
+        setShowMenu(false);
+    };
+
+    // 채팅방 나가기
+    const handleLeaveRoom = async () => {
+        if (window.confirm('이 채팅방을 나가시겠습니까?')) {
+            try {
+                await leaveChatRoom(chatRoomId);
+                alert('채팅방에서 나갔습니다.');
+                onBack();
+            } catch (error) {
+                alert(`나가기 실패: ${error.message}`);
+            }
+        }
+        setShowMenu(false);
+    };
+
+    // 공지 작성
+    const handleCreateAnnouncement = async () => {
+        try {
+            await createAnnouncement(chatRoomId, announcementContent);
+            setAnnouncementContent('');
+            setShowAnnouncementModal(false);
+            alert('공지가 등록되었습니다.');
+        } catch (error) {
+            alert(`공지 등록 실패: ${error.message}`);
+        }
+    };
+    useEffect(() => {
+        if (chatRoomId) {
+            setLoading(true);
+            setError(null);
+
+            // useChatState에서 WebSocket 연결 및 메시지 로딩 처리
+            // 연결 완료까지 대기
+            const timer = setTimeout(() => {
+                setLoading(false);
+            }, 2000); // 2초 후 로딩 완료
+
+            return () => clearTimeout(timer);
+        }
+    }, [chatRoomId]);
+
+    // 연결 상태 변화에 따른 로딩 상태 업데이트
+    useEffect(() => {
+        if (connectionStatus === 'connected' || connectionStatus === 'error') {
+            setLoading(false);
+        }
+    }, [connectionStatus]);
+
+    // 메시지 전송 처리
+    const handleSendMessage = (content) => {
+        try {
+            console.log('Sending message to chatRoom:', chatRoomId, 'Content:', content);
+            sendMessage(chatRoomId, content, replyTo?.id);
+            setReplyTo(null);
+        } catch (error) {
+            console.error('메시지 전송 실패:', error);
+            setError('메시지 전송에 실패했습니다.');
+        }
+    };
+
+    // 메시지 삭제 처리
+    const handleDeleteMessage = (messageId, deleteForEveryone = false) => {
+        try {
+            if (deleteForEveryone) {
+                requestDeleteMessage(chatRoomId, messageId);
+            } else {
+                console.log('개인 삭제 기능은 아직 구현되지 않았습니다.');
+            }
+        } catch (error) {
+            console.error('메시지 삭제 실패:', error);
+            setError('메시지 삭제에 실패했습니다.');
         }
     };
 
     // 메시지에 답장
     const handleReplyToMessage = (message) => {
-        setReplyingTo(message);
+        setReplyTo(message);
     };
 
     // 메시지에 답장 취소
     const handleCancelReply = () => {
-        setReplyingTo(null);
+        setReplyTo(null);
     };
 
     // 채팅방이 존재하지 않는 경우
@@ -194,12 +191,21 @@ const ChatRoom = ({ roomId, chatRooms, onBack }) => {
         return (
             <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">
-                    <h2 className="text-xl font-semibold text-gray-600 mb-2">채팅방을 찾을 수 없습니다</h2>
+                    <h2 className="text-xl font-semibold text-gray-600 mb-2">
+                        채팅방을 찾을 수 없습니다
+                    </h2>
+                    <p className="text-gray-500 mb-4">
+                        채팅방 ID: {chatRoomId}
+                    </p>
+                    <p className="text-sm text-gray-400 mb-4">
+                        사용 가능한 채팅방: {chatRooms.map(room => room.id || room.chatRoomId || room.roomId).join(', ')}
+                    </p>
                     <button
                         onClick={onBack}
-                        className="text-blue-600 hover:text-blue-700 transition-colors"
+                        className="text-blue-600 hover:text-blue-700 transition-colors flex items-center space-x-2 mx-auto"
                     >
-                        목록으로 돌아가기
+                        <ArrowLeft size={16} />
+                        <span>목록으로 돌아가기</span>
                     </button>
                 </div>
             </div>
@@ -211,8 +217,14 @@ const ChatRoom = ({ roomId, chatRooms, onBack }) => {
         return (
             <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                    <p className="text-gray-600">메시지를 불러오는 중...</p>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600 mb-2">채팅방에 접속하는 중...</p>
+                    <p className="text-sm text-gray-500">
+                        연결 상태: {connectionStatus}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-2">
+                        채팅방 ID: {chatRoomId}
+                    </p>
                 </div>
             </div>
         );
@@ -223,54 +235,369 @@ const ChatRoom = ({ roomId, chatRooms, onBack }) => {
         return (
             <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">
-                    <p className="text-red-600 mb-2">{error}</p>
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="text-blue-600 hover:text-blue-700 transition-colors"
-                    >
-                        다시 시도
-                    </button>
+                    <p className="text-red-600 mb-4">{error}</p>
+                    <div className="space-y-2">
+                        <button
+                            onClick={() => {
+                                setError(null);
+                                setLoading(true);
+                                setTimeout(() => setLoading(false), 2000);
+                            }}
+                            className="text-blue-600 hover:text-blue-700 transition-colors block mx-auto"
+                        >
+                            다시 시도
+                        </button>
+                        <button
+                            onClick={onBack}
+                            className="text-gray-600 hover:text-gray-700 transition-colors flex items-center space-x-2 mx-auto"
+                        >
+                            <ArrowLeft size={16} />
+                            <span>목록으로 돌아가기</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="flex-1 flex flex-col bg-white h-full relative">
+        <div className="flex-1 flex flex-col bg-white h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)] overflow-hidden">
             {/* 채팅방 헤더 */}
-            <div className="bg-white border-b px-8 py-3 flex items-center justify-between">
+            <div className="bg-white border-b px-6 py-4 flex items-center justify-between flex-shrink-0">
                 <div className="flex items-center space-x-4">
+                    {/* 뒤로가기 버튼 */}
+                    <button
+                        onClick={onBack}
+                        className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                        <ArrowLeft size={20} className="text-gray-600" />
+                    </button>
+
                     <div>
-                        <h2 className="text-lg font-semibold text-gray-800">{currentRoom.roomName}</h2>
+                        <h2 className="text-lg font-semibold text-gray-800">
+                            {currentRoom.chatRoomName || currentRoom.roomName || currentRoom.name || `채팅방 ${chatRoomId}`}
+                        </h2>
                         <div className="flex items-center space-x-4 text-sm text-gray-500">
-                            <Users size={14}/>
-                            <span>{currentRoom.members}명 참여</span>
+                            <div className="flex items-center space-x-2">
+                                <Users size={14}/>
+                                <span>
+                                    {currentRoom.currentMembers || currentRoom.members || 0}명 참여
+                                </span>
+                            </div>
                             {currentRoom.isPrivate && <span>• 비공개</span>}
+                            <span>• {connectionStatus === 'connected' ? '온라인' :
+                                connectionStatus === 'error' ? '오프라인' : '연결 중'}</span>
                         </div>
                     </div>
                 </div>
-                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <MoreVertical size={20} className="text-gray-600"/>
+
+                {/* 설정 버튼 */}
+                <div className="relative" ref={menuRef}>
+                    <button
+                        onClick={() => setShowMenu(!showMenu)}
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                        <MoreVertical size={20} className="text-gray-600"/>
+                    </button>
+
+                    {/* 드롭다운 메뉴 */}
+                    {showMenu && (
+                        <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                            <div className="py-1">
+                                <button
+                                    onClick={() => {
+                                        setShowAnnouncementModal(true);
+                                        setShowMenu(false);
+                                    }}
+                                    className="flex items-center space-x-2 w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+                                >
+                                    <MessageSquare size={16} />
+                                    <span>공지 올리기</span>
+                                </button>
+
+                                {isOwner && (
+                                    <>
+                                        <button
+                                            onClick={handleEditRoom}
+                                            className="flex items-center space-x-2 w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+                                        >
+                                            <Edit size={16} />
+                                            <span>채팅방 이름 수정</span>
+                                        </button>
+
+                                        <button
+                                            onClick={handleDeleteRoom}
+                                            className="flex items-center space-x-2 w-full px-4 py-2 text-left text-sm hover:bg-gray-100 text-red-600"
+                                        >
+                                            <Trash2 size={16} />
+                                            <span>채팅방 삭제</span>
+                                        </button>
+                                    </>
+                                )}
+
+                                <div className="border-t border-gray-200 my-1"></div>
+
+                                <button
+                                    onClick={handleLeaveRoom}
+                                    className="flex items-center space-x-2 w-full px-4 py-2 text-left text-sm hover:bg-gray-100 text-red-600"
+                                >
+                                    <LogOut size={16} />
+                                    <span>채팅방 나가기</span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* 채팅방 설명 (있는 경우) */}
+            {currentRoom.description && (
+                <div className="bg-blue-50 px-6 py-3 border-b flex-shrink-0">
+                    <p className="text-sm text-blue-700">
+                        {currentRoom.description}
+                    </p>
+                </div>
+            )}
+
+            {/* 연결 상태 표시 */}
+            {connectionStatus === 'error' && (
+                <div className="bg-red-50 px-6 py-2 border-b flex-shrink-0">
+                    <p className="text-sm text-red-700">
+                        실시간 채팅 서버에 연결할 수 없습니다. 테스트 모드로 동작합니다.
+                    </p>
+                </div>
+            )}
+
+            {connectionStatus === 'connecting' && (
+                <div className="bg-yellow-50 px-6 py-2 border-b flex-shrink-0">
+                    <p className="text-sm text-yellow-700">
+                        채팅 서버에 연결하는 중...
+                    </p>
+                </div>
+            )}
+
+            {/* 메시지 영역 - 스크롤 처리 */}
+            <div className="flex-1 min-h-0 overflow-y-auto">
+                {roomMessages.length === 0 ? (
+                    <div className="h-full flex items-center justify-center p-8">
+                        <div className="text-center">
+                            <Users size={48} className="text-gray-300 mx-auto mb-4" />
+                            <h3 className="text-lg font-medium text-gray-600 mb-2">
+                                대화를 시작해보세요!
+                            </h3>
+                            <p className="text-gray-500 mb-2">
+                                아직 메시지가 없습니다. 첫 메시지를 보내보세요.
+                            </p>
+                            <p className="text-xs text-gray-400">
+                                연결 상태: {connectionStatus}
+                            </p>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="p-4">
+                        {/* 실제 ChatMessages 컴포넌트가 있다면 사용, 없다면 간단한 메시지 리스트 */}
+                        {typeof ChatMessages === 'undefined' ? (
+                            <div className="space-y-4">
+                                {roomMessages.map((message, index) => (
+                                    <div key={message.id || index} className="flex">
+                                        <div className="flex-1">
+                                            <div className="flex items-baseline space-x-2 mb-1">
+                                                <span className="font-medium text-sm">
+                                                    {message.sender || '익명'}
+                                                </span>
+                                                <span className="text-xs text-gray-500">
+                                                    {new Date(message.timestamp).toLocaleTimeString()}
+                                                </span>
+                                            </div>
+                                            <div className="text-gray-800">
+                                                {message.content}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <ChatMessages
+                                messages={roomMessages}
+                                currentUser={currentUser}
+                                onReply={handleReplyToMessage}
+                                onDelete={handleDeleteMessage}
+                            />
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* 메시지 입력 영역 - 하단 고정 */}
+            <div className="border-t bg-white flex-shrink-0">
+                {/* 실제 MessageInput 컴포넌트가 있다면 사용, 없다면 간단한 입력창 */}
+                {typeof MessageInput === 'undefined' ? (
+                    <SimpleMessageInput
+                        onSendMessage={handleSendMessage}
+                        disabled={connectionStatus === 'connecting'}
+                        replyingTo={replyTo}
+                        onCancelReply={handleCancelReply}
+                    />
+                ) : (
+                    <MessageInput
+                        onSendMessage={handleSendMessage}
+                        replyingTo={replyTo}
+                        onCancelReply={handleCancelReply}
+                        disabled={connectionStatus === 'connecting'}
+                        placeholder={
+                            connectionStatus === 'connecting'
+                                ? '서버에 연결하는 중...'
+                                : '메시지를 입력하세요...'
+                        }
+                    />
+                )}
+            </div>
+
+            {/* 편집 모달 */}
+            {showEditModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+                        <h3 className="text-lg font-semibold mb-4">채팅방 정보 수정</h3>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    채팅방 이름
+                                </label>
+                                <input
+                                    type="text"
+                                    value={editRoomName}
+                                    onChange={(e) => setEditRoomName(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    maxLength={50}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    채팅방 설명
+                                </label>
+                                <textarea
+                                    value={editDescription}
+                                    onChange={(e) => setEditDescription(e.target.value)}
+                                    rows={3}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                    maxLength={200}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex space-x-3 mt-6">
+                            <button
+                                onClick={() => setShowEditModal(false)}
+                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleSaveEdit}
+                                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                disabled={!editRoomName.trim()}
+                            >
+                                저장
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 공지 모달 */}
+            {showAnnouncementModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+                        <h3 className="text-lg font-semibold mb-4">공지 작성</h3>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                공지 내용
+                            </label>
+                            <textarea
+                                value={announcementContent}
+                                onChange={(e) => setAnnouncementContent(e.target.value)}
+                                rows={4}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                placeholder="공지 내용을 입력하세요..."
+                                maxLength={500}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                                {announcementContent.length}/500자
+                            </p>
+                        </div>
+
+                        <div className="flex space-x-3 mt-6">
+                            <button
+                                onClick={() => {
+                                    setShowAnnouncementModal(false);
+                                    setAnnouncementContent('');
+                                }}
+                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleCreateAnnouncement}
+                                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                                disabled={!announcementContent.trim()}
+                            >
+                                공지 등록
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+// 간단한 메시지 입력 컴포넌트 (MessageInput이 없는 경우 대체용)
+const SimpleMessageInput = ({ onSendMessage, disabled, replyingTo, onCancelReply }) => {
+    const [message, setMessage] = useState('');
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (message.trim() && !disabled) {
+            onSendMessage(message.trim());
+            setMessage('');
+        }
+    };
+
+    return (
+        <div className="p-4">
+            {replyingTo && (
+                <div className="mb-2 p-2 bg-gray-100 rounded text-sm">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <span className="font-medium">{replyingTo.sender}님에게 답장</span>
+                            <p className="text-gray-600 truncate">{replyingTo.content}</p>
+                        </div>
+                        <button onClick={onCancelReply} className="text-gray-400 hover:text-gray-600">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            )}
+            <form onSubmit={handleSubmit} className="flex space-x-2">
+                <input
+                    type="text"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder={disabled ? '연결 중...' : '메시지를 입력하세요...'}
+                    disabled={disabled}
+                    className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                />
+                <button
+                    type="submit"
+                    disabled={!message.trim() || disabled}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                    전송
                 </button>
-            </div>
-
-            {/* 메시지 영역 */}
-            <div className="flex-1 overflow-y-auto max-h-[calc(100vh-220px)]">
-                <ChatMessages
-                    messages={messages}
-                    onReply={handleReplyToMessage}
-                    onDelete={handleDeleteMessage}
-                />
-            </div>
-
-            {/* 메시지 입력 영역 */}
-            <div className="sticky bottom-0 bg-white border-t z-20">
-                <MessageInput
-                    onSendMessage={handleSendMessage}
-                    replyingTo={replyingTo}
-                    onCancelReply={handleCancelReply}
-                />
-            </div>
+            </form>
         </div>
     );
 };
