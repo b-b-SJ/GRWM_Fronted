@@ -86,6 +86,19 @@ const AuthPage = () => {
         }
     };
 
+    // 폼 데이터를 초기화하는 함수
+    const resetForm = () => {
+        setFormData({
+            email: '',
+            password: '',
+            confirmPassword: '',
+            username: '',
+            loginId: ''
+        });
+        clearError();
+        resetLoginIdState();
+    };
+
     const handleCheckLoginId = async () => {
         await checkLoginId(formData.loginId);
     };
@@ -101,7 +114,10 @@ const AuthPage = () => {
                     setShowPassword={setShowPassword}
                     isLoading={isLoading}
                     error={error}
-                    setCurrentPage={setCurrentPage}
+                    setCurrentPage={(page) => {
+                        resetForm();
+                        setCurrentPage(page);
+                    }}
                 />
             );
         case 'signup':
@@ -123,7 +139,11 @@ const AuthPage = () => {
                 />
             );
         default:
-            return <MainAuthPage setCurrentPage={setCurrentPage} />;
+            return <MainAuthPage  setCurrentPage={(page) => {
+                resetForm();
+                setCurrentPage(page);
+            }}
+            />;
     }
 };
 

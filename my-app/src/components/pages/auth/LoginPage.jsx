@@ -11,6 +11,12 @@ const LoginPage = ({
                        error,
                        setCurrentPage,
                    }) => {
+
+    const handleSubmit = (event) => {
+        event.preventDefault(); // 새로고침 방지
+        handleLogin(); // 로그인 관리
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
             <div className="max-w-md w-full">
@@ -36,7 +42,7 @@ const LoginPage = ({
                         </div>
                     )}
 
-                    <div className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         {/* 아이디 입력 */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -100,15 +106,15 @@ const LoginPage = ({
                             </button>
                         </div>
 
-                        {/* 로그인 버튼 */}
+                        {/* 로그인 버튼 - submit으로 변경 (엔터 입력) */}
                         <button
-                            onClick={handleLogin}
+                            type="submit"
                             disabled={isLoading}
                             className="w-full bg-gradient-to-r from-blue-600 to-sky-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-blue-700 hover:to-sky-700 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isLoading ? '로그인 중...' : '로그인'}
                         </button>
-                    </div>
+                    </form>
 
                     {/* 구분선 */}
                     <div className="relative mt-6 mb-6">
@@ -120,9 +126,9 @@ const LoginPage = ({
                         </div>
                     </div>
 
-                    {/* 소셜 로그인 버튼들 */}
+                    {/* 소셜 로그인 버튼 */}
                     <div className="space-y-3 mb-6">
-                        {/* Google 로그인 */}
+                        {/* Google Login */}
                         <button
                             // onClick={handleGoogleLogin}
                             disabled={isLoading}
@@ -141,7 +147,7 @@ const LoginPage = ({
                             <span className="text-gray-700 font-medium">Google로 로그인</span>
                         </button>
 
-                        {/* Kakao 로그인 */}
+                        {/* Kakao Login */}
                         <button
                             // onClick={handleKakaoLogin}
                             disabled={isLoading}
@@ -169,7 +175,6 @@ const LoginPage = ({
                 </div>
             </div>
         </div>
-
     );
 };
 
