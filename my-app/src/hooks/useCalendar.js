@@ -118,54 +118,6 @@ export function useCalendar() {
   };
   const weekFound = findWeek(weeks, currentDate);
 
-  {
-    /**위에 거에서 자른 건데 쓰레기기긔
-     * const giveweek = () => {
-    const weeksOld = [];
-    let currentWeeky = [];
-    let currentDate = new Date(startDay);
-    currentWeeky.push(new Date(currentDate)); //배열에 넣는
-
-    if (currentWeeky.length === 7 || currentDate === 0) {
-      weeksOld.push(currentWeeky);
-      currentWeeky = [];
-    }
-    currentDate.setDate(currentDate.getDate() + 1);
-
-    return weeksOld;
-  };
-
-  const weeksOld = giveweek(currentDate);
-
-     * 
-     //내가 암것두 안보고 짯는데 개망한 코드.....ㅠㅠㅠㅠㅠㅠㅠㅠ
-  //() 안에는 호출할 때 필요한 인자들이 들어가는 건가?
-  const getWeek = (day) => {
-    //월~금
-    let currentWeek = [];
-    const firstDayofWeek = new Date(day);
-    //현재 날짜, 현재 날의 요일값
-    const todayDay = day.getDay(); //현재 날의 요일값
-    //오늘이 들어있는 요일을 가져오면 됨
-    const startofWeekM = (day.getDay() + 6) % 7; //월요일을 앞에.
-    console.log(startofWeekM);
-    firstDayofWeek.setDate(1 - startofWeekM);
-    let giveWeekDummy = firstDayofWeek;
-    console.log(giveWeekDummy);
-
-    for (let i = 0; i < 7; i++) {
-      //현재 날짜 기준으로 그근처에 있는 값?들을 가져와야됨
-      const newDate = new Date(firstDayofWeek);
-
-      newDate.setDate(firstDayofWeek.getDate() + 1); //더하다가 31-> 1 넘어가고 그런 거를 아직 생각을 안함
-      console.log(currentWeek);
-      currentWeek.push(newDate);
-    }
-
-    return currentWeek;};
-    */
-  }
-
   const getTimeTable = () => {
     const timeTb = [];
     for (let t = 0; t < 24; t++) {
