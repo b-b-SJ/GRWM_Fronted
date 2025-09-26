@@ -5,10 +5,9 @@ import ChatMessages from './ChatMessages';
 import MessageInput from './MessageInput';
 
 /**
- * ChatRoom 컴포넌트 - useChatState 연동, 하드코딩 제거
+ * ChatRoom 컴포넌트 - useChatState 연동, 말풍선 스타일 채팅 UI
  * - useChatState의 메시지 상태와 함수들을 활용
  * - WebSocket을 통한 실시간 메시지 처리
- * - 채팅방 전체 레이아웃
  */
 const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
     const {
@@ -35,6 +34,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
     const [announcementContent, setAnnouncementContent] = useState('');
 
     const menuRef = useRef(null);
+    const messagesEndRef = useRef(null);
 
     // 현재 채팅방 정보 찾기 (다양한 필드명 대응)
     const currentRoom = chatRooms.find(room =>
@@ -55,6 +55,11 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
         connectionStatus,
         isOwner
     });
+
+    // 메시지가 업데이트될 때마다 스크롤을 맨 아래로
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [roomMessages]);
 
     // 메뉴 외부 클릭 시 닫기
     useEffect(() => {
@@ -128,6 +133,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
             alert(`공지 등록 실패: ${error.message}`);
         }
     };
+
     useEffect(() => {
         if (chatRoomId) {
             setLoading(true);
@@ -377,7 +383,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
             )}
 
             {/* 메시지 영역 - 스크롤 처리 */}
-            <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="flex-1 min-h-0 overflow-y-auto bg-gray-50">
                 {roomMessages.length === 0 ? (
                     <div className="h-full flex items-center justify-center p-8">
                         <div className="text-center">
@@ -394,28 +400,15 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                         </div>
                     </div>
                 ) : (
-                    <div className="p-4">
-                        {/* 실제 ChatMessages 컴포넌트가 있다면 사용, 없다면 간단한 메시지 리스트 */}
+                    <div className="p-4 space-y-4">
+                        {/* 실제 ChatMessages 컴포넌트가 있다면 사용, 없다면 말풍선 스타일 메시지 리스트 */}
                         {typeof ChatMessages === 'undefined' ? (
-                            <div className="space-y-4">
-                                {roomMessages.map((message, index) => (
-                                    <div key={message.id || index} className="flex">
-                                        <div className="flex-1">
-                                            <div className="flex items-baseline space-x-2 mb-1">
-                                                <span className="font-medium text-sm">
-                                                    {message.sender || '익명'}
-                                                </span>
-                                                <span className="text-xs text-gray-500">
-                                                    {new Date(message.timestamp).toLocaleTimeString()}
-                                                </span>
-                                            </div>
-                                            <div className="text-gray-800">
-                                                {message.content}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                            <ChatBubbleMessages
+                                messages={roomMessages}
+                                currentUser={currentUser}
+                                onReply={handleReplyToMessage}
+                                onDelete={handleDeleteMessage}
+                            />
                         ) : (
                             <ChatMessages
                                 messages={roomMessages}
@@ -424,6 +417,8 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                                 onDelete={handleDeleteMessage}
                             />
                         )}
+                        {/* 스크롤 앵커 */}
+                        <div ref={messagesEndRef} />
                     </div>
                 )}
             </div>
@@ -554,6 +549,110 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
     );
 };
 
+// 말풍선 스타일 메시지 컴포넌트
+const ChatBubbleMessages = ({ messages, currentUser, onReply, onDelete }) => {
+    const formatTime = (timestamp) => {
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString('ko-KR', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+    };
+
+    const isMyMessage = (message) => {
+        // 디버깅을 위해 로그 출력
+        console.log('메시지 소유권 확인:', {
+            messageSenderId: message.senderId,
+            messageSender: message.sender,
+            messageWriterChatName: message.writerChatName,
+            currentUserId: currentUser.userId,
+            currentUserUsername: currentUser.username,
+            currentUserLoginId: currentUser.loginId,
+            currentUserName: currentUser.name
+        });
+
+        // 다양한 경우를 체크
+        return message.senderId === currentUser.userId ||
+            message.sender === currentUser.username ||
+            message.sender === currentUser.loginId ||
+            message.sender === currentUser.name ||
+            message.writerChatName === currentUser.username ||
+            message.writerChatName === currentUser.loginId ||
+            message.writerChatName === currentUser.name;
+    };
+
+    return (
+        <div className="space-y-4">
+            {messages.map((message, index) => {
+                const isMine = isMyMessage(message);
+                const showAvatar = !isMine && (index === 0 || !isMyMessage(messages[index - 1]));
+
+                return (
+                    <div
+                        key={message.id || index}
+                        className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
+                    >
+                        <div className={`flex ${isMine ? 'flex-row-reverse' : 'flex-row'} items-end space-x-2 max-w-[70%]`}>
+                            {/* 아바타 (다른 사람 메시지만) */}
+                            {!isMine && (
+                                <div className={`flex-shrink-0 w-8 h-8 ${showAvatar ? 'visible' : 'invisible'}`}>
+                                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-xs font-medium text-gray-600">
+                                        {(message.sender || '?')[0].toUpperCase()}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className={`${isMine ? 'ml-2' : 'mr-2'}`}>
+                                {/* 발송자 이름 (다른 사람 메시지만, 새 발송자인 경우만) */}
+                                {!isMine && showAvatar && (
+                                    <div className="text-xs text-gray-500 mb-1 px-3">
+                                        {message.sender || '익명'}
+                                    </div>
+                                )}
+
+                                {/* 답장 표시 */}
+                                {message.replyTo && (
+                                    <div className={`text-xs text-gray-500 mb-1 px-3 ${isMine ? 'text-right' : 'text-left'}`}>
+                                        {message.replyTo.sender}님에게 답장
+                                    </div>
+                                )}
+
+                                {/* 메시지 말풍선 */}
+                                <div
+                                    className={`
+                                        relative px-4 py-2 rounded-2xl break-words
+                                        ${isMine
+                                        ? 'bg-blue-500 text-white rounded-br-md'
+                                        : 'bg-white text-gray-800 border border-gray-200 rounded-bl-md shadow-sm'
+                                    }
+                                    `}
+                                >
+                                    {/* 말풍선 꼬리 */}
+                                    {isMine ? (
+                                        <div className="absolute bottom-0 right-0 w-0 h-0 border-l-[10px] border-l-blue-500 border-t-[10px] border-t-transparent"></div>
+                                    ) : (
+                                        <div className="absolute bottom-0 left-0 w-0 h-0 border-r-[10px] border-r-white border-t-[10px] border-t-transparent"></div>
+                                    )}
+
+                                    <div className="text-sm leading-relaxed">
+                                        {message.content}
+                                    </div>
+                                </div>
+
+                                {/* 시간 표시 */}
+                                <div className={`text-xs text-gray-500 mt-1 px-3 ${isMine ? 'text-right' : 'text-left'}`}>
+                                    {formatTime(message.timestamp)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
+
 // 간단한 메시지 입력 컴포넌트 (MessageInput이 없는 경우 대체용)
 const SimpleMessageInput = ({ onSendMessage, disabled, replyingTo, onCancelReply }) => {
     const [message, setMessage] = useState('');
@@ -569,31 +668,34 @@ const SimpleMessageInput = ({ onSendMessage, disabled, replyingTo, onCancelReply
     return (
         <div className="p-4">
             {replyingTo && (
-                <div className="mb-2 p-2 bg-gray-100 rounded text-sm">
+                <div className="mb-2 p-3 bg-gray-50 rounded-lg text-sm border-l-4 border-blue-500">
                     <div className="flex justify-between items-start">
                         <div>
-                            <span className="font-medium">{replyingTo.sender}님에게 답장</span>
-                            <p className="text-gray-600 truncate">{replyingTo.content}</p>
+                            <span className="font-medium text-blue-600">{replyingTo.sender}님에게 답장</span>
+                            <p className="text-gray-600 truncate mt-1">{replyingTo.content}</p>
                         </div>
-                        <button onClick={onCancelReply} className="text-gray-400 hover:text-gray-600">
+                        <button
+                            onClick={onCancelReply}
+                            className="text-gray-400 hover:text-gray-600 ml-2 flex-shrink-0"
+                        >
                             ✕
                         </button>
                     </div>
                 </div>
             )}
-            <form onSubmit={handleSubmit} className="flex space-x-2">
+            <form onSubmit={handleSubmit} className="flex space-x-3">
                 <input
                     type="text"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder={disabled ? '연결 중...' : '메시지를 입력하세요...'}
                     disabled={disabled}
-                    className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 outline-none"
                 />
                 <button
                     type="submit"
                     disabled={!message.trim() || disabled}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    className="px-6 py-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
                 >
                     전송
                 </button>

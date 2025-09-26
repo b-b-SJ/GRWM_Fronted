@@ -57,8 +57,7 @@ const parseStompMessage = (data) => {
 const getTestRooms = (username, isTemporary = false) => {
     return [
         {
-            roomId: 'room1', // ChatRoom 컴포넌트의 더미 데이터와 일치하도록
-            id: 1, // 사이드바에서 사용할 ID
+            chatRoomId: 10, // 사이드바에서 사용할 ID
             chatRoomName: `${username}님의 테스트 채팅방`,
             roomName: `${username}님의 테스트 채팅방`, // ChatRoom 컴포넌트에서 사용
             name: `${username}님의 테스트 채팅방`,
@@ -70,20 +69,6 @@ const getTestRooms = (username, isTemporary = false) => {
             description: 'API 테스트용 채팅방입니다. 클릭하면 채팅방에 입장할 수 있습니다.',
             createdAt: new Date().toISOString(),
         },
-        {
-            roomId: 'room2', // ChatRoom 컴포넌트의 더미 데이터와 일치하도록
-            id: 2,
-            chatRoomName: '일반 대화방',
-            roomName: '일반 대화방',
-            name: '일반 대화방',
-            currentMembers: 8,
-            members: 8,
-            maxMembers: 30,
-            isPrivate: false,
-            category: CATEGORY_MAP['일반'].id,
-            description: '자유롭게 대화할 수 있는 테스트 채팅방입니다.',
-            createdAt: new Date().toISOString(),
-        }
     ];
 };
 

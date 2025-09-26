@@ -46,6 +46,7 @@ const AuthPage = () => {
         clearError();
     };
 
+    // 로그인 관리
     const handleLogin = async () => {
         const result = await login(formData.loginId, formData.password);
         if (result.success) {
@@ -59,6 +60,7 @@ const AuthPage = () => {
         }
     };
 
+    // 회원가입 관리
     const handleSignup = async () => {
         if (formData.password !== formData.confirmPassword) {
             clearError();
