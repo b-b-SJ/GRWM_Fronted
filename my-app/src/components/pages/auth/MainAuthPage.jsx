@@ -48,10 +48,10 @@ const MainAuthPage = ({ setCurrentPage }) => {
                 }`}>
                     {/* 앱 로고 컨테이너 */}
                     <div className="relative mx-auto mb-6 w-20 h-20">
-                        {/* 메인 로고 (호버 시 확대 및 회전 효과) */}
+                        {/* 메인 로고 */}
                         <div
-                            className="bg-gradient-to-r from-blue-600 to-sky-600 w-20 h-20 rounded-2xl flex items-center justify-center transform transition-all duration-500 hover:scale-110 hover:rotate-3 shadow-lg hover:shadow-xl">
-                            <span className="text-white text-3xl font-bold animate-pulse">G</span>
+                            className="bg-gradient-to-r from-blue-600 to-sky-600 w-20 h-20 rounded-2xl flex items-center justify-center transform transition-all duration-500">
+                            <span className="text-white text-3xl font-bold animate-pulse">🚀</span>
                         </div>
                         {/* 로고 주변을 도는 궤도선 애니메이션 (8초 주기로 회전) */}
                         <div className="absolute inset-0 border-2 border-blue-200 rounded-2xl animate-spin"
@@ -67,7 +67,7 @@ const MainAuthPage = ({ setCurrentPage }) => {
                         className="text-3xl mb-8 whitespace-nowrap"
                         style={{fontFamily: "'RomanticGumi', sans-serif", fontWeight: 100}}
                     >
-                        {/* GRWM - 각 글자 둥둥 */}
+                        {/* 메인 앱 이름 (GRWM) - 각 글자 둥둥 */}
                         <span className="text-5xl inline-flex space-x-0">
                         {"GRWM".split("").map((char, idx) => (
                             <span
@@ -164,19 +164,24 @@ const MainAuthPage = ({ setCurrentPage }) => {
             </div>
 
             {/* 하단 웨이브 장식 요소 */}
-            <div
-                className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-blue-100/30 to-transparent pointer-events-none">
-                {/* SVG를 사용한 웨이브 모양 (4초 주기로 펄스 애니메이션) */}
+            <div className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none">
                 <svg
                     viewBox="0 0 1440 120"
                     className="w-full h-full"
                     preserveAspectRatio="none"
                 >
+                    <defs>
+                        <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="rgba(56, 189, 248, 0.3)"/>
+                            <stop offset="50%" stopColor="rgba(59, 130, 246, 0.3)"/>
+                            <stop offset="100%" stopColor="rgba(255, 130, 203, 0.3)"/>
+                        </linearGradient>
+                    </defs>
                     <path
                         d="M0,60 C240,100 480,20 720,60 C960,100 1200,20 1440,60 L1440,120 L0,120 Z"
-                        fill="rgba(59, 130, 246, 0.1)"
+                        fill="url(#waveGradient)"
                         className="animate-pulse"
-                        style={{ animationDuration: '4s' }}
+                        style={{animationDuration: '4s'}}
                     />
                 </svg>
             </div>

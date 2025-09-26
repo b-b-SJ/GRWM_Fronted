@@ -129,8 +129,8 @@ export const AuthProvider = ({ children }) => {
             }
         } catch (error) {
             console.error('로그인 오류:', error);
-            setError('로그인 중 오류가 발생했습니다.');
-            return { success: false, error: '로그인 중 오류가 발생했습니다.' };
+            setError('ID가 존재하지 않거나 비밀번호가 일치하지 않습니다.');
+            return { success: false, error: 'ID가 존재하지 않거나 비밀번호가 일치하지 않습니다.' };
         } finally {
             setIsLoading(false);
         }

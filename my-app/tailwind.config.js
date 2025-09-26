@@ -47,6 +47,17 @@ module.exports = {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-4px)' },
         },
+        'float-slow': {
+          '0%, 100%': { transform: 'translateY(0) translateX(0)' },
+          '25%': { transform: 'translateY(-15px) translateX(15px)' },
+          '50%': { transform: 'translateY(0) translateX(30px)' },
+          '75%': { transform: 'translateY(15px) translateX(15px)' },
+          '100%': { transform: 'translateY(0) translateX(0)' },
+        },
+        'pulse-slow': {
+          '0%, 100%': { opacity: '0.3' },
+          '50%': { opacity: '0.6' },
+        }
       }
     },
   },
