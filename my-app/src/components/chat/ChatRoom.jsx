@@ -549,7 +549,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
     );
 };
 
-// 말풍선 스타일 메시지 컴포넌트
+// 말풍선 스타일 메시지 컴포넌트 ( 통째로 임시, 백엔드와 dto 맞추고 나중에 다시 작성 )
 const ChatBubbleMessages = ({ messages, currentUser, onReply, onDelete }) => {
     const formatTime = (timestamp) => {
         const date = new Date(timestamp);
@@ -572,14 +572,9 @@ const ChatBubbleMessages = ({ messages, currentUser, onReply, onDelete }) => {
             currentUserName: currentUser.name
         });
 
-        // 다양한 경우를 체크
+        // 전송자 id 체크 (임시)
         return message.senderId === currentUser.userId ||
-            message.sender === currentUser.username ||
-            message.sender === currentUser.loginId ||
-            message.sender === currentUser.name ||
-            message.writerChatName === currentUser.username ||
-            message.writerChatName === currentUser.loginId ||
-            message.writerChatName === currentUser.name;
+            message.sender === currentUser.username 
     };
 
     return (
