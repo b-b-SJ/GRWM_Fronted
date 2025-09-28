@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
     User,
     Settings,
@@ -9,13 +9,17 @@ import {
     LogOut,
     Edit3,
     Users,
+    RefreshCw,
+    Check
 } from 'lucide-react';
 import {useNavigate} from "react-router-dom";
+import { useNotificationAPI } from '../../hooks/notificationAPI';
 
 /**
  * FixedSidebar 컴포넌트
  * - 모든 페이지에서 공통으로 사용되는 고정된 사이드바 레이아웃
  * - 사용자 프로필, 알림, 모드(베타), 설정, 도움말
+ * - API 연동 가능한 알림 시스템
  */
 const FixedSidebar = ({ currentUser }) => {
     const [darkMode, setDarkMode] = useState(false);
@@ -23,8 +27,118 @@ const FixedSidebar = ({ currentUser }) => {
     const [showNotificationMenu, setShowNotificationMenu] = useState(false);
     const [activeNotificationTab, setActiveNotificationTab] = useState('전체');
 
+    // 알림 관련 상태
+    const [notifications, setNotifications] = useState([]);
+    const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
+    const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
+    const [notificationError, setNotificationError] = useState(null);
+
     const profileMenuRef = useRef(null);
     const notificationMenuRef = useRef(null);
+
+    // API 훅 사용
+    const notificationAPI = useNotificationAPI();
+
+    // 알림 데이터 로드
+    const loadNotifications = useCallback(async (category = null) => {
+        setIsLoadingNotifications(true);
+        setNotificationError(null);
+
+        try {
+            let data;
+            if (category && category !== '전체') {
+                // 카테고리별 조회
+                const categoryMap = {
+                    '채팅방': 'chat',
+                    '트래커': 'tracker',
+                    '커뮤니티': 'community'
+                };
+                data = await notificationAPI.getNotificationsByCategory(categoryMap[category]);
+            } else {
+                // 전체 조회
+                data = await notificationAPI.getAllNotifications();
+            }
+            setNotifications(data);
+            // 읽지 않은 알림 여부 확인
+            checkUnreadNotifications();
+        } catch (error) {
+            console.error('알림 로드 실패:', error);
+            setNotificationError('알림을 불러오는데 실패했습니다.');
+        } finally {
+            setIsLoadingNotifications(false);
+        }
+    }, [notificationAPI]);
+
+    // 읽지 않은 알림 여부 확인
+    const checkUnreadNotifications = useCallback(async () => {
+        try {
+            if (notificationAPI.hasUnreadNotifications) {
+                const hasUnread = await notificationAPI.hasUnreadNotifications();
+                setHasUnreadNotifications(hasUnread);
+            } else {
+                // API가 없으면 로컬 상태에서 확인
+                const hasUnread = notifications.some(n => !n.isRead);
+                setHasUnreadNotifications(hasUnread);
+            }
+        } catch (error) {
+            console.error('읽지 않은 알림 확인 실패:', error);
+        }
+    }, [notificationAPI, notifications]);
+
+    // 개별 알림 읽음 처리
+    const handleMarkAsRead = async (notificationId) => {
+        try {
+            await notificationAPI.markNotificationAsRead(notificationId);
+            // 로컬 상태 업데이트
+            setNotifications(prev =>
+                prev.map(notification =>
+                    notification.id === notificationId
+                        ? { ...notification, isRead: true }
+                        : notification
+                )
+            );
+            checkUnreadNotifications(); // 읽지 않은 알림 여부 업데이트
+        } catch (error) {
+            console.error('알림 읽음 처리 실패:', error);
+        }
+    };
+
+    // 모든 알림 읽음 처리
+    const handleMarkAllAsRead = async () => {
+        try {
+            await notificationAPI.markAllNotificationsAsRead();
+            setNotifications(prev =>
+                prev.map(notification => ({ ...notification, isRead: true }))
+            );
+            setHasUnreadNotifications(false);
+        } catch (error) {
+            console.error('모든 알림 읽음 처리 실패:', error);
+        }
+    };
+
+
+
+    // 컴포넌트 마운트 시 초기 데이터 로드
+    useEffect(() => {
+        checkUnreadNotifications();
+
+        // 실시간 알림 구독 (있는 경우에만)
+        if (notificationAPI.subscribeToNotifications) {
+            const unsubscribe = notificationAPI.subscribeToNotifications((newNotification) => {
+                // 새 알림이 도착했을 때 처리
+                setNotifications(prev => [newNotification, ...prev.slice(0, 9)]); // 최근 10개 유지
+                setHasUnreadNotifications(true);
+            });
+            return unsubscribe;
+        }
+    }, [checkUnreadNotifications, notificationAPI]);
+
+    // 탭 변경 시 알림 다시 로드
+    useEffect(() => {
+        if (showNotificationMenu) {
+            loadNotifications(activeNotificationTab);
+        }
+    }, [activeNotificationTab, showNotificationMenu, loadNotifications]);
 
     const toggleDarkMode = () => {
         setDarkMode(!darkMode);
@@ -41,6 +155,11 @@ const FixedSidebar = ({ currentUser }) => {
     const handleNotificationClick = () => {
         setShowNotificationMenu(!showNotificationMenu);
         setShowProfileMenu(false); // 다른 메뉴 닫기
+
+        if (!showNotificationMenu) {
+            // 메뉴가 열릴 때 알림 로드
+            loadNotifications(activeNotificationTab);
+        }
     };
 
     // 외부 클릭 감지
@@ -65,27 +184,6 @@ const FixedSidebar = ({ currentUser }) => {
         // 로그아웃 로직 구현해야
         console.log('로그아웃');
         navigate('/auth');
-    };
-
-    // 더미 알림 데이터
-    const getNotificationsByTab = (tab) => {
-        const notifications = {
-            '전체': [
-                { id: 1, type: '채팅방', message: '새로운 메시지가 도착했습니다.', time: '2분 전' },
-                { id: 2, type: '트래커', message: '어제의 나에게로부터 메시지가 도착했습니다!', time: '5분 전' },
-                { id: 3, type: '커뮤니티', message: '새로운 댓글이 달렸습니다.', time: '10분 전' },
-            ],
-            '채팅방': [
-                { id: 1, type: '채팅방', message: '새로운 메시지가 도착했습니다.', time: '2분 전' },
-            ],
-            '트래커': [
-                { id: 1, type: '트래커', message: '어제의 나에게로부터 메시지가 도착했습니다!', time: '5분 전' },
-            ],
-            '커뮤니티': [
-                { id: 1, type: '커뮤니티', message: '새로운 댓글이 달렸습니다.', time: '10분 전' },
-            ]
-        };
-        return notifications[tab] || [];
     };
 
     return (
@@ -162,15 +260,24 @@ const FixedSidebar = ({ currentUser }) => {
                         className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors group relative"
                     >
                         <Bell size={18} className="text-gray-400 group-hover:text-white" />
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
+                        {hasUnreadNotifications && (
+                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
+                        )}
                     </button>
 
                     {/* 알림 팝업 메뉴 */}
                     {showNotificationMenu && (
                         <div className="absolute left-16 top-0 ml-2 bg-white rounded-lg shadow-xl border w-80 z-50">
                             {/* 헤더 */}
-                            <div className="px-4 py-3 border-b">
+                            <div className="px-4 py-3 border-b flex items-center justify-between">
                                 <h3 className="text-lg font-semibold text-gray-800">알림</h3>
+                                <button
+                                    onClick={() => loadNotifications(activeNotificationTab)}
+                                    className="p-1 hover:bg-gray-100 rounded"
+                                    disabled={isLoadingNotifications}
+                                >
+                                    <RefreshCw size={16} className={`text-gray-500 ${isLoadingNotifications ? 'animate-spin' : ''}`} />
+                                </button>
                             </div>
 
                             {/* 탭 메뉴 */}
@@ -192,24 +299,61 @@ const FixedSidebar = ({ currentUser }) => {
 
                             {/* 알림 목록 */}
                             <div className="max-h-64 overflow-y-auto">
-                                {getNotificationsByTab(activeNotificationTab).map((notification) => (
-                                    <div key={notification.id} className="px-4 py-3 hover:bg-gray-50 border-b border-gray-100 cursor-pointer">
-                                        <div className="flex items-start space-x-3">
-                                            <div className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                                            <div className="flex-1">
-                                                <p className="text-sm text-gray-800">{notification.message}</p>
-                                                <div className="flex items-center justify-between mt-1">
-                                                    <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
-                                                        {notification.type}
-                                                    </span>
-                                                    <span className="text-xs text-gray-500">{notification.time}</span>
+                                {isLoadingNotifications ? (
+                                    <div className="px-4 py-8 text-center">
+                                        <RefreshCw size={24} className="mx-auto mb-2 text-gray-300 animate-spin" />
+                                        <p className="text-sm text-gray-500">로딩중...</p>
+                                    </div>
+                                ) : notificationError ? (
+                                    <div className="px-4 py-8 text-center text-red-500">
+                                        <p className="text-sm">{notificationError}</p>
+                                        <button
+                                            onClick={() => loadNotifications(activeNotificationTab)}
+                                            className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+                                        >
+                                            다시 시도
+                                        </button>
+                                    </div>
+                                ) : notifications.length > 0 ? (
+                                    notifications.map((notification) => (
+                                        <div
+                                            key={notification.id}
+                                            className={`px-4 py-3 hover:bg-gray-50 border-b border-gray-100 cursor-pointer group ${
+                                                !notification.isRead ? 'bg-blue-50' : ''
+                                            }`}
+                                            onClick={() => !notification.isRead && handleMarkAsRead(notification.id)}
+                                        >
+                                            <div className="flex items-start space-x-3">
+                                                <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${
+                                                    !notification.isRead ? 'bg-blue-500' : 'bg-gray-300'
+                                                }`}></div>
+                                                <div className="flex-1">
+                                                    <p className="text-sm text-gray-800">{notification.message}</p>
+                                                    <div className="flex items-center justify-between mt-1">
+                                                        <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                                                            {notification.type}
+                                                        </span>
+                                                        <span className="text-xs text-gray-500">{notification.time}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    {!notification.isRead && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleMarkAsRead(notification.id);
+                                                            }}
+                                                            className="p-1 hover:bg-gray-200 rounded"
+                                                            title="읽음 처리"
+                                                        >
+                                                            <Check size={14} className="text-green-600" />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
-
-                                {getNotificationsByTab(activeNotificationTab).length === 0 && (
+                                    ))
+                                ) : (
                                     <div className="px-4 py-8 text-center text-gray-500">
                                         <Bell size={24} className="mx-auto mb-2 text-gray-300" />
                                         <p className="text-sm">새로운 알림이 없습니다</p>
@@ -218,11 +362,16 @@ const FixedSidebar = ({ currentUser }) => {
                             </div>
 
                             {/* 푸터 */}
-                            <div className="px-4 py-2 border-t bg-gray-50">
-                                <button className="w-full text-sm text-blue-600 hover:text-blue-800 font-medium">
-                                    모든 알림 읽음 처리
-                                </button>
-                            </div>
+                            {notifications.some(n => !n.isRead) && (
+                                <div className="px-4 py-2 border-t bg-gray-50">
+                                    <button
+                                        onClick={handleMarkAllAsRead}
+                                        className="w-full text-sm text-blue-600 hover:text-blue-800 font-medium"
+                                    >
+                                        모든 알림 읽음 처리
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
