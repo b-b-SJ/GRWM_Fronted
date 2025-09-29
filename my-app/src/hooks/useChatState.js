@@ -831,7 +831,7 @@ destination:/topic/chat.${chatRoomId}
         }));
     }, []);
 
-    // STOMP 메시지 전송 - chatRoomId에 맞게 수정
+    // STOMP 메시지 전송 - senderId, replyTo 추가
     const sendMessage = useCallback((chatRoomId, content, replyToId = null) => {
         if (!isAuthenticated || !currentUser.userId) {
             throw new Error('로그인이 필요합니다.');
@@ -839,11 +839,17 @@ destination:/topic/chat.${chatRoomId}
 
         const ws = websocketRef.current;
 
+        // 답장할 메시지 객체 찾기
+        const replyToMessage = replyToId ? messages[chatRoomId]?.find(m => m.id === replyToId) : null;
+
         if (ws && ws.readyState === WebSocket.OPEN && connectionStatus === 'connected') {
             const messageData = {
                 chatRoomId: parseInt(chatRoomId),
                 content: content,
-                writerChatName: currentUser.username
+                senderId: currentUser.userId,
+                writerChatName: currentUser.username,
+                // 서버에 답장할 메시지 ID를 전송합니다.
+                replyToMessageId: replyToId
             };
 
             const sendFrame = `SEND
@@ -862,8 +868,11 @@ ${JSON.stringify(messageData)}\0`;
                 id: `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                 content: content,
                 sender: currentUser.username,
+                senderId: currentUser.userId,
                 timestamp: new Date().toISOString(),
-                type: 'chat'
+                type: 'chat',
+                // 테스트 모드에서는 찾은 replyTo 객체를 바로 사용합니다.
+                replyTo: replyToMessage
             };
 
             addMessage(chatRoomId, testMessage);
@@ -879,7 +888,7 @@ ${JSON.stringify(messageData)}\0`;
                 addMessage(chatRoomId, responseMessage);
             }, 1000);
         }
-    }, [currentUser.userId, currentUser.username, isAuthenticated, connectionStatus, addMessage]);
+    }, [currentUser.userId, currentUser.username, isAuthenticated, connectionStatus, messages, addMessage]);
 
     // 메시지 삭제 요청 - chatRoomId에 맞게 수정
     const requestDeleteMessage = useCallback((chatRoomId, messageId) => {

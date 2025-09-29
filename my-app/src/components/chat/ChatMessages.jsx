@@ -63,7 +63,7 @@ const ChatMessages = ({ messages, onReply, onDelete }) => {
         if (!message.isOwn) return false;
 
         const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-        const messageDate = new Date(message.createdAt); // 문자열 -> Date 객체 변환
+        const messageDate = new Date(message.timestamp);
 
         return messageDate > fiveMinutesAgo;
     };
@@ -71,6 +71,23 @@ const ChatMessages = ({ messages, onReply, onDelete }) => {
     // 답장 미리보기 내용 자르기
     const formatReplyPreview = (content) => {
         return content.length > 50 ? content.substring(0, 50) + '...' : content;
+    };
+
+    // 메시지 시간을 포맷하는 헬퍼 함수
+    const formatTime = (timestamp) => {
+        if (!timestamp) return '';
+        try {
+            const date = new Date(timestamp);
+            if (isNaN(date.getTime())) {
+                console.error('유효하지 않은 시간 형식입니다:', timestamp);
+                return '시간 오류';
+            }
+            const options = { hour: '2-digit', minute: '2-digit', hour12: false };
+            return date.toLocaleTimeString('ko-KR', options);
+        } catch (e) {
+            console.error('시간 변환 오류:', e);
+            return '시간 오류';
+        }
     };
 
     // 시스템 메시지 렌더링
@@ -86,33 +103,36 @@ const ChatMessages = ({ messages, onReply, onDelete }) => {
 
     // 일반 사용자 메시지 렌더링
     const renderUserMessage = (msg) => {
+        // ChatRoom에서 전달받은 isOwn 값을 직접 사용합니다.
+        const isMine = msg.isOwn;
+
         return (
             <div
                 key={msg.id}
-                className={`flex ${msg.isOwn ? 'justify-end' : 'justify-start'} relative`}
+                className={`flex ${isMine ? 'justify-end' : 'justify-start'} relative`}
                 onMouseLeave={() => {
                     setHoveredMessageId(null);
                     setShowMenuForId(null);
                 }}
                 onMouseEnter={() => setHoveredMessageId(msg.id)}
             >
-                <div className={`max-w-xs lg:max-w-md ${msg.isOwn ? 'order-2' : 'order-1'} relative`}>
+                <div className={`max-w-xs lg:max-w-md ${isMine ? 'order-2' : 'order-1'} relative`}>
                     {/* 답장 메시지 표시 */}
                     {msg.replyTo && (
                         <div
                             className={`mb-2 px-3 py-2 rounded-lg bg-gray-100 border-l-4 border-gray-400 ${
-                                msg.isOwn ? 'ml-8' : 'mr-8'
+                                isMine ? 'ml-8' : 'mr-8'
                             }`}
                         >
-                            <div className="text-xs text-gray-600 font-medium">{msg.replyTo.username}</div>
+                            <div className="text-xs text-gray-600 font-medium">{msg.replyTo.sender}</div>
                             <div className="text-sm text-gray-700">{formatReplyPreview(msg.replyTo.content)}</div>
                         </div>
                     )}
 
                     {/* 타인의 메시지일 경우 사용자명 + 방장 아이콘 표시 */}
-                    {!msg.isOwn && (
+                    {!isMine && (
                         <div className="flex items-center space-x-1 text-sm text-gray-600 mb-1 px-1">
-                            <span>{msg.username}</span>
+                            <span>{msg.sender}</span>
                             {msg.isOwner && <Crown size={12} className="text-yellow-500" />}
                         </div>
                     )}
@@ -122,9 +142,9 @@ const ChatMessages = ({ messages, onReply, onDelete }) => {
                         className={`px-4 py-2 rounded-2xl ${
                             msg.isDeleted
                                 ? 'bg-gray-200 text-gray-500 italic'
-                                : msg.isOwn
+                                : isMine
                                     ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-100 text-gray-800'
+                                    : 'bg-white text-gray-800 border border-gray-200 shadow-sm'
                         }`}
                     >
                         {msg.content}
@@ -133,10 +153,10 @@ const ChatMessages = ({ messages, onReply, onDelete }) => {
                     {/* 시간 표시 */}
                     <div
                         className={`text-xs text-gray-500 mt-1 px-1 ${
-                            msg.isOwn ? 'text-right' : 'text-left'
+                            isMine ? 'text-right' : 'text-left'
                         }`}
                     >
-                        {msg.timestamp}
+                        {formatTime(msg.timestamp)}
                     </div>
 
                     {/* 메뉴 버튼 */}
@@ -146,7 +166,7 @@ const ChatMessages = ({ messages, onReply, onDelete }) => {
                                 setShowMenuForId((prev) => (prev === msg.id ? null : msg.id))
                             }
                             className={`absolute top-1/2 -translate-y-1/2 ${
-                                msg.isOwn ? '-left-10' : '-right-10'
+                                isMine ? '-left-10' : '-right-10'
                             } p-1 bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50 transition-colors`}
                         >
                             <MoreHorizontal size={14} className="text-gray-600" />
@@ -157,11 +177,11 @@ const ChatMessages = ({ messages, onReply, onDelete }) => {
                     {showMenuForId === msg.id && !msg.isDeleted && (
                         <div
                             className={`absolute top-1/2 -translate-y-1/2 ${
-                                msg.isOwn ? '-left-[200px]' : '-right-[180px]'
+                                isMine ? '-left-[200px]' : '-right-[180px]'
                             } bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[120px]`}
                         >
                             {/* 타인 메시지 메뉴 */}
-                            {!msg.isOwn && (
+                            {!isMine && (
                                 <>
                                     <button
                                         onClick={() => handleReplyMessage(msg)}
@@ -181,7 +201,7 @@ const ChatMessages = ({ messages, onReply, onDelete }) => {
                             )}
 
                             {/* 본인 메시지 메뉴 */}
-                            {msg.isOwn && (
+                            {isMine && (
                                 <>
                                     <button
                                         onClick={() =>
@@ -214,17 +234,12 @@ const ChatMessages = ({ messages, onReply, onDelete }) => {
 
     return (
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {/* 메시지 목록 렌더링 */}
-            {messages.map((msg) => {
-                // 시스템 메시지인지 확인
+            {messages.map((msg, index) => {
                 if (msg.type === 'system') {
                     return renderSystemMessage(msg);
                 }
-
-                // 일반 사용자 메시지
                 return renderUserMessage(msg);
             })}
-            {/* 항상 하단 스크롤 유지를 위한 요소 */}
             <div ref={messagesEndRef} />
         </div>
     );

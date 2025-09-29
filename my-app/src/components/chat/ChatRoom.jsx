@@ -304,8 +304,25 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                 </div>
             ) : (
                 <ChatMessages
-                    messages={roomMessages}
-                    currentUser={currentUser}
+                    messages={roomMessages.map(msg => {
+                        const isOwnMessage = (
+                            // senderId가 존재하고, 두 ID가 일치하는지 확인
+                            msg.senderId !== undefined && msg.senderId === currentUser.userId
+                        );
+
+                        console.log('--- 메시지 디버깅 시작 ---');
+                        console.log(`메시지 ID: ${msg.id}`);
+                        console.log(`발신자 ID: ${msg.senderId} (타입: ${typeof msg.senderId})`);
+                        console.log(`현재 유저 ID: ${currentUser.userId} (타입: ${typeof currentUser.userId})`);
+                        console.log(`두 ID가 일치하는가?: ${msg.senderId === currentUser.userId}`);
+                        console.log(`최종 isOwnMessage 값: ${isOwnMessage}`);
+                        console.log('--- 메시지 디버깅 끝 ---');
+
+                        return {
+                            ...msg,
+                            isOwn: isOwnMessage
+                        };
+                    })}
                     onReply={handleReplyToMessage}
                     onDelete={handleDeleteMessage}
                 />
