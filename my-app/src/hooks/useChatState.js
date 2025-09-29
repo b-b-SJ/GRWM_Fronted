@@ -516,6 +516,7 @@ export const ChatStateProvider = ({ children }) => {
         try {
             const requestData = {
                 userId: currentUser.userId,
+                chatName: currentUser.username || currentUser.chatName,
                 content: content.trim()
             };
 
@@ -937,7 +938,6 @@ ${JSON.stringify(messageData)}\0`;
             fetchChatRooms();
         } else if (!isChatPage) {
             // 채팅 페이지가 아니면 상태 초기화 (메모리 절약)
-            console.log('Non-chat page detected - clearing chat states');
             setChatRooms([]);
             setMessages({});
             if (selectedRoom) {
@@ -945,7 +945,6 @@ ${JSON.stringify(messageData)}\0`;
             }
         } else if (!isAuthenticated) {
             // 로그아웃 시 모든 상태 초기화
-            console.log('Logout detected - clearing all chat states');
             setChatRooms([]);
             setMessages({});
             if (selectedRoom) {
