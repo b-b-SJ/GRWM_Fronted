@@ -4,7 +4,7 @@ import AppLayout from './components/layout/AppLayout';
 import MainPage from './components/pages/MainPage';
 import PlannerPage from './components/pages/PlannerPage';
 import TrackerPage from './components/pages/TrackerPage';
-import CommunityPage from './components/pages/CommunityPage';
+import CommunityPage from "./components/pages/community/CommunityPage";
 import WorkspacePage from './components/pages/WorkspacePage';
 import { ChatStateProvider } from './hooks/useChatState';
 import AuthPage from './components/pages/auth/AuthPage';
