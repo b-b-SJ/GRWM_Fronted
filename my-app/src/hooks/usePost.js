@@ -6,7 +6,7 @@ export function usePost() {
     {
       postId: "12",
       //묶어서 줄 수 있는지 물어보기 -> 된대용 헤헤
-      userId: "youyousangjong",
+      communityId: "youyousangjong",
       userName: "유유상종",
       profileImage:
         "https://i.ibb.co/FbWvz1bB/2025030118134100-02-CB906-EA538-A35643-C1-E1484-C4-B947-D.jpg",
@@ -27,17 +27,20 @@ export function usePost() {
     {
       postId: "21",
       //묶어서 줄 수 있는지 물어보기 -> 된대용 헤헤
-      userId: "gyudong",
-      userName: "",
+      communityId: "gyudong",
+      userName: "규동",
       profileImage:
-        "https://i.ibb.co/FbWvz1bB/2025030118134100-02-CB906-EA538-A35643-C1-E1484-C4-B947-D.jpg",
+        "https://recipe1.ezmember.co.kr/cache/recipe/2021/12/13/4686a67d2f6e39e1899d1e2afaff26ee1.jpg",
       content: {
         text: "소고기는 키친타월로 앞뒤로 꾹꾹 눌러서 핏기를 제거해 주고 먹기 좋은 크기로 썰어줍니다. 양파는 너무 얇지 않게 썰어주고 쪽파(대파)도 송송 썰어 줍니다. 분량의 양념을 넣고 잘 섞어줍니다. 달군 프라이팬에 식용유를 약간 두르고 소고기를 넣고 후추 톡톡 뿌려서 구워줍니다. 고기가 익으면 양파를 넣고 같이 볶아주세요. 섞어둔 양념장을 붓고 센 불에 끓여주다가 끓어오르면 중약불로 줄여서 졸여줍니다. 국물이 자박 자박해질 정도로 졸여주세요. 그릇에 밥을 담고 소고기를 올려줍니다. 가운데 계란 노른자를 올리고 쪽파를 뿌려서 완성해 주세요.",
         images: [
-          "https://i.ibb.co/QFkg9D3q/2025020819375700-02-CB906-EA538-A35643-C1-E1484-C4-B947-D.jpg",
+          "https://recipe1.ezmember.co.kr/cache/recipe/2021/12/13/ecf4b2fbf998f4d526ae6a5f446ebac61.jpg",
+          "https://recipe1.ezmember.co.kr/cache/recipe/2021/12/13/a41ddf83011bd73079c007d31a52218a1.jpg",
+          "https://recipe1.ezmember.co.kr/cache/recipe/2021/12/13/99aa5fbfb197d60e4c0ef06e7e3b838c1.jpg",
+          "https://recipe1.ezmember.co.kr/cache/recipe/2021/12/13/4686a67d2f6e39e1899d1e2afaff26ee1.jpg",
         ],
       },
-      hashtags: ["#희한한화장실", "#힘줄까말까", "#똥:희희재밌다"],
+      hashtags: ["#출처는", "#만개의", "#레시피"],
       visibility: "public",
       likeCount: 0,
       commentCount: 0,
@@ -81,7 +84,9 @@ export function usePost() {
 
   const getUserSimpProfile = (userIdToFind) => {
     //community id로 들어올 가능성 농후하긴 함
-    const matchingPost = posts.find((post) => post.userId === userIdToFind); //일치하는 거 가져옴
+    const matchingPost = posts.find(
+      (post) => post.communityId === userIdToFind
+    ); //일치하는 거 가져옴
     if (matchingPost) {
       return {
         profileImage: matchingPost.profileImage,

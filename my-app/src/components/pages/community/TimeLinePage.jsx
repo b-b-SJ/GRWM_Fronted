@@ -1,4 +1,4 @@
-//메인 탐라
+//타임라인 페이지 -> 헤더 부분 포함
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import MainTimeLine from "../../community/MainTimeLine";
@@ -9,7 +9,8 @@ const TimeLinePage = () => {
   return (
     <div>
       <h1 className="bg-fuchsia-300 text-3xl p-4">
-        길길이 날뛰며 엉엉슨 울며 얘기했다, 여기라고, 여기가 타임라인 페이지라고
+        길길이 날뛰며 엉엉슨 울며 얘기했다, 여기라고, 여기가 타임라인
+        페이지라고- 헤더
       </h1>
       <nav className="flex gap-7 p-4 bg-fuchsia-400 w-fit">
         <button
@@ -17,17 +18,20 @@ const TimeLinePage = () => {
     ${timeLine === "main" ? "bg-blue-400 text-white" : "bg-white"}`}
           onClick={() => setTimeLine("main")}
         >
-          듀듀듀듀듀
+          메인
         </button>
         <button
           className={`px-4 py-2 rounded-xl
     ${timeLine === "hash" ? "bg-blue-400 text-white" : "bg-white"}`}
           onClick={() => setTimeLine("hash")}
         >
-          엉등이
+          해시태그
         </button>
       </nav>
-      <PostingStyle />
+      <PostingStyle communityId={"youyousangjong"} postId={"12"} />
+      <PostingStyle communityId={"youyousangjong"} postId={"120"} />
+      <PostingStyle communityId={"gyudong"} postId={"21"} />
+
       {timeLine === "main" ? <MainTimeLine /> : <HashtagTimeLine />}
     </div>
   );
