@@ -376,7 +376,12 @@ const WorkspacePage = () => {
     const handleRoomCreated = (chatRoomId) => {
         console.log('Chat room creation completed, entering room:', chatRoomId);
 
-        // createAndJoinRoom에서 이미 JOIN API까지 처리했으므로
+        // 생성한 채팅방은 무조건 방장으로 표시. (임시)
+        const createdRoom = {
+            chatRoomId: chatRoomId,
+            isManager: true, // 임시로 방장 표시
+        };
+
         // WebSocket 연결만 수행
         try {
             joinRoom(chatRoomId);
