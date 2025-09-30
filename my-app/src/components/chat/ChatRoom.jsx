@@ -41,7 +41,10 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
         room.roomId == chatRoomId || room.chatRoomId == chatRoomId
     );
 
-    const isOwner = currentRoom?.isOwner || currentRoom?.ownerId === currentUser.userId;
+    // 사용자가 방장인지 확인 - 백엔드에서 isManager로 전달
+    const isOwner = currentRoom?.isManager || currentRoom?.isOwner || currentRoom?.ownerId === currentUser.userId;
+
+    // chatRoomId에 해당하는 메시지들 (useChatState에서 관리)
     const roomMessages = messages[chatRoomId] || [];
 
     useEffect(() => {
