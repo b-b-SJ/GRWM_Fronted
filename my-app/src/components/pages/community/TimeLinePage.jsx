@@ -25,6 +25,7 @@ const TimeLinePage = () => {
           해시태그
         </button>
       </nav>
+      <PostingStyle communityId={"onetwothree"} postId={"123"} />
       <PostingStyle communityId={"youyousangjong"} postId={"12"} />
       <PostingStyle communityId={"youyousangjong"} postId={"120"} />
       <PostingStyle communityId={"gyudong"} postId={"21"} />

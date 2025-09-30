@@ -11,12 +11,12 @@ export function usePost() {
       profileImage:
         "https://i.ibb.co/FbWvz1bB/2025030118134100-02-CB906-EA538-A35643-C1-E1484-C4-B947-D.jpg",
       content: {
-        text: " oO(집가고 싶당..)",
+        text: "새로 인테리어 공사 받은 우리집 화장실",
         images: [
           "https://i.ibb.co/QFkg9D3q/2025020819375700-02-CB906-EA538-A35643-C1-E1484-C4-B947-D.jpg",
         ],
       },
-      hashtags: ["#희한한화장실", "#힘줄까말까", "#똥:희희재밌다"],
+      hashtags: ["#글라햄일상"],
       visibility: "public",
       likeCount: 0,
       commentCount: 0,
@@ -46,12 +46,33 @@ export function usePost() {
       commentCount: 0,
       isEdited: false,
       createdAt: new Date(),
-      updatedAt: null, // 없어도 되는 값은 null로 시작할 수 있습니다.
+      updatedAt: null,
+    },
+    {
+      postId: "123",
+      communityId: "onetwothree",
+      userName: "가을이다~",
+      profileImage:
+        "https://cdn.mos.cms.futurecdn.net/7CfzWqwoHSzqtyQrfvnTwN-1200-80.jpg",
+      content: {
+        text: "어느덧 벌써 가을이네요^^ 예쁘게 물든 나뭇잎들에 저 또한 훈훈한 미소가 지어집니다. 다들 건강하시고 행복하세요^^~",
+        images: [
+          "https://cdn.mos.cms.futurecdn.net/7CfzWqwoHSzqtyQrfvnTwN-1200-80.jpg",
+        ],
+      },
+      hashtags: [""],
+      visibility: "public",
+      likeCount: 0,
+      commentCount: 0,
+      isEdited: false,
+      createdAt: new Date(),
+      updatedAt: null,
     },
   ]);
 
   const [loadingTimeLine, setLoadingTimeLine] = useState(false);
   const [error, setError] = useState(null);
+  const [loadingPost, setLoadingPost] = useState(false);
   // 아직 working on it
   {
     /**const getPostList = useCallback(async () => {
@@ -84,26 +105,32 @@ export function usePost() {
      */
   }
 
-  const getPostList = useCallback(async (communityId) => {
+  const getUserPostList = useCallback(async (communityId) => {
     //확인 필요
 
-    setLoadingTimeLine(true);
+    setLoadingPost(true);
     setError(null);
 
     try {
-      const response = await fetch(`api/community-posts`, {
-        method: "GET",
-        headers: {},
-      });
+      //특정 유저가 작성한 게시물 리스트
+      const response = await fetch(
+        `api/community-posts?communityId={communityId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (response.ok) {
       } else {
-        console.error("타임라인 조회에 실패했습니다");
+        console.error("게시글 조회에 실패했습니다");
       }
     } catch (error) {
       console.error("타임라인 조회 에러", error);
     } finally {
-      setLoadingTimeLine(false);
+      setLoadingPost(false);
     }
   }, []);
 

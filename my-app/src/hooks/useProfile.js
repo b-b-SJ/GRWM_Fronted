@@ -120,7 +120,7 @@ export function useProfile() {
     try {
       const response = await fetch(`/api/users/{userId}/profile`, {
         method: "GET",
-        headers: {},
+        headers: { contentType: "application/json" },
       });
 
       if (response.ok) {
@@ -147,7 +147,7 @@ export function useProfile() {
     try {
       const response = await fetch(`/api/users/me/profile`, {
         method: "GET",
-        headers: {},
+        headers: { contentType: "application/json" },
       });
 
       if (response.ok) {
@@ -172,7 +172,10 @@ export function useProfile() {
       const requestData = {};
       const response = await fetch(``, {
         method: "PUT",
-        headers: {},
+        headers: {
+          contentType: "application/json",
+          //authorization, //본인일 경우에만 허용
+        },
         body: JSON.stringify(requestData),
       });
 
@@ -200,7 +203,9 @@ export function useProfile() {
       const requestData = {};
       const response = await fetch("", {
         method: "POST",
-        headers: {},
+        headers: {
+          contentType: "application/json",
+        },
         body: JSON.stringify(requestData),
       });
 
@@ -224,7 +229,10 @@ export function useProfile() {
       try {
         const response = await fetch(`/api/users/${targetId}/follow`, {
           method: "POST",
-          headers: {},
+          headers: {
+            contentType: "application/json",
+            //authorization도 필요한지?
+          },
           body: null, //머가 들어가디?온즈오브 갤럭시 ㅇㅈㄹ
         });
         if (!response.ok) {
@@ -250,7 +258,7 @@ export function useProfile() {
       try {
         const response = await fetch(`/api/users/${targetId}/follow`, {
           method: "DELETE",
-          headers: {},
+          headers: { contentType: "application/json" },
           body: null,
         });
         if (!response.ok) {
