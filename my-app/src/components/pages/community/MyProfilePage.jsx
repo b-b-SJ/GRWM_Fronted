@@ -3,7 +3,7 @@ import { useState } from "react"; // useEffect는 훅 안으로 이동했으므�
 import { useNavigate } from "react-router-dom";
 import { UserRound, Ellipsis, Award } from "lucide-react";
 import { useProfile } from "../../../hooks/useProfile"; // 새로운 훅 import
-import PostingStyle from "../../community/PostingStyle";
+//import NoPosting from "../../community/NoPosting";
 
 // MyProfilePage는 props를 받지 않습니다.
 const MyProfilePage = () => {
@@ -54,27 +54,33 @@ const MyProfilePage = () => {
             </h2>
 
             <div className="flex flex-row gap-5 ml-2">
-              {/* 내 프로필 페이지에서는 팔로우 버튼 대신 '프로필 수정' 버튼이 들어가야 합니다. */}
-              <button className="text-gray-800 text-xl font-semibold border border-gray-300 w-[150px] h-fit py-2 rounded-md shadow-sm hover:bg-gray-100 transition-colors">
-                프로필 수정
+              <button
+                className="group text-gray-700 text-xl ml-2 bg-gray-300 w-[150px] h-fit py-2 rounded-md shadow-md hover:bg-gray-400 transition-colors"
+                onClick={() => setFollow(!follow)}
+              >
+                프로필 편집
               </button>
+
               <button className="">
                 <Ellipsis size={32} />
               </button>
             </div>
-
             {/**게시물 팔로워 팔로잉 */}
+
             <div className="flex justify-evenly text-center text-lg">
               <div>
                 <p className="text-gray-500">게시물</p>
+
                 <p className="font-bold">{myProfile.postCount}</p>
               </div>
               <button>
                 <p className="text-gray-500">팔로워</p>
+
                 <p className="font-bold">{myProfile.followerCount}</p>
               </button>
               <button>
                 <p className="text-gray-500">팔로잉</p>
+
                 <p className="font-bold">{myProfile.followingCount}</p>
               </button>
             </div>
@@ -94,9 +100,10 @@ const MyProfilePage = () => {
         {/**바이오 */}
         <div className="p-4 pl-8">{myProfile.description}</div>
       </div>
-
-      {/*게시글 내용: 내 게시글을 보여주는 로직이 필요합니다. myProfile에서 내 communityId나 userId를 가져와 사용합니다.*/}
-      {/* <PostingStyle communityId={myProfile.communityId} postId={"12"} /> */}
+      {/*게시글 내용 */}
+      <h1 className="py-48 flex justify-center items-center">
+        아직 게시글이 없습니다
+      </h1>
     </div>
   );
 };

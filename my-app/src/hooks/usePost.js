@@ -50,6 +50,8 @@ export function usePost() {
     },
   ]);
 
+  const [loadingTimeLine, setLoadingTimeLine] = useState(false);
+  const [error, setError] = useState(null);
   // 아직 working on it
   {
     /**const getPostList = useCallback(async () => {
@@ -82,6 +84,29 @@ export function usePost() {
      */
   }
 
+  const getPostList = useCallback(async (communityId) => {
+    //확인 필요
+
+    setLoadingTimeLine(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`api/community-posts`, {
+        method: "GET",
+        headers: {},
+      });
+
+      if (response.ok) {
+      } else {
+        console.error("타임라인 조회에 실패했습니다");
+      }
+    } catch (error) {
+      console.error("타임라인 조회 에러", error);
+    } finally {
+      setLoadingTimeLine(false);
+    }
+  }, []);
+
   const getUserSimpProfile = (userIdToFind) => {
     //community id로 들어올 가능성 농후하긴 함
     const matchingPost = posts.find(
@@ -97,7 +122,6 @@ export function usePost() {
     }
   }; //근데 생각해보니까 프로필 이미지만 가져올 게 아니라 찾는 김에 유저 정보 다 가져오는 게 나은데 왜 이렇게 햇지;
 
-  //
   const getContent = (postIdToFind) => {
     const matchingPost = posts.find((post) => post.postId === postIdToFind);
     if (matchingPost) {

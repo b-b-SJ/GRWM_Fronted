@@ -55,7 +55,7 @@ const mockProfiles = [
   },
 ];
 
-const initialProfile = {
+const initialProfile1 = {
   User: {
     communityId: "gangganggang",
     nickName: "걍가라123",
@@ -71,40 +71,54 @@ const initialProfile = {
   achievedBadgeCount: 0,
   pinnedPostId: null,
 };
-const initialProfile1 = [
-  {
-    User: {
-      communityId: "youyousangjong",
-      nickName: "유유상종수",
-      profileImage:
-        "https://i.ibb.co/FbWvz1bB/2025030118134100-02-CB906-EA538-A35643-C1-E1484-C4-B947-D.jpg",
-    },
-    description:
-      "안냥하세여, 저는 글라햄이구 동물의 숲 주민이에여..저는 느끼주민인데여...디게디게 기여우여ㅎㅎ",
-    bannerImage:
-      "https://static0.srcdn.com/wordpress/wp-content/uploads/2022/08/Every-Animal-Crossing-Villager-With-An-In-Game-Family.jpg",
-    postCount: 1,
-    followerCount: 0,
-    followingCount: 0,
-    achievedBadgeCount: 0,
-    pinnedPostId: null,
+const myProfile = {
+  User: {
+    communityId: "jkbearlover",
+    nickName: "농담곰러버",
+    profileImage:
+      "https://mblogthumb-phinf.pstatic.net/MjAyMDA1MjZfMjUg/MDAxNTkwNDcxNzQ0NTUx.wLUx0ICJSHhE7CU5CAsa3tPPMkvfa76-XFNgkT5kPJYg.4I4B907z3cE2B6UhRUpCfdgbXuSiSh8muyX-pjQlhfgg.JPEG.cho980827/1590471744738.jpg?type=w800",
   },
-];
+  description: "왜 이리 세상이 나에게 가혹해..혹혹ㅠㅠ",
+  bannerImage:
+    "https://img1.daumcdn.net/thumb/R800x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdna%2FZDKg6%2FbtsKZ1lc62r%2FAAAAAAAAAAAAAAAAAAAAAGGkSeyKprTHrP9Ii1vQ8G6-QJoYrZjh7luoyRbcBr0m%2Fimg.jpg%3Fcredential%3DyqXZFxpELC7KVnFOS48ylbz2pIh7yKj8%26expires%3D1759244399%26allow_ip%3D%26allow_referer%3D%26signature%3DMBHbZOaCyrSO%252Fm3I%252BH2PfBFvyIk%253D",
+  postCount: 0,
+  followerCount: 0,
+  followingCount: 0,
+  achievedBadgeCount: 0,
+  pinnedPostId: null,
+};
+const initialProfile = {
+  User: {
+    communityId: "youyousangjong",
+    nickName: "유유상종수",
+    profileImage:
+      "https://i.ibb.co/FbWvz1bB/2025030118134100-02-CB906-EA538-A35643-C1-E1484-C4-B947-D.jpg",
+  },
+  description:
+    "안냥하세여, 저는 글라햄이구 동물의 숲 주민이에여..저는 느끼주민인데여...디게디게 기여우여ㅎㅎ",
+  bannerImage:
+    "https://static0.srcdn.com/wordpress/wp-content/uploads/2022/08/Every-Animal-Crossing-Villager-With-An-In-Game-Family.jpg",
+  postCount: 1,
+  followerCount: 0,
+  followingCount: 0,
+  achievedBadgeCount: 0,
+  pinnedPostId: null,
+};
 
 export function useProfile() {
-  const [profile, setProfile] = useState(null); //초기값.
+  const [profile, setProfile] = useState(initialProfile); //초기값.
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [error, setError] = useState(null);
 
   //프로필정보 가져오기 -함수명들 내가 적은 명세 보고 해야하는 걸까..(모름)
   const getUserProfile = useCallback(async (communityId) => {
     //확인 필요
-
+    //loadMockProfile을 여기에 적용?하면 이게 테스트가 돌아갈지??
     setLoadingProfile(true);
     setError(null);
 
     try {
-      const response = await fetch(`api/users/{userId}/profile`, {
+      const response = await fetch(`/api/users/{userId}/profile`, {
         method: "GET",
         headers: {},
       });
@@ -124,12 +138,39 @@ export function useProfile() {
     }
   }, []); //[]에는 뭐 넣어야하는 거지
 
+  const getMyProfile = useCallback(async (communityId) => {
+    //음?? 내 프로필에 대해서 추가적으로 작성할 코드는?
+    //loadMockProfile을 여기에 적용?하면 이게 테스트가 돌아갈지??
+    setLoadingProfile(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/users/me/profile`, {
+        method: "GET",
+        headers: {},
+      });
+
+      if (response.ok) {
+        const profileInfo = await response.json();
+        setProfile(profileInfo);
+      } else {
+        console.error("프로필 조회에 실패했습니다");
+        setProfile(myProfile); //크ㅡ앙
+      }
+    } catch (error) {
+      console.error("프로필 조회 에러", error);
+      setProfile(myProfile); //크-앙
+    } finally {
+      setLoadingProfile(false);
+    }
+  }, []);
+
   const updateUserProfile = useCallback(async (communityId, userData) => {
     //얘도 확인필요
 
     try {
       const requestData = {};
-      const response = await fetch("", {
+      const response = await fetch(``, {
         method: "PUT",
         headers: {},
         body: JSON.stringify(requestData),
@@ -178,6 +219,57 @@ export function useProfile() {
     }
   }, []);
 
+  const followUser = useCallback(
+    async (communityId, targetId) => {
+      try {
+        const response = await fetch(`/api/users/${targetId}/follow`, {
+          method: "POST",
+          headers: {},
+          body: null, //머가 들어가디?온즈오브 갤럭시 ㅇㅈㄹ
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "팔로우에 실패했습니다");
+        } else {
+          //팔로우 성공시 프로필 정보 다시 불러오기
+          await getUserProfile(communityId);
+        }
+      } catch (error) {
+        console.error("팔로우 오류:", error);
+        setError(error.message);
+        throw error;
+      } finally {
+        setLoadingProfile(false);
+      }
+    },
+    [getUserProfile]
+  );
+
+  const unfollowUser = useCallback(
+    async (communityId, targetId) => {
+      try {
+        const response = await fetch(`/api/users/${targetId}/follow`, {
+          method: "DELETE",
+          headers: {},
+          body: null,
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "언팔로우에 실패했습니다");
+        } else {
+          await getUserProfile(communityId);
+        }
+      } catch (error) {
+        console.error("언팔로우 오류", error);
+        setError(error.message);
+        throw error;
+      } finally {
+        setLoadingProfile(false);
+      }
+    },
+    [getUserProfile]
+  );
+
   // 목업 데이터로 테스트하는 함수 (개발용)
   const loadMockProfile = useCallback((communityId) => {
     const mockProfile = mockProfiles.find(
@@ -192,11 +284,15 @@ export function useProfile() {
 
   return {
     profile, // 단일 프로필로 변경
+    myProfile,
     getUserProfile,
     updateUserProfile,
     loadMockProfile, // 개발용 목업 로더
     error,
     loadingProfile,
+    followUser,
+    unfollowUser,
+    getMyProfile,
   };
 }
 //유저 아이디는 string이 아니라 long
