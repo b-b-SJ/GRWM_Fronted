@@ -94,7 +94,7 @@ const PasswordModal = ({ isOpen, onClose, onSubmit, roomName, isLoading }) => {
                         </button>
                         <button
                             type="button"
-                            onClick={(e) => handleSubmit(e)}
+                            onClick={handleSubmit}
                             className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
                             disabled={isLoading}
                         >
@@ -108,8 +108,8 @@ const PasswordModal = ({ isOpen, onClose, onSubmit, roomName, isLoading }) => {
 };
 
 // 채팅방 카드 컴포넌트
-const ChatRoomCard = ({ room, onJoinRoom, workspaceMode }) => {
-    const isStudyRoom = workspaceMode === '스터디룸';
+const ChatRoomCard = ({ room, onJoinRoom }) => {
+    const isFull = room.maxMembers > 0 && room.currentMembers >= room.maxMembers;
 
     return (
         <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
@@ -126,7 +126,7 @@ const ChatRoomCard = ({ room, onJoinRoom, workspaceMode }) => {
                         )}
                     </div>
                     <p className="text-gray-600 text-sm mb-2 line-clamp-2">
-                        {room.description}
+                        {room.description || '설명이 없습니다.'}
                     </p>
                 </div>
             </div>
@@ -135,7 +135,10 @@ const ChatRoomCard = ({ room, onJoinRoom, workspaceMode }) => {
                 <div className="flex items-center space-x-4 text-sm text-gray-500">
                     <div className="flex items-center space-x-1">
                         <Users size={14} />
-                        <span>{room.currentMembers}/{room.maxMembers}</span>
+                        <span>
+                            {room.currentMembers}
+                            {room.maxMembers > 0 ? `/${room.maxMembers}` : ''}
+                        </span>
                     </div>
                     <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
                         {room.category}
@@ -145,9 +148,9 @@ const ChatRoomCard = ({ room, onJoinRoom, workspaceMode }) => {
                 <button
                     onClick={() => onJoinRoom(room)}
                     className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                    disabled={room.currentMembers >= room.maxMembers}
+                    disabled={isFull}
                 >
-                    {room.currentMembers >= room.maxMembers ? '만석' : '입장하기'}
+                    {isFull ? '만석' : '입장하기'}
                 </button>
             </div>
         </div>
@@ -155,7 +158,10 @@ const ChatRoomCard = ({ room, onJoinRoom, workspaceMode }) => {
 };
 
 // 메인 탐색 컴포넌트
-const ChatRoomExplorer = ({ workspaceMode = '채팅룸', onJoinRoom = (roomId) => console.log('Joining room:', roomId) }) => {
+const ChatRoomExplorer = ({
+                              workspaceMode = '채팅룸',
+                              onJoinRoom = (roomId) => console.log('Joining room:', roomId)
+                          }) => {
     const [rooms, setRooms] = useState([]);
     const [filteredRooms, setFilteredRooms] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -168,105 +174,73 @@ const ChatRoomExplorer = ({ workspaceMode = '채팅룸', onJoinRoom = (roomId) =
         isLoading: false
     });
 
-    const categories = ['전체', '일반', '프로젝트', '스터디', '취미', '기타'];
     const isStudyRoom = workspaceMode === '스터디룸';
 
-    // Mock 데이터로 채팅방 목록 불러오기
+    // 채팅방 목록 불러오기
     useEffect(() => {
         const fetchRooms = async () => {
             try {
                 setLoading(true);
 
-                // API 연결 전 임시 Mock 데이터
-                const mockRooms = [
-                    {
-                        id: 'room1',
-                        roomName: '졸업 프로젝트',
-                        description: '졸프 이야기~ 잘 졸업해봅시다...',
-                        category: '일반',
-                        isPrivate: false,
-                        currentMembers: 3,
-                        maxMembers: 30,
-                        createdAt: '2024-01-15T10:30:00Z'
+                const response = await fetch('http://localhost:8080/api/chat-room/show', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
                     },
-                    {
-                        id: 'room2',
-                        roomName: '소공 스터디',
-                        description: '4학년 1학기 전공! 소공 스터디!',
-                        category: '프로젝트',
-                        isPrivate: true,
-                        currentMembers: 10,
-                        maxMembers: 20,
-                        createdAt: '2024-01-14T15:20:00Z'
-                    },
-                    {
-                        id: 'room3',
-                        roomName: '개발 스터디',
-                        description: '개발 학습을 함께 하는 스터디룸',
-                        category: '스터디',
-                        isPrivate: false,
-                        currentMembers: 15,
-                        maxMembers: 25,
-                        createdAt: '2024-01-13T09:45:00Z'
-                    },
-                    {
-                        id: 'room4',
-                        roomName: '게임 좀 하고 삽시다',
-                        description: '다양한 게임에 대해 이야기하는 공간입니다. 게임 추천, 공략, 리뷰 등 자유롭게!',
-                        category: '취미',
-                        isPrivate: false,
-                        currentMembers: 23,
-                        maxMembers: 30,
-                        createdAt: '2024-01-12T14:15:00Z'
-                    },
-                    {
-                        id: 'room5',
-                        roomName: '배구 보는 사람',
-                        description: '배구를 사랑하는 사람의 모임',
-                        category: '취미',
-                        isPrivate: true,
-                        currentMembers: 18,
-                        maxMembers: 20,
-                        createdAt: '2024-01-11T11:00:00Z'
-                    }
-                ];
+                    credentials: 'include',
+                });
 
-                // 로딩 시뮬레이션 (실제로는 필요 없음)
-                await new Promise(resolve => setTimeout(resolve, 800));
+                if (!response.ok) {
+                    throw new Error('채팅방 목록을 불러오는데 실패했습니다.');
+                }
 
-                setRooms(mockRooms);
+                const data = await response.json();
+
+                // DTO를 컴포넌트 형식으로 변환
+                const formattedRooms = data.map(room => ({
+                    id: room.chatRoomId,
+                    roomName: room.chatRoomName,
+                    description: room.description,
+                    category: room.category,
+                    isPrivate: room.isPrivate,
+                    currentMembers: room.currentMembers,
+                    maxMembers: room.maxMembers,
+                }));
+
+                setRooms(formattedRooms);
 
             } catch (error) {
                 console.error('채팅방 목록 로딩 오류:', error);
-                // Mock 데이터를 사용하므로 오류 처리 제거
-                // setError('채팅방 목록을 불러올 수 없습니다. 다시 시도해주세요.');
+                alert('채팅방 목록을 불러올 수 없습니다. 다시 시도해주세요.');
+                setRooms([]);
             } finally {
                 setLoading(false);
             }
         };
 
         fetchRooms();
-    }, [isStudyRoom]);
+    }, []);
+
+    // 카테고리 목록 동적 생성
+    const categories = ['전체', ...new Set(rooms.map(room => room.category))];
 
     // 필터링 로직
     useEffect(() => {
         let filtered = rooms;
 
-        // 검색어 필터
         if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
             filtered = filtered.filter(room =>
-                room.roomName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                room.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                room.description.toLowerCase().includes(searchQuery.toLowerCase())
+                room.roomName.toLowerCase().includes(query) ||
+                room.category.toLowerCase().includes(query) ||
+                (room.description && room.description.toLowerCase().includes(query))
             );
         }
 
-        // 카테고리 필터
         if (selectedCategory !== '전체') {
             filtered = filtered.filter(room => room.category === selectedCategory);
         }
 
-        // 비공개방만 보기 필터
         if (showPrivateOnly) {
             filtered = filtered.filter(room => room.isPrivate);
         }
@@ -283,61 +257,85 @@ const ChatRoomExplorer = ({ workspaceMode = '채팅룸', onJoinRoom = (roomId) =
                 isLoading: false
             });
         } else {
-            // 공개방 입장 (Mock)
             await joinPublicRoom(room);
         }
     };
 
-    // 공개방 입장 (Mock)
+    // 공개방 입장
     const joinPublicRoom = async (room) => {
         try {
-            // Mock API 호출 시뮬레이션
-            console.log('공개방 입장:', room);
+            const response = await fetch(`http://localhost:8080/api/chat-room/${room.id}/join`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+            });
 
-            // 로딩 시뮬레이션
-            await new Promise(resolve => setTimeout(resolve, 500));
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || '입장에 실패했습니다.');
+            }
 
-            // 입장 성공 시 채팅방으로 이동
             onJoinRoom(room.id);
 
         } catch (error) {
             console.error('공개방 입장 오류:', error);
-            alert('채팅방 입장에 실패했습니다.');
+            alert(error.message || '채팅방 입장에 실패했습니다.');
         }
     };
 
-    // 비밀번호 확인 후 비공개방 입장 (Mock)
+    // 비밀번호 확인 후 비공개방 입장
     const handlePasswordSubmit = async (password) => {
         setPasswordModal(prev => ({ ...prev, isLoading: true }));
 
         try {
-            // Mock API 호출 시뮬레이션
-            console.log('비공개방 입장 시도:', passwordModal.room, 'password:', password);
+            const verifyResponse = await fetch(
+                `http://localhost:8080/api/chat-room/${passwordModal.room.id}/verify`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ password }),
+                }
+            );
 
-            // 로딩 시뮬레이션
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // Mock 비밀번호 검증 (실제로는 서버에서 검증)
-            const correctPassword = '1234'; // Mock 비밀번호
-            if (password !== correctPassword) {
-                throw new Error('비밀번호가 일치하지 않습니다. (비번: 1234)');
+            if (!verifyResponse.ok) {
+                const errorText = await verifyResponse.text();
+                throw new Error(errorText || '비밀번호가 일치하지 않습니다.');
             }
 
-            // 입장 성공 시 모달 닫고 채팅방으로 이동
+            const joinResponse = await fetch(
+                `http://localhost:8080/api/chat-room/${passwordModal.room.id}/join`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                }
+            );
+
+            if (!joinResponse.ok) {
+                const errorText = await joinResponse.text();
+                throw new Error(errorText || '입장에 실패했습니다.');
+            }
+
             setPasswordModal({ isOpen: false, room: null, isLoading: false });
             onJoinRoom(passwordModal.room.id);
 
         } catch (error) {
             console.error('비공개방 입장 오류:', error);
             alert(error.message || '입장에 실패했습니다.');
-        } finally {
             setPasswordModal(prev => ({ ...prev, isLoading: false }));
         }
     };
 
     if (loading) {
         return (
-            <div className="flex-1 flex items-center justify-center">
+            <div className="flex-1 flex items-center justify-center min-h-screen bg-gray-50">
                 <div className="text-center">
                     <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                     <p className="text-gray-500">{workspaceMode} 목록을 불러오는 중...</p>
@@ -348,7 +346,6 @@ const ChatRoomExplorer = ({ workspaceMode = '채팅룸', onJoinRoom = (roomId) =
 
     return (
         <div className="flex-1 flex flex-col p-6 bg-gray-50 min-h-screen">
-            {/* 헤더 */}
             <div className="mb-6">
                 <div className="flex items-center space-x-2 mb-2">
                     {isStudyRoom ? (
@@ -361,13 +358,11 @@ const ChatRoomExplorer = ({ workspaceMode = '채팅룸', onJoinRoom = (roomId) =
                     </h1>
                 </div>
                 <p className="text-gray-600">
-                    다양한 {workspaceMode}을 찾아보고 참여해보세요. (Mock 데이터)
+                    다양한 {workspaceMode}을 찾아보고 참여해보세요.
                 </p>
             </div>
 
-            {/* 검색 및 필터 */}
             <div className="mb-6 space-y-4">
-                {/* 검색바 */}
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                     <input
@@ -379,14 +374,12 @@ const ChatRoomExplorer = ({ workspaceMode = '채팅룸', onJoinRoom = (roomId) =
                     />
                 </div>
 
-                {/* 필터 옵션 */}
-                <div className="flex items-center space-x-4 flex-wrap">
+                <div className="flex items-center space-x-4 flex-wrap gap-2">
                     <div className="flex items-center space-x-2">
                         <Filter size={16} className="text-gray-500" />
                         <span className="text-sm font-medium text-gray-700">필터:</span>
                     </div>
 
-                    {/* 카테고리 선택 */}
                     <select
                         value={selectedCategory}
                         onChange={(e) => setSelectedCategory(e.target.value)}
@@ -397,7 +390,6 @@ const ChatRoomExplorer = ({ workspaceMode = '채팅룸', onJoinRoom = (roomId) =
                         ))}
                     </select>
 
-                    {/* 비공개방만 보기 */}
                     <label className="flex items-center space-x-2 cursor-pointer">
                         <input
                             type="checkbox"
@@ -409,13 +401,11 @@ const ChatRoomExplorer = ({ workspaceMode = '채팅룸', onJoinRoom = (roomId) =
                     </label>
                 </div>
 
-                {/* 결과 개수 */}
                 <div className="text-sm text-gray-500">
                     총 {filteredRooms.length}개의 {workspaceMode}
                 </div>
             </div>
 
-            {/* 채팅방 목록 */}
             <div className="flex-1">
                 {filteredRooms.length > 0 ? (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -424,12 +414,11 @@ const ChatRoomExplorer = ({ workspaceMode = '채팅룸', onJoinRoom = (roomId) =
                                 key={room.id}
                                 room={room}
                                 onJoinRoom={handleJoinRoom}
-                                workspaceMode={workspaceMode}
                             />
                         ))}
                     </div>
                 ) : (
-                    <div className="flex-1 flex items-center justify-center">
+                    <div className="flex-1 flex items-center justify-center py-20">
                         <div className="text-center">
                             <Search size={64} className="text-gray-300 mx-auto mb-4" />
                             <h3 className="text-lg font-medium text-gray-500 mb-2">
@@ -443,7 +432,6 @@ const ChatRoomExplorer = ({ workspaceMode = '채팅룸', onJoinRoom = (roomId) =
                 )}
             </div>
 
-            {/* 비밀번호 입력 모달 */}
             <PasswordModal
                 isOpen={passwordModal.isOpen}
                 onClose={() => setPasswordModal({ isOpen: false, room: null, isLoading: false })}
