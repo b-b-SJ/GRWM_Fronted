@@ -596,149 +596,8 @@ export const ChatStateProvider = ({ children }) => {
         }
     }, [createChatRoom, joinChatRoom]);
 
-    // STOMP WebSocket 연결 - chatRoomId에 맞게 수정
-    const connectWebSocket = useCallback((chatRoomId) => {
-        // chatRoomId 유효성 검사 추가
-        if (!chatRoomId) {
-            console.error('connectWebSocket: chatRoomId가 없습니다:', chatRoomId);
-            return;
-        }
-
-        if (!isAuthenticated || !currentUser.userId) {
-            console.error('WebSocket 연결을 위해 로그인이 필요합니다');
-            return;
-        }
-
-        console.log('WebSocket 연결 시도, chatRoomId:', chatRoomId);
-
-        // 기존 연결 정리
-        if (websocketRef.current && websocketRef.current.readyState !== WebSocket.CLOSED) {
-            websocketRef.current.close(1000, 'New connection requested');
-            websocketRef.current = null;
-        }
-
-        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsHost = process.env.NODE_ENV === 'production'
-            ? window.location.host
-            : 'localhost:8080';
-
-        const wsUrl = `${wsProtocol}//${wsHost}/ws/chatroom`;
-
-        console.log('STOMP WebSocket 연결 시도:', wsUrl, 'chatRoomId:', chatRoomId);
-
-        const ws = new WebSocket(wsUrl);
-        websocketRef.current = ws;
-
-        ws.onopen = () => {
-            console.log('WebSocket 연결됨, STOMP CONNECT 프레임 전송 중...');
-
-            const accessToken = localStorage.getItem('accessToken');
-            const connectFrame = `CONNECT
-accept-version:1.2
-heart-beat:20000,20000
-Authorization:Bearer ${accessToken}
-host:${wsHost}
-
-\0`;
-
-            ws.send(connectFrame);
-        };
-
-        ws.onmessage = (event) => {
-            console.log('STOMP 메시지 수신:', event.data);
-
-            if (event.data.startsWith('CONNECTED')) {
-                console.log('STOMP 연결 성공, 채팅방 구독 중...');
-                setConnectionStatus('connected');
-
-                const subscribeFrame = `SUBSCRIBE
-id:sub-${chatRoomId}
-destination:/topic/chat.${chatRoomId}
-
-\0`;
-
-                ws.send(subscribeFrame);
-
-                // WebSocket 연결 성공 후 채팅 히스토리 로드
-                fetchChatHistory(chatRoomId);
-
-                // 채팅방 목록 갱신은 별도로 조건부 실행
-                setTimeout(async () => {
-                    console.log('WebSocket 연결 후 채팅방 목록 갱신 시도...');
-                    try {
-                        // 토큰 유효성 확인 후 갱신
-                        const isTokenValid = await checkTokenValidity();
-                        if (isTokenValid) {
-                            await fetchChatRooms(true); // 토큰 체크 스킵
-                        } else {
-                            console.log('Token invalid - skipping room list refresh');
-                        }
-                    } catch (refreshError) {
-                        console.warn('Room list refresh after WebSocket connection failed:', refreshError);
-                        // 에러 발생해도 WebSocket 연결에는 영향 없음
-                    }
-                }, 1000);
-
-            } else if (event.data.startsWith('MESSAGE')) {
-                const messageData = parseStompMessage(event.data);
-
-                if (messageData) {
-                    const formattedMessage = {
-                        id: messageData.messageId,
-                        content: messageData.content,
-                        sender: messageData.writerChatName,
-                        timestamp: messageData.createdAt,
-                        type: messageData.type === 0 ? 'chat' :
-                            messageData.type === 1 ? 'join' : 'leave'
-                    };
-
-                    addMessage(chatRoomId, formattedMessage);
-                }
-            }
-        };
-
-        ws.onclose = (event) => {
-            console.log('STOMP WebSocket 연결 종료:', event.code, event.reason);
-            setConnectionStatus('disconnected');
-
-            if (event.code !== 1000 && selectedRoom === chatRoomId) {
-                setTimeout(() => {
-                    console.log('STOMP WebSocket 재연결 시도...');
-                    connectWebSocket(chatRoomId);
-                }, 3000);
-            }
-        };
-
-        ws.onerror = (error) => {
-            console.error('STOMP WebSocket error:', error);
-            setConnectionStatus('error');
-
-            setMessages(prev => ({
-                ...prev,
-                [chatRoomId]: [
-                    {
-                        id: 'stomp-error-msg',
-                        content: '실시간 채팅 서버(STOMP)에 연결할 수 없습니다.',
-                        sender: 'System',
-                        timestamp: new Date().toISOString(),
-                        type: 'system'
-                    },
-                    {
-                        id: 'test-msg-1',
-                        content: '테스트 메시지입니다. STOMP 서버 연결 후 실시간 채팅이 가능합니다.',
-                        sender: currentUser.username,
-                        timestamp: new Date(Date.now() - 3600000).toISOString(),
-                        type: 'chat'
-                    }
-                ]
-            }));
-        };
-
-    }, [isAuthenticated, currentUser.userId, currentUser.username, selectedRoom, checkTokenValidity, fetchChatRooms]);
-
-    // 채팅 메시지 히스토리 불러오기 - chatRoomId에 맞게 수정
+    // 채팅 히스토리 로드 - connectWebSocket보다 먼저 선언
     const fetchChatHistory = useCallback(async (chatRoomId) => {
-        // chatRoomId 유효성 검사 추가
         if (!chatRoomId) {
             console.error('fetchChatHistory: chatRoomId가 없습니다:', chatRoomId);
             return;
@@ -759,6 +618,10 @@ destination:/topic/chat.${chatRoomId}
                     id: msg.messageId,
                     content: msg.content,
                     sender: msg.writerChatName,
+                    // username 비교로 본인 메시지 판별
+                    senderId: msg.writerChatName === currentUser.username
+                        ? currentUser.userId
+                        : undefined,
                     timestamp: msg.createdAt,
                     type: msg.type === 0 ? 'chat' :
                         msg.type === 1 ? 'join' : 'leave'
@@ -776,7 +639,7 @@ destination:/topic/chat.${chatRoomId}
         } catch (error) {
             console.error('채팅 히스토리 조회 실패:', error);
         }
-    }, [getAuthHeaders]);
+    }, [getAuthHeaders, currentUser.username, currentUser.userId]);
 
     // WebSocket 메시지 처리
     const handleWebSocketMessage = useCallback((data) => {
@@ -838,17 +701,14 @@ destination:/topic/chat.${chatRoomId}
         }
 
         const ws = websocketRef.current;
-
-        // 답장할 메시지 객체 찾기
         const replyToMessage = replyToId ? messages[chatRoomId]?.find(m => m.id === replyToId) : null;
 
         if (ws && ws.readyState === WebSocket.OPEN && connectionStatus === 'connected') {
+            // API 명세에 맞게 수정: communityId 사용
             const messageData = {
                 chatRoomId: parseInt(chatRoomId),
                 content: content,
-                senderId: currentUser.userId,
-                writerChatName: currentUser.username,
-                // 서버에 답장할 메시지 ID를 전송합니다.
+                communityId: currentUser.userId, // API 명세에 따라 communityId 사용
                 replyToMessageId: replyToId
             };
 
@@ -861,9 +721,25 @@ ${JSON.stringify(messageData)}\0`;
             console.log('STOMP 메시지 전송:', messageData);
             ws.send(sendFrame);
 
-        } else {
-            console.warn('STOMP WebSocket이 연결되지 않음 - 테스트 메시지로 추가');
+            // 클라이언트에서 즉시 메시지 추가 (낙관적 업데이트)
+            // 서버에서 브로드캐스트되면 중복 체크는 addMessage에서 처리
+            const optimisticMessage = {
+                id: `temp-${Date.now()}`, // 임시 ID (서버 응답으로 교체됨)
+                content: content,
+                sender: currentUser.username,
+                senderId: currentUser.userId, // 프론트에서 추가하여 본인 메시지 판별
+                timestamp: new Date().toISOString(),
+                type: 'chat',
+                replyTo: replyToMessage,
+                isPending: true // 전송 중 표시용
+            };
 
+            addMessage(chatRoomId, optimisticMessage);
+
+        } else {
+            console.warn(`STOMP WebSocket 연결 안됨 (상태: ${connectionStatus}, readyState: ${ws?.readyState})`);
+
+            // 테스트 메시지 추가
             const testMessage = {
                 id: `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                 content: content,
@@ -871,25 +747,12 @@ ${JSON.stringify(messageData)}\0`;
                 senderId: currentUser.userId,
                 timestamp: new Date().toISOString(),
                 type: 'chat',
-                // 테스트 모드에서는 찾은 replyTo 객체를 바로 사용합니다.
                 replyTo: replyToMessage
             };
 
             addMessage(chatRoomId, testMessage);
-
-            setTimeout(() => {
-                const responseMessage = {
-                    id: `response-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                    content: `"${content}" 메시지를 받았습니다! (STOMP 서버 연결 후 실시간 채팅이 가능합니다)`,
-                    sender: 'TestBot',
-                    timestamp: new Date().toISOString(),
-                    type: 'chat'
-                };
-                addMessage(chatRoomId, responseMessage);
-            }, 1000);
         }
     }, [currentUser.userId, currentUser.username, isAuthenticated, connectionStatus, messages, addMessage]);
-
     // 메시지 삭제 요청 - chatRoomId에 맞게 수정
     const requestDeleteMessage = useCallback((chatRoomId, messageId) => {
         if (!isAuthenticated || !currentUser.userId) {
@@ -909,6 +772,139 @@ ${JSON.stringify(messageData)}\0`;
             throw new Error('채팅 서버에 연결되지 않았습니다.');
         }
     }, [currentUser.userId, isAuthenticated]);
+
+    // STOMP WebSocket 연결 - chatRoomId에 맞게 수정
+    const connectWebSocket = useCallback((chatRoomId) => {
+        if (!chatRoomId) {
+            console.error('connectWebSocket: chatRoomId가 없습니다:', chatRoomId);
+            return;
+        }
+
+        if (!isAuthenticated || !currentUser.userId) {
+            console.error('WebSocket 연결을 위해 로그인이 필요합니다');
+            return;
+        }
+
+        console.log('WebSocket 연결 시도, chatRoomId:', chatRoomId);
+
+        // 기존 연결 정리
+        if (websocketRef.current && websocketRef.current.readyState !== WebSocket.CLOSED) {
+            websocketRef.current.close(1000, 'New connection requested');
+            websocketRef.current = null;
+        }
+
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsHost = process.env.NODE_ENV === 'production'
+            ? window.location.host
+            : 'localhost:8080';
+
+        const wsUrl = `${wsProtocol}//${wsHost}/ws/chatroom`;
+
+        console.log('STOMP WebSocket 연결 시도:', wsUrl, 'chatRoomId:', chatRoomId);
+
+        // 연결 중 상태로 먼저 설정
+        setConnectionStatus('connecting');
+
+        const ws = new WebSocket(wsUrl);
+        websocketRef.current = ws;
+
+        ws.onopen = () => {
+            console.log('WebSocket 연결됨, STOMP CONNECT 프레임 전송 중...');
+
+            const accessToken = localStorage.getItem('accessToken');
+            const connectFrame = `CONNECT
+accept-version:1.2
+heart-beat:20000,20000
+Authorization:Bearer ${accessToken}
+
+\0`;
+
+            ws.send(connectFrame);
+        };
+
+        ws.onmessage = (event) => {
+            console.log('STOMP 메시지 수신 (raw):', event.data);
+
+            // CONNECTED 프레임 처리
+            if (event.data.startsWith('CONNECTED')) {
+                console.log('✅ STOMP 연결 성공!');
+                setConnectionStatus('connected');
+
+                // 구독 프레임 전송
+                const subscribeFrame = `SUBSCRIBE
+id:sub-${chatRoomId}
+destination:/topic/chat.${chatRoomId}
+
+\0`;
+
+                console.log('구독 프레임 전송:', `/topic/chat.${chatRoomId}`);
+                ws.send(subscribeFrame);
+
+                // 채팅 히스토리 로드
+                fetchChatHistory(chatRoomId);
+
+                // 채팅방 목록 갱신
+                setTimeout(async () => {
+                    console.log('WebSocket 연결 후 채팅방 목록 갱신 시도...');
+                    try {
+                        const isTokenValid = await checkTokenValidity();
+                        if (isTokenValid) {
+                            await fetchChatRooms(true);
+                        }
+                    } catch (refreshError) {
+                        console.warn('Room list refresh failed:', refreshError);
+                    }
+                }, 1000);
+
+            }
+            // MESSAGE 프레임 처리
+            else if (event.data.startsWith('MESSAGE')) {
+                const messageData = parseStompMessage(event.data);
+                console.log('파싱된 메시지:', messageData);
+
+                if (messageData) {
+                    const formattedMessage = {
+                        id: messageData.messageId,
+                        content: messageData.content,
+                        sender: messageData.writerChatName,
+                        // 백엔드가 senderId를 반환하면 사용, 아니면 undefined
+                        senderId: messageData.senderId || messageData.communityId,
+                        timestamp: messageData.createdAt,
+                        type: messageData.type === 0 ? 'chat' :
+                            messageData.type === 1 ? 'join' : 'leave'
+                    };
+
+                    console.log('포맷된 메시지 추가:', formattedMessage);
+                    addMessage(chatRoomId, formattedMessage);
+                }
+            }
+            // ERROR 프레임 처리
+            else if (event.data.startsWith('ERROR')) {
+                console.error('STOMP ERROR 프레임 수신:', event.data);
+                setConnectionStatus('error');
+            }
+        };
+
+        ws.onclose = (event) => {
+            console.log('STOMP WebSocket 연결 종료:', event.code, event.reason);
+            setConnectionStatus('disconnected');
+
+            // 정상 종료가 아니고 현재 방이 선택된 경우 재연결 시도
+            if (event.code !== 1000 && selectedRoom === chatRoomId) {
+                setTimeout(() => {
+                    console.log('STOMP WebSocket 재연결 시도...');
+                    connectWebSocket(chatRoomId);
+                }, 3000);
+            }
+        };
+
+        ws.onerror = (error) => {
+            console.error('STOMP WebSocket error:', error);
+            setConnectionStatus('error');
+        };
+
+    }, [isAuthenticated, currentUser.userId, currentUser.username, selectedRoom, checkTokenValidity, fetchChatRooms, fetchChatHistory, addMessage]);
+
 
     // 방 입장 - chatRoomId에 맞게 수정
     const joinRoom = useCallback((chatRoomId) => {
