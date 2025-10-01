@@ -182,15 +182,32 @@ const ChatRoomExplorer = ({
             try {
                 setLoading(true);
 
+                // 로컬 스토리지에서 토큰 가져오기
+                const token = localStorage.getItem('accessToken'); // 또는 'token', 'authToken' 등
+
+                // 디버깅: 토큰 확인
+                console.log('Token:', token ? '존재함' : '없음');
+
+                if (!token) {
+                    throw new Error('로그인 토큰이 없습니다.');
+                }
+
                 const response = await fetch('http://localhost:8080/api/chat-room/show', {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`, // 토큰을 Authorization 헤더에 추가
                     },
                     credentials: 'include',
                 });
 
+                // 디버깅: 응답 상태 확인
+                console.log('Response status:', response.status);
+
                 if (!response.ok) {
+                    if (response.status === 403 || response.status === 401) {
+                        throw new Error('인증이 만료되었거나 유효하지 않습니다.');
+                    }
                     throw new Error('채팅방 목록을 불러오는데 실패했습니다.');
                 }
 
@@ -211,7 +228,15 @@ const ChatRoomExplorer = ({
 
             } catch (error) {
                 console.error('채팅방 목록 로딩 오류:', error);
-                alert('채팅방 목록을 불러올 수 없습니다. 다시 시도해주세요.');
+
+                // 403 에러 (인증 필요) 처리
+                if (error.message.includes('403') || error.message.includes('Forbidden')) {
+                    alert('로그인이 필요한 서비스입니다. 로그인 페이지로 이동합니다.');
+                    // 로그인 페이지로 리다이렉트 (실제 경로로 수정 필요)
+                    // window.location.href = '/login';
+                } else {
+                    alert('채팅방 목록을 불러올 수 없습니다. 다시 시도해주세요.');
+                }
                 setRooms([]);
             } finally {
                 setLoading(false);
@@ -264,15 +289,25 @@ const ChatRoomExplorer = ({
     // 공개방 입장
     const joinPublicRoom = async (room) => {
         try {
+            const token = localStorage.getItem('accessToken');
+
+            if (!token) {
+                throw new Error('로그인 토큰이 없습니다.');
+            }
+
             const response = await fetch(`http://localhost:8080/api/chat-room/${room.id}/join`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
                 },
                 credentials: 'include',
             });
 
             if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error('인증이 만료되었습니다. 다시 로그인해주세요.');
+                }
                 const errorText = await response.text();
                 throw new Error(errorText || '입장에 실패했습니다.');
             }
