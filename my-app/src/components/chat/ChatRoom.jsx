@@ -42,7 +42,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
     );
 
     // 사용자가 방장인지 확인 - 백엔드에서 isManager로 전달
-    const isOwner = currentRoom?.isManager || currentRoom?.isOwner || currentRoom?.ownerId === currentUser.userId;
+    const isManager = currentRoom?.isManager === true;
 
     // chatRoomId에 해당하는 메시지들 (useChatState에서 관리)
     const roomMessages = messages[chatRoomId] || [];
@@ -245,7 +245,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                                     <MessageSquare size={16} />
                                     <span>공지 올리기</span>
                                 </button>
-                                {isOwner && (
+                                {isManager && (
                                     <>
                                         <button onClick={handleEditRoom} className="flex items-center space-x-2 w-full px-4 py-2 text-left text-sm hover:bg-gray-100">
                                             <Edit size={16} />
@@ -314,12 +314,6 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                         );
 
                         console.log('--- 메시지 디버깅 시작 ---');
-                        console.log(`메시지 ID: ${msg.id}`);
-                        console.log(`발신자 ID: ${msg.senderId} (타입: ${typeof msg.senderId})`);
-                        console.log(`현재 유저 ID: ${currentUser.userId} (타입: ${typeof currentUser.userId})`);
-                        console.log(`두 ID가 일치하는가?: ${msg.senderId === currentUser.userId}`);
-                        console.log(`최종 isOwnMessage 값: ${isOwnMessage}`);
-                        console.log('--- 메시지 디버깅 끝 ---');
 
                         return {
                             ...msg,
