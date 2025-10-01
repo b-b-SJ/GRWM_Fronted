@@ -94,9 +94,7 @@ const TrackerPage = () => {
                     <h3 className="text-lg font-semibold mb-4">자주 사용한 해시태그</h3>
                     <div className="flex flex-wrap gap-2">
                         {[
-                            { tag: '#성장', count: 25 },
-                            { tag: '#감사', count: 18 },
-                            { tag: '#도전', count: 15 },
+                            { tag: '#공부', count: 15 },
                             { tag: '#행복', count: 12 },
                             { tag: '#학습', count: 10 },
                             { tag: '#건강', count: 8 }

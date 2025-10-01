@@ -23,7 +23,7 @@ const AuthPage = () => {
     });
 
     // Hooks
-    const { login, signup, isLoading, error, clearError } = useAuth();
+    const { login, signup, isLoading, error, clearError, user } = useAuth();
     const {
         checkLoginId,
         isChecking: loginIdChecking,
@@ -46,14 +46,21 @@ const AuthPage = () => {
         clearError();
     };
 
+    // 로그인 관리
     const handleLogin = async () => {
         const result = await login(formData.loginId, formData.password);
         if (result.success) {
-            alert('로그인 성공! 메인 페이지로 이동합니다.');
+            // 로그인 성공 시 사용자 정보 표시
+            const welcomeMessage = result.data.username
+                ? `환영합니다, ${result.data.username}님! 메인 페이지로 이동합니다.`
+                : '로그인 성공! 메인 페이지로 이동합니다.';
+
+            alert(welcomeMessage);
             navigate('/main');
         }
     };
 
+    // 회원가입 관리
     const handleSignup = async () => {
         if (formData.password !== formData.confirmPassword) {
             clearError();
@@ -81,6 +88,19 @@ const AuthPage = () => {
         }
     };
 
+    // 폼 데이터를 초기화하는 함수
+    const resetForm = () => {
+        setFormData({
+            email: '',
+            password: '',
+            confirmPassword: '',
+            username: '',
+            loginId: ''
+        });
+        clearError();
+        resetLoginIdState();
+    };
+
     const handleCheckLoginId = async () => {
         await checkLoginId(formData.loginId);
     };
@@ -96,7 +116,10 @@ const AuthPage = () => {
                     setShowPassword={setShowPassword}
                     isLoading={isLoading}
                     error={error}
-                    setCurrentPage={setCurrentPage}
+                    setCurrentPage={(page) => {
+                        resetForm();
+                        setCurrentPage(page);
+                    }}
                 />
             );
         case 'signup':
@@ -118,7 +141,11 @@ const AuthPage = () => {
                 />
             );
         default:
-            return <MainAuthPage setCurrentPage={setCurrentPage} />;
+            return <MainAuthPage  setCurrentPage={(page) => {
+                resetForm();
+                setCurrentPage(page);
+            }}
+            />;
     }
 };
 

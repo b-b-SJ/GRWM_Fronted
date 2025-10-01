@@ -82,14 +82,16 @@ const MessageInput = ({ onSendMessage, replyingTo, onCancelReply }) => {
                             placeholder={replyingTo ? "답장을 입력하세요..." : "메시지를 입력하세요..."}
                             className="w-full px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-12"
                         />
-                        {/* 이모지 버튼 (기능 구현 예정) */}
-                        <button
-                            type="button"
+                        {/*
+                       // 이모지 버튼 (임시. 일단 삭제)
+                         <button
+                             type="button"
                             className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
                             title="이모지"
                         >
                             <Smile size={18} className="text-gray-600" />
                         </button>
+                         */}
                     </div>
 
                     {/* 메시지 전송 버튼 */}
