@@ -179,7 +179,7 @@ const WorkspaceSidebar = ({
                                             ) : (
                                                 <Hash size={14} className="text-gray-500" />
                                             )}
-                                            {room.isOwner && <Crown size={14} className="text-yellow-500" />}
+                                            {room.isManager && <Crown size={14} className="text-yellow-500" />}
                                         </div>
 
                                         {/* 채팅방 정보 표시 */}
