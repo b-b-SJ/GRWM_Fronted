@@ -38,42 +38,6 @@ export const AuthProvider = ({ children }) => {
         setIsLoading(true);
         setError('');
 
-        // 하드코딩 유저 (개발용) - JWT 형식으로 수정 + userId 추가
-        if (loginId === 'test' && password === '1234') {
-            const mockResponse = {
-                tokenType: 'Bearer',
-                accessToken: 'dummy-jwt-token',
-                username: 'Test User',
-                userId: 1 // userId 추가
-            };
-
-            // 토큰과 사용자 정보 저장 (userId 포함)
-            localStorage.setItem('accessToken', mockResponse.accessToken);
-            localStorage.setItem('userData', JSON.stringify({
-                userId: mockResponse.userId,
-                username: mockResponse.username,
-                loginId: loginId
-            }));
-
-            setIsAuthenticated(true);
-            setUser({
-                userId: mockResponse.userId,
-                username: mockResponse.username,
-                loginId: loginId
-            });
-
-            setIsLoading(false);
-            return {
-                success: true,
-                data: {
-                    tokenType: mockResponse.tokenType,
-                    accessToken: mockResponse.accessToken,
-                    username: mockResponse.username,
-                    userId: mockResponse.userId
-                }
-            };
-        }
-
         try {
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
