@@ -491,6 +491,7 @@ const WorkspacePage = () => {
                         <ChatRoomExplorer
                             workspaceMode={workspaceMode}
                             onJoinRoom={handleJoinRoomFromExplorer}
+                            joinedRoomIds={chatRooms.map(room => room.chatRoomId)}
                         />
                     ) : selectedRoom ? (
                         <ChatRoom

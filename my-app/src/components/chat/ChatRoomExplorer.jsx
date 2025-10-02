@@ -108,7 +108,7 @@ const PasswordModal = ({ isOpen, onClose, onSubmit, roomName, isLoading }) => {
 };
 
 // 채팅방 카드 컴포넌트
-const ChatRoomCard = ({ room, onJoinRoom }) => {
+const ChatRoomCard = ({ room, onJoinRoom, isJoined = false }) => {
     const isFull = room.maxMembers > 0 && room.currentMembers >= room.maxMembers;
 
     return (
@@ -147,10 +147,16 @@ const ChatRoomCard = ({ room, onJoinRoom }) => {
 
                 <button
                     onClick={() => onJoinRoom(room)}
-                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                    disabled={isFull}
+                    className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+                        isJoined
+                            ? 'bg-gray-500 text-white cursor-default'
+                            : isFull
+                                ? 'bg-gray-500 text-white cursor-not-allowed'
+                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                    disabled={isFull || isJoined}
                 >
-                    {isFull ? '만석' : '입장하기'}
+                    {isJoined ? '참여 중' : isFull ? '만석' : '입장하기'}
                 </button>
             </div>
         </div>
@@ -160,7 +166,8 @@ const ChatRoomCard = ({ room, onJoinRoom }) => {
 // 메인 탐색 컴포넌트
 const ChatRoomExplorer = ({
                               workspaceMode = '채팅룸',
-                              onJoinRoom = (roomId) => console.log('Joining room:', roomId)
+                              onJoinRoom = (roomId) => console.log('Joining room:', roomId),
+                              joinedRoomIds = [] // ✅ 추가: 참여 중인 방 ID 배열
                           }) => {
     const [rooms, setRooms] = useState([]);
     const [filteredRooms, setFilteredRooms] = useState([]);
@@ -182,11 +189,7 @@ const ChatRoomExplorer = ({
             try {
                 setLoading(true);
 
-                // 로컬 스토리지에서 토큰 가져오기
-                const token = localStorage.getItem('accessToken'); // 또는 'token', 'authToken' 등
-
-                // 디버깅: 토큰 확인
-                console.log('Token:', token ? '존재함' : '없음');
+                const token = localStorage.getItem('accessToken');
 
                 if (!token) {
                     throw new Error('로그인 토큰이 없습니다.');
@@ -196,13 +199,10 @@ const ChatRoomExplorer = ({
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`, // 토큰을 Authorization 헤더에 추가
+                        'Authorization': `Bearer ${token}`,
                     },
                     credentials: 'include',
                 });
-
-                // 디버깅: 응답 상태 확인
-                console.log('Response status:', response.status);
 
                 if (!response.ok) {
                     if (response.status === 403 || response.status === 401) {
@@ -213,27 +213,34 @@ const ChatRoomExplorer = ({
 
                 const data = await response.json();
 
-                // DTO를 컴포넌트 형식으로 변환
-                const formattedRooms = data.map(room => ({
-                    id: room.chatRoomId,
-                    roomName: room.chatRoomName,
-                    description: room.description,
-                    category: room.category,
-                    isPrivate: room.isPrivate,
-                    currentMembers: room.currentMembers,
-                    maxMembers: room.maxMembers,
-                }));
+                console.log('API 원본 응답:', data);
 
+                const formattedRooms = data.map(room => {
+                    console.log('Room 변환:', {
+                        id: room.chatRoomId,
+                        isPrivate: room.private || room.isPrivate || false,
+                        원본: room
+                    });
+
+                    return {
+                        id: room.chatRoomId,
+                        roomName: room.chatRoomName,
+                        description: room.description,
+                        category: room.category,
+                        currentMembers: room.currentMembers,
+                        maxMembers: room.maxMembers,
+                        isPrivate: room.private || room.isPrivate || false, // 필드명
+                    };
+                });
+
+                console.log('변환된 rooms:', formattedRooms);
                 setRooms(formattedRooms);
 
             } catch (error) {
                 console.error('채팅방 목록 로딩 오류:', error);
 
-                // 403 에러 (인증 필요) 처리
                 if (error.message.includes('403') || error.message.includes('Forbidden')) {
                     alert('로그인이 필요한 서비스입니다. 로그인 페이지로 이동합니다.');
-                    // 로그인 페이지로 리다이렉트 (실제 경로로 수정 필요)
-                    // window.location.href = '/login';
                 } else {
                     alert('채팅방 목록을 불러올 수 없습니다. 다시 시도해주세요.');
                 }
@@ -275,47 +282,39 @@ const ChatRoomExplorer = ({
 
     // 채팅방 입장 처리
     const handleJoinRoom = async (room) => {
+        // isPrivate 체크를 먼저 하도록 변경
         if (room.isPrivate) {
             setPasswordModal({
                 isOpen: true,
                 room,
                 isLoading: false
             });
-        } else {
-            await joinPublicRoom(room);
+            return;
         }
+
+        // 이미 참여 중인 방이면 아무 동작도 하지 않음
+        if (joinedRoomIds.includes(room.id)) {
+            alert('이미 참여 중인 채팅방입니다.');
+            return;
+        }
+
+        await joinPublicRoom(room);
     };
 
     // 공개방 입장
     const joinPublicRoom = async (room) => {
         try {
-            const token = localStorage.getItem('accessToken');
-
-            if (!token) {
-                throw new Error('로그인 토큰이 없습니다.');
-            }
-
-            const response = await fetch(`http://localhost:8080/api/chat-room/${room.id}/join`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                credentials: 'include',
-            });
-
-            if (!response.ok) {
-                if (response.status === 401 || response.status === 403) {
-                    throw new Error('인증이 만료되었습니다. 다시 로그인해주세요.');
-                }
-                const errorText = await response.text();
-                throw new Error(errorText || '입장에 실패했습니다.');
-            }
-
-            onJoinRoom(room.id);
-
+            // ChatStateContext의 joinChatRoom에 위임
+            await onJoinRoom(room.id);
         } catch (error) {
             console.error('공개방 입장 오류:', error);
+
+            // 이미 참여 중인 경우 처리
+            if (error.message && (error.message.includes('이미') || error.message.includes('already'))) {
+                alert('이미 참여 중인 채팅방입니다.');
+                return;
+            }
+
             alert(error.message || '채팅방 입장에 실패했습니다.');
         }
     };
@@ -325,12 +324,20 @@ const ChatRoomExplorer = ({
         setPasswordModal(prev => ({ ...prev, isLoading: true }));
 
         try {
+            const token = localStorage.getItem('accessToken');
+
+            if (!token) {
+                throw new Error('로그인 토큰이 없습니다.');
+            }
+
+            // 비밀번호 검증만 수행
             const verifyResponse = await fetch(
                 `http://localhost:8080/api/chat-room/${passwordModal.room.id}/verify`,
                 {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
                     },
                     credentials: 'include',
                     body: JSON.stringify({ password }),
@@ -338,28 +345,12 @@ const ChatRoomExplorer = ({
             );
 
             if (!verifyResponse.ok) {
-                const errorText = await verifyResponse.text();
-                throw new Error(errorText || '비밀번호가 일치하지 않습니다.');
+                throw new Error('비밀번호가 일치하지 않습니다.');
             }
 
-            const joinResponse = await fetch(
-                `http://localhost:8080/api/chat-room/${passwordModal.room.id}/join`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    credentials: 'include',
-                }
-            );
-
-            if (!joinResponse.ok) {
-                const errorText = await joinResponse.text();
-                throw new Error(errorText || '입장에 실패했습니다.');
-            }
-
+            // 검증 성공 후 ChatStateContext에 위임
             setPasswordModal({ isOpen: false, room: null, isLoading: false });
-            onJoinRoom(passwordModal.room.id);
+            await onJoinRoom(passwordModal.room.id);
 
         } catch (error) {
             console.error('비공개방 입장 오류:', error);
@@ -449,6 +440,7 @@ const ChatRoomExplorer = ({
                                 key={room.id}
                                 room={room}
                                 onJoinRoom={handleJoinRoom}
+                                isJoined={joinedRoomIds.includes(room.id)}
                             />
                         ))}
                     </div>
