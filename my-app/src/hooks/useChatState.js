@@ -154,8 +154,6 @@ export const ChatStateProvider = ({ children }) => {
                     // isManager 관련 필드 확인
                     console.log('isManager 필드:', rooms[0].isManager);
                     console.log('manager 필드:', rooms[0].manager);
-                    console.log('isOwner 필드:', rooms[0].isOwner);
-                    console.log('owner 필드:', rooms[0].owner);
                 }
 
                 const processedRooms = rooms.map(room => ({
@@ -163,7 +161,7 @@ export const ChatStateProvider = ({ children }) => {
                     chatRoomName: room.roomName || room.chatRoomName,
                     currentMembers: room.currentMembers || room.members || 0,
                     isPrivate: room.private || room.isPrivate || false,
-                    isManager: room.isManager || false
+                    isManager: room.isManager || room.manager || false
                 }));
                 setChatRooms(processedRooms);
 
