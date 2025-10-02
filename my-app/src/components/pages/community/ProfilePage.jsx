@@ -12,15 +12,15 @@ const ProfilePage = () => {
   const { profile, loadingProfile, error, getUserProfile, loadMockProfile } =
     useProfile();
   const navigate = useNavigate();
-  const { communityId } = useParams();
-  console.log("으으으으으", communityId);
-  console.log("끼야야야", profile);
+  const param = useParams();
+  console.log("URL 파라미터 전체:", param, param.communityId);
+  console.log("현재 URL:", window.location.pathname);
   // 페이지가 처음 보일 때, communityId로 프로필 정보를 요청
   useEffect(() => {
-    if (communityId) {
-      loadMockProfile(communityId);
+    if (1) {
+      getUserProfile(1);
     }
-  }, [loadMockProfile, communityId]);
+  }, [getUserProfile, 1]);
 
   // 로딩, 에러, 빈 상태 처리
   if (loadingProfile) return <div>로딩 중...</div>;

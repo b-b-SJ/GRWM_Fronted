@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { UserRound } from "lucide-react";
-
+import { useAuth } from "./AuthContext";
 // 목업 데이터
 const mockProfiles = [
   {
@@ -89,7 +89,7 @@ const myProfile = {
 };
 const initialProfile = {
   User: {
-    communityId: "youyousangjong",
+    communityId: 3,
     nickName: "유유상종수",
     profileImage:
       "https://i.ibb.co/FbWvz1bB/2025030118134100-02-CB906-EA538-A35643-C1-E1484-C4-B947-D.jpg",
@@ -106,205 +106,286 @@ const initialProfile = {
 };
 
 export function useProfile() {
-  const [profile, setProfile] = useState(initialProfile); //초기값.
+  const { user, getAuthHeaders, isAuthenticated } = useAuth();
+  const communityId = user.userId;
+  console.log("오시는지?", communityId, user);
+  const [profile, setProfile] = useState(initialProfile);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [error, setError] = useState(null);
 
-  //프로필정보 가져오기 -함수명들 내가 적은 명세 보고 해야하는 걸까..(모름)
-  const getUserProfile = useCallback(async (communityId) => {
-    //확인 필요
-    //loadMockProfile을 여기에 적용?하면 이게 테스트가 돌아갈지??
-    setLoadingProfile(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`/api/users/{userId}/profile`, {
-        method: "GET",
-        headers: { contentType: "application/json" },
-      });
-
-      if (response.ok) {
-        const profileInfo = await response.json();
-        setProfile(profileInfo);
-      } else {
-        console.error("프로필 조회에 실패했습니다");
-        setProfile(initialProfile);
-      }
-    } catch (error) {
-      console.error("프로필 조회 에러", error);
-      setProfile(initialProfile);
-    } finally {
-      setLoadingProfile(false);
-    }
-  }, []); //[]에는 뭐 넣어야하는 거지
-
-  const getMyProfile = useCallback(async (communityId) => {
-    //음?? 내 프로필에 대해서 추가적으로 작성할 코드는?
-    //loadMockProfile을 여기에 적용?하면 이게 테스트가 돌아갈지??
-    setLoadingProfile(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`/api/users/me/profile`, {
-        method: "GET",
-        headers: { contentType: "application/json" },
-      });
-
-      if (response.ok) {
-        const profileInfo = await response.json();
-        setProfile(profileInfo);
-      } else {
-        console.error("프로필 조회에 실패했습니다");
-        setProfile(myProfile); //크ㅡ앙
-      }
-    } catch (error) {
-      console.error("프로필 조회 에러", error);
-      setProfile(myProfile); //크-앙
-    } finally {
-      setLoadingProfile(false);
-    }
-  }, []);
-
-  const updateUserProfile = useCallback(async (communityId, userData) => {
-    //얘도 확인필요
-
-    try {
-      const requestData = {};
-      const response = await fetch(``, {
-        method: "PUT",
-        headers: {
-          contentType: "application/json",
-          //authorization, //본인일 경우에만 허용
-        },
-        body: JSON.stringify(requestData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "프로필 편집에 실패했습니다");
+  // ===== 다른 사용자 프로필 조회 =====
+  const getUserProfile = useCallback(
+    async (communityId) => {
+      if (!communityId) {
+        console.error("communityId가 필요합니다");
+        return;
       }
 
-      //편집 된 거 다시 가져와
+      setLoadingProfile(true);
+      setError(null);
 
-      await getUserProfile();
-
-      //신규 생성이면 아이디 같은 걸 줄텐데 그게 아니라면 뭘 주는?
-    } catch (error) {
-      console.error("프로필 편집 오류:", error);
-      setError(error.message);
-      throw error;
-    } finally {
-      setLoadingProfile(false);
-    }
-  }, []);
-
-  const createUserProfile = useCallback(async (userData) => {
-    try {
-      const requestData = {};
-      const response = await fetch("", {
-        method: "POST",
-        headers: {
-          contentType: "application/json",
-        },
-        body: JSON.stringify(requestData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "프로필 생성에 실패했습니다");
-      }
-
-      await getUserProfile();
-    } catch (error) {
-      console.error("프로필 생성 오류:", error);
-      setError(error.message);
-      throw error;
-    } finally {
-      setLoadingProfile(false);
-    }
-  }, []);
-
-  const followUser = useCallback(
-    async (communityId, targetId) => {
       try {
-        const response = await fetch(`/api/users/${targetId}/follow`, {
-          method: "POST",
+        const response = await fetch(
+          `http://localhost:8080/api/users/${communityId}/profile`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              ...getAuthHeaders(),
+            },
+          }
+        );
+
+        if (response.ok) {
+          const profileInfo = await response.json();
+          setProfile(profileInfo);
+          console.log("프로필 조회 성공:", profileInfo);
+        } else {
+          console.error("프로필 조회 실패:", response.status);
+          setError("프로필 조회에 실패했습니다");
+          setProfile(initialProfile);
+        }
+      } catch (error) {
+        console.error("프로필 조회 에러:", error);
+        setError(error.message);
+        setProfile(initialProfile);
+      } finally {
+        setLoadingProfile(false);
+      }
+    },
+    [getAuthHeaders]
+  );
+
+  // ===== 내 프로필 조회 =====
+  const getMyProfile = useCallback(async () => {
+    setLoadingProfile(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/users/me/profile`,
+        {
+          method: "GET",
           headers: {
-            contentType: "application/json",
-            //authorization도 필요한지?
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
           },
-          body: null, //머가 들어가디?온즈오브 갤럭시 ㅇㅈㄹ
-        });
+        }
+      );
+
+      if (response.ok) {
+        const profileInfo = await response.json();
+        setProfile(profileInfo);
+        console.log("내 프로필 조회 성공:", profileInfo);
+      } else {
+        console.error(" 내 프로필 조회 실패:", response.status);
+        setError("프로필 조회에 실패했습니다");
+        setProfile(myProfile);
+      }
+    } catch (error) {
+      console.error("내 프로필 조회 에러:", error);
+      setError(error.message);
+      setProfile(myProfile);
+    } finally {
+      setLoadingProfile(false);
+    }
+  }, [getAuthHeaders]);
+
+  // ===== 컴포넌트 마운트 시 자동으로 내 프로필 가져오기 =====
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      getMyProfile();
+    }
+  }, [isAuthenticated, user, getMyProfile]);
+
+  // ===== 프로필 수정 =====
+  const updateUserProfile = useCallback(
+    async (communityId, userData) => {
+      if (!communityId || !userData) {
+        console.error("communityId와 userData가 필요합니다");
+        return;
+      }
+
+      setLoadingProfile(true);
+      setError(null);
+
+      try {
+        const requestData = {
+          nickname: userData.nickname,
+          description: userData.description,
+          profileImage: userData.profileImage,
+          bannerImage: userData.bannerImage,
+        };
+
+        const response = await fetch(
+          `http://localhost:8080/api/users/${communityId}/profile`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json", // ⚠️ 수정
+              ...getAuthHeaders(),
+            },
+            body: JSON.stringify(requestData),
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "프로필 편집에 실패했습니다");
+        }
+
+        // 수정 후 다시 프로필 가져오기
+        await getUserProfile(communityId);
+        console.log("✅ 프로필 수정 성공");
+      } catch (error) {
+        console.error("❌ 프로필 편집 오류:", error);
+        setError(error.message);
+        throw error;
+      } finally {
+        setLoadingProfile(false);
+      }
+    },
+    [getUserProfile, getAuthHeaders]
+  );
+
+  // ===== 프로필 생성 =====
+  const createUserProfile = useCallback(
+    async (userData) => {
+      setLoadingProfile(true);
+      setError(null);
+
+      try {
+        const requestData = {
+          nickname: userData.nickname,
+          description: userData.description,
+          profileImage: userData.profileImage,
+          bannerImage: userData.bannerImage,
+        };
+
+        const response = await fetch(
+          `http://localhost:8080/api/users/profile`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json", // ⚠️ 수정
+              ...getAuthHeaders(),
+            },
+            body: JSON.stringify(requestData),
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "프로필 생성에 실패했습니다");
+        }
+
+        const newProfile = await response.json();
+        setProfile(newProfile);
+        console.log("✅ 프로필 생성 성공:", newProfile);
+      } catch (error) {
+        console.error("❌ 프로필 생성 오류:", error);
+        setError(error.message);
+        throw error;
+      } finally {
+        setLoadingProfile(false);
+      }
+    },
+    [getAuthHeaders]
+  );
+
+  // ===== 팔로우 =====
+  const followUser = useCallback(
+    async (targetId) => {
+      if (!targetId) {
+        console.error("targetId가 필요합니다");
+        return;
+      }
+
+      setLoadingProfile(true);
+      setError(null);
+
+      try {
+        const response = await fetch(
+          `http://localhost:8080/api/users/${targetId}/follow`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json", // ⚠️ 수정
+              ...getAuthHeaders(),
+            },
+          }
+        );
+
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.message || "팔로우에 실패했습니다");
-        } else {
-          //팔로우 성공시 프로필 정보 다시 불러오기
-          await getUserProfile(communityId);
         }
+
+        // 팔로우 성공시 내 프로필 정보 다시 불러오기
+        await getMyProfile();
+        console.log("✅ 팔로우 성공");
       } catch (error) {
-        console.error("팔로우 오류:", error);
+        console.error("❌ 팔로우 오류:", error);
         setError(error.message);
         throw error;
       } finally {
         setLoadingProfile(false);
       }
     },
-    [getUserProfile]
+    [getMyProfile, getAuthHeaders]
   );
 
+  // ===== 언팔로우 =====
   const unfollowUser = useCallback(
-    async (communityId, targetId) => {
+    async (targetId) => {
+      if (!targetId) {
+        console.error("targetId가 필요합니다");
+        return;
+      }
+
+      setLoadingProfile(true);
+      setError(null);
+
       try {
-        const response = await fetch(`/api/users/${targetId}/follow`, {
-          method: "DELETE",
-          headers: { contentType: "application/json" },
-          body: null,
-        });
+        const response = await fetch(
+          `http://localhost:8080/api/users/${targetId}/follow`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json", // ⚠️ 수정
+              ...getAuthHeaders(),
+            },
+          }
+        );
+
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.message || "언팔로우에 실패했습니다");
-        } else {
-          await getUserProfile(communityId);
         }
+
+        await getMyProfile();
+        console.log("✅ 언팔로우 성공");
       } catch (error) {
-        console.error("언팔로우 오류", error);
+        console.error("❌ 언팔로우 오류:", error);
         setError(error.message);
         throw error;
       } finally {
         setLoadingProfile(false);
       }
     },
-    [getUserProfile]
+    [getMyProfile, getAuthHeaders]
   );
 
-  // 목업 데이터로 테스트하는 함수 (개발용)
-  const loadMockProfile = useCallback((communityId) => {
-    const mockProfile = mockProfiles.find(
-      (p) => p.User.communityId === communityId
-    );
-    if (mockProfile) {
-      setProfile(mockProfile);
-    } else {
-      setProfile(initialProfile);
-    }
-  }, []);
-
   return {
-    profile, // 단일 프로필로 변경
-    myProfile,
+    profile,
+    myProfile, // 목업 데이터
     getUserProfile,
+    getMyProfile,
     updateUserProfile,
-    loadMockProfile, // 개발용 목업 로더
-    error,
-    loadingProfile,
+    createUserProfile,
     followUser,
     unfollowUser,
-    getMyProfile,
+    error,
+    loadingProfile,
   };
 }
-//유저 아이디는 string이 아니라 long
-//구현 우선 순위!!! 프로필화면
-//팔로잉 팔로우 로직 연결
-//-> 포스팅 스크롤까지.
-//포스팅 작성 같은 거는 나중에-> 프로필 편집+포스팅 작성 함께 진행 -> 이미지 업로드 기능

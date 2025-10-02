@@ -50,7 +50,7 @@ export function usePost() {
     },
     {
       postId: "123",
-      communityId: "onetwothree",
+      communityId: 3,
       userName: "가을이다~",
       profileImage:
         "https://cdn.mos.cms.futurecdn.net/7CfzWqwoHSzqtyQrfvnTwN-1200-80.jpg",
@@ -114,7 +114,7 @@ export function usePost() {
     try {
       //특정 유저가 작성한 게시물 리스트
       const response = await fetch(
-        `api/community-posts?communityId={communityId}`,
+        `http://localhost:8080/api/community-posts?communityId={communityId}`,
         {
           method: "GET",
           headers: {

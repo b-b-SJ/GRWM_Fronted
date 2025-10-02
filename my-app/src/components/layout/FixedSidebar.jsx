@@ -243,7 +243,10 @@ const FixedSidebar = ({ currentUser }) => {
                   <Edit3 size={14} className="text-gray-500" />
                 </button>
               </div>
-              <div className="flex items-center space-x-3">
+              <div
+                className="flex items-center space-x-3"
+                onClick={() => navigate("/profile/:communityId")}
+              >
                 <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
                   <Users size={20} className="text-white" />
                 </div>

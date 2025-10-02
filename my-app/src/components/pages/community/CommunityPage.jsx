@@ -35,7 +35,7 @@ const CommunityPage = () => {
         <div className="flex flex-col col-span-1 mt-6 lg:ms-48 lg:me-60">
           <Routes>
             <Route path="/" element={<TimeLinePage />} />
-            <Route path="/profile/my" element={<MyProfilePage />} />
+            {/*<Route path="/profile/my" element={<MyProfilePage />} />*/}
             <Route path="/profile/:communityId" element={<ProfilePage />} />
 
             {/**userId 받는 시그로 처리해야됨 */}

@@ -2,9 +2,11 @@ import React from "react";
 import { usePost } from "../../hooks/usePost";
 import { Link } from "react-router-dom";
 import { Heart, MessageSquare, EllipsisVertical } from "lucide-react";
+import { useParams } from "react-router-dom";
 const PostingStyle = ({ communityId, postId }) => {
   const posts = usePost();
-
+  const params = useParams();
+  console.log("전체 파라믖", params);
   //지금으로부터 얼마 경과했는지
   const postWriterData = posts.getUserSimpProfile(communityId);
   const postContentData = posts.getContent(postId);

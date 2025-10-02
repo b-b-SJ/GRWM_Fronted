@@ -6,6 +6,7 @@ import HashtagTimeLine from "../../community/HashtagTimeLine";
 import PostingStyle from "../../community/PostingStyle";
 const TimeLinePage = () => {
   const [timeLine, setTimeLine] = useState("main");
+
   return (
     <div>
       <h1 className="bg-fuchsia-300 text-3xl p-4">타임라인 헤더 - 수정 예정</h1>
@@ -25,10 +26,10 @@ const TimeLinePage = () => {
           해시태그
         </button>
       </nav>
-      <PostingStyle communityId={"onetwothree"} postId={"123"} />
-      <PostingStyle communityId={"youyousangjong"} postId={"12"} />
-      <PostingStyle communityId={"youyousangjong"} postId={"120"} />
-      <PostingStyle communityId={"gyudong"} postId={"21"} />
+      <PostingStyle communityId={3} postId={"123"} />
+      <PostingStyle communityId={10} postId={"12"} />
+      <PostingStyle communityId={10} postId={"120"} />
+      <PostingStyle communityId={2} postId={"21"} />
 
       {timeLine === "main" ? <MainTimeLine /> : <HashtagTimeLine />}
     </div>
