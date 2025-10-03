@@ -138,22 +138,21 @@ export const ChatStateProvider = ({ children }) => {
         try {
             const response = await fetch(`/api/chat-room/show/${currentUser.userId}/joinlist`, {
                 method: 'GET',
-                headers: getAuthHeaders()
+                headers: {
+                    ...getAuthHeaders(),
+                    'Cache-Control': 'no-cache'  // 캐시 방지
+                }
             });
 
             if (response.ok) {
                 const rooms = await response.json();
-                // ✅ 백엔드 원본 응답 확인
+                // 백엔드 원본 응답 확인
                 console.log('=== 백엔드 원본 응답 ===');
                 console.log('전체 rooms:', rooms);
 
                 if (rooms.length > 0) {
                     console.log('첫 번째 방 필드들:', Object.keys(rooms[0]));
                     console.log('첫 번째 방 전체 데이터:', rooms[0]);
-
-                    // isManager 관련 필드 확인
-                    console.log('isManager 필드:', rooms[0].isManager);
-                    console.log('manager 필드:', rooms[0].manager);
                 }
 
                 const processedRooms = rooms.map(room => ({
@@ -308,18 +307,27 @@ export const ChatStateProvider = ({ children }) => {
         }
     }, [currentUser.userId, currentUser.username, currentUser.loginId, isAuthenticated, getAuthHeaders, fetchChatRooms]);
 
+    const leaveRoom = useCallback(() => {
+        console.log('방 나가기');
+        if (websocketRef.current) {
+            websocketRef.current.close(1000, 'User left');
+        }
+        setSelectedRoom(null);
+        setReplyTo(null);
+        setConnectionStatus('disconnected');
+    }, []);
+
     const leaveChatRoom = useCallback(async (chatRoomId) => {
         if (!isAuthenticated || !currentUser.userId) {
             throw new Error('로그인이 필요합니다.');
         }
 
-        const response = await fetch('/api/chat-room/leave', {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: JSON.stringify({
-                userId: currentUser.userId,
-                chatRoomId: chatRoomId
-            })
+        console.log('Request URL:', `/api/chat-room/${chatRoomId}/${currentUser.userId}/leave`); // 디버깅용
+        console.log('Headers:', getAuthHeaders()); // 디버깅용
+
+        const response = await fetch(`/api/chat-room/${chatRoomId}/${currentUser.userId}/leave`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
         });
 
         if (!response.ok) {
@@ -333,7 +341,7 @@ export const ChatStateProvider = ({ children }) => {
 
         await fetchChatRooms();
         return true;
-    }, [currentUser.userId, isAuthenticated, getAuthHeaders, selectedRoom, fetchChatRooms]);
+    }, [currentUser.userId, isAuthenticated, getAuthHeaders, selectedRoom, fetchChatRooms, leaveRoom]);
 
     const getChatRoomInfo = useCallback(async (chatRoomId) => {
         if (!isAuthenticated || !currentUser.userId) {
@@ -399,7 +407,7 @@ export const ChatStateProvider = ({ children }) => {
 
         await fetchChatRooms();
         return true;
-    }, [isAuthenticated, currentUser.userId, getAuthHeaders, selectedRoom, fetchChatRooms]);
+    }, [isAuthenticated, currentUser.userId, getAuthHeaders, selectedRoom, fetchChatRooms, leaveRoom]);
 
     const createAnnouncement = useCallback(async (chatRoomId, content) => {
         if (!isAuthenticated || !currentUser.userId) {
@@ -736,16 +744,6 @@ destination:/topic/chat.${chatRoomId}
 
         connectWebSocket(chatRoomId);
     }, [connectWebSocket, isAuthenticated, currentUser.userId]);
-
-    const leaveRoom = useCallback(() => {
-        console.log('방 나가기');
-        if (websocketRef.current) {
-            websocketRef.current.close(1000, 'User left');
-        }
-        setSelectedRoom(null);
-        setReplyTo(null);
-        setConnectionStatus('disconnected');
-    }, []);
 
     useEffect(() => {
         if (isAuthenticated && currentUser.userId && isChatPage) {
