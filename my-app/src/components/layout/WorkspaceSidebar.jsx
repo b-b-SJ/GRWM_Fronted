@@ -212,10 +212,7 @@ const WorkspaceSidebar = ({
                     })}
 
                     {/* 스터디룸 목록 (예시 데이터, 차후 수정) */}
-                    {!isLoadingRooms && workspaceMode === '스터디룸' && [
-                        { studyRoomId: '1', name: '코딩테스트 스터디', members: 8, subject: 'Algorithm', status: 'active' },
-                        { studyRoomId: '2', name: 'React 프로젝트', members: 5, subject: 'Frontend', status: 'active' },
-                    ].map((room) => (
+                    {!isLoadingRooms && workspaceMode === '스터디룸' && [].map((room) => (
                         <div
                             key={room.studyRoomId}
                             onClick={() => {
