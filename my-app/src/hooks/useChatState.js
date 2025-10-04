@@ -307,6 +307,7 @@ export const ChatStateProvider = ({ children }) => {
         }
     }, [currentUser.userId, currentUser.username, currentUser.loginId, isAuthenticated, getAuthHeaders, fetchChatRooms]);
 
+    // 채팅방을 떠날 때 UI 상태를 정리
     const leaveRoom = useCallback(() => {
         console.log('방 나가기');
         if (websocketRef.current) {
@@ -317,6 +318,7 @@ export const ChatStateProvider = ({ children }) => {
         setConnectionStatus('disconnected');
     }, []);
 
+    // 채팅방 나가기
     const leaveChatRoom = useCallback(async (chatRoomId) => {
         if (!isAuthenticated || !currentUser.userId) {
             throw new Error('로그인이 필요합니다.');
@@ -325,7 +327,7 @@ export const ChatStateProvider = ({ children }) => {
         console.log('Request URL:', `/api/chat-room/${chatRoomId}/${currentUser.userId}/leave`); // 디버깅용
         console.log('Headers:', getAuthHeaders()); // 디버깅용
 
-        const response = await fetch(`/api/chat-room/${chatRoomId}/${currentUser.userId}/leave`, {
+        const response = await fetch(`/api/chat-room/${chatRoomId}/leave`, {
             method: 'DELETE',
             headers: getAuthHeaders()
         });
@@ -343,6 +345,7 @@ export const ChatStateProvider = ({ children }) => {
         return true;
     }, [currentUser.userId, isAuthenticated, getAuthHeaders, selectedRoom, fetchChatRooms, leaveRoom]);
 
+    // 채팅방 정보
     const getChatRoomInfo = useCallback(async (chatRoomId) => {
         if (!isAuthenticated || !currentUser.userId) {
             throw new Error('로그인이 필요합니다.');
