@@ -167,7 +167,7 @@ const ChatRoomCard = ({ room, onJoinRoom, isJoined = false }) => {
 const ChatRoomExplorer = ({
                               workspaceMode = '채팅룸',
                               onJoinRoom = (roomId) => console.log('Joining room:', roomId),
-                              joinedRoomIds = [] // ✅ 추가: 참여 중인 방 ID 배열
+                              joinedRoomIds = [] // 추가: 참여 중인 방 ID 배열
                           }) => {
     const [rooms, setRooms] = useState([]);
     const [filteredRooms, setFilteredRooms] = useState([]);
