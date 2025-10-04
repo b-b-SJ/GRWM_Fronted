@@ -52,6 +52,7 @@ const parseStompMessage = (data) => {
     }
 };
 
+// 백엔드 연결 실패 시, 테스트 용 채팅방
 const getTestRooms = (username, isTemporary = false) => {
     return [
         {
@@ -216,12 +217,13 @@ export const ChatStateProvider = ({ children }) => {
             body: JSON.stringify(requestData)
         });
 
+        const data = await response.json();
+
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || '채팅방 생성에 실패했습니다.');
+            throw new Error(data.message || '채팅방 생성에 실패했습니다.');
         }
 
-        return await response.json();
+        return data;
     }, [currentUser.userId, isAuthenticated, getAuthHeaders]);
 
     const verifyRoomPassword = useCallback(async (chatRoomId, password) => {
@@ -332,9 +334,16 @@ export const ChatStateProvider = ({ children }) => {
             headers: getAuthHeaders()
         });
 
+        let data = {};
+        if (response.status !== 204) { // 204 No Content가 아닐 경우만 본문 읽기 시도
+            try {
+                data = await response.json();
+            } catch (e) {
+                console.warn('DELETE 응답이 JSON이 아님');
+            }
+        }
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || '채팅방 나가기에 실패했습니다.');
+            throw new Error(data.message || '채팅방 나가기에 실패했습니다.');
         }
 
         if (selectedRoom === chatRoomId) {
@@ -356,12 +365,14 @@ export const ChatStateProvider = ({ children }) => {
             headers: getAuthHeaders()
         });
 
+        const data = await response.json();
+
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || '채팅방 정보 조회 실패');
+            throw new Error(data.message || '채팅방 정보 조회 실패');
         }
 
-        return await response.json();
+        return data;
+
     }, [isAuthenticated, currentUser.userId, getAuthHeaders]);
 
     const editChatRoomName = useCallback(async (chatRoomId, roomName, description = null) => {
@@ -380,10 +391,19 @@ export const ChatStateProvider = ({ children }) => {
             body: JSON.stringify(requestData)
         });
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || '채팅방 정보 수정에 실패했습니다.');
+        let data = {};
+        if (response.status !== 204) {
+            try {
+                data = await response.json();
+            } catch (e) {
+                console.warn('PATCH 응답이 JSON이 아님');
+            }
         }
+
+        if (!response.ok) {
+            throw new Error(data.message || '채팅방 정보 수정에 실패했습니다.');
+        }
+
 
         await fetchChatRooms();
         return true;
@@ -399,9 +419,17 @@ export const ChatStateProvider = ({ children }) => {
             headers: getAuthHeaders()
         });
 
+        let data = {};
+        if (response.status !== 204) {
+            try {
+                data = await response.json();
+            } catch (e) {
+                console.warn('DELETE 응답이 JSON이 아님');
+            }
+        }
+
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || '채팅방 삭제에 실패했습니다.');
+            throw new Error(data.message || '채팅방 삭제에 실패했습니다.');
         }
 
         if (selectedRoom === chatRoomId) {
@@ -417,11 +445,20 @@ export const ChatStateProvider = ({ children }) => {
             throw new Error('로그인이 필요합니다.');
         }
 
+        const chatName = currentUser.username || currentUser.loginId || '사용자';
+
         const requestData = {
             userId: currentUser.userId,
-            chatName: currentUser.username || currentUser.chatName,
+            chatName: chatName,
             content: content.trim()
         };
+
+        console.log('공지 생성 요청:', {
+            chatRoomId,
+            userId: currentUser.userId,
+            chatName: chatName,
+            content: content.trim()
+        });
 
         const response = await fetch(`/api/chat-room/${chatRoomId}/announcement/create`, {
             method: 'POST',
@@ -429,14 +466,16 @@ export const ChatStateProvider = ({ children }) => {
             body: JSON.stringify(requestData)
         });
 
+        const result = await response.json();
+
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || '공지 생성에 실패했습니다.');
+            console.error('공지 생성 실패:', result);
+            throw new Error(result.message || '공지 생성에 실패했습니다.');
         }
 
-        return await response.json();
     }, [isAuthenticated, currentUser.userId, currentUser.username, currentUser.chatName, getAuthHeaders]);
 
+    // 공지사항 불러오기
     const getMainAnnouncement = useCallback(async (chatRoomId) => {
         if (!isAuthenticated || !currentUser.userId) {
             throw new Error('로그인이 필요합니다.');
@@ -447,12 +486,13 @@ export const ChatStateProvider = ({ children }) => {
             headers: getAuthHeaders()
         });
 
+        const data = await response.json();
+
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || '공지 조회에 실패했습니다.');
+            throw new Error(data.message || '공지 조회에 실패했습니다.');
         }
 
-        return await response.json();
+        return data;
     }, [isAuthenticated, currentUser.userId, getAuthHeaders]);
 
     const createAndJoinRoom = useCallback(async (roomData) => {
@@ -542,8 +582,8 @@ export const ChatStateProvider = ({ children }) => {
             const messageData = {
                 chatRoomId: parseInt(chatRoomId),
                 content: content,
-                communityId: currentUser.userId
-                // replytoMessageId: replyToId  // ⚠️ 답장 기능 구현 시 주석 해제
+                conmmunityId: currentUser.userId
+                // replytoMessageId: replyToId  //  답장 기능 구현 시 주석 해제
             };
 
             const sendFrame = `SEND
