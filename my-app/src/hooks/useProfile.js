@@ -4,7 +4,7 @@ import { useAuth } from "./AuthContext";
 // 목업 데이터
 const mockProfiles = [
   {
-    User: {
+    user: {
       communityId: "gilgyu",
       nickName: "길규",
       profileImage:
@@ -20,7 +20,7 @@ const mockProfiles = [
     pinnedPostId: null,
   },
   {
-    User: {
+    user: {
       communityId: "gyudong",
       nickName: "규동 먹고 싶다",
       profileImage:
@@ -37,7 +37,7 @@ const mockProfiles = [
     pinnedPostId: "21",
   },
   {
-    User: {
+    user: {
       communityId: "youyousangjong",
       nickName: "유유상종",
       profileImage:
@@ -56,7 +56,7 @@ const mockProfiles = [
 ];
 
 const initialProfile1 = {
-  User: {
+  user: {
     communityId: "gangganggang",
     nickName: "걍가라123",
     profileImage:
@@ -72,8 +72,8 @@ const initialProfile1 = {
   pinnedPostId: null,
 };
 const myProfile = {
-  User: {
-    communityId: "jkbearlover",
+  user: {
+    communityId: 1,
     nickName: "농담곰러버",
     profileImage:
       "https://mblogthumb-phinf.pstatic.net/MjAyMDA1MjZfMjUg/MDAxNTkwNDcxNzQ0NTUx.wLUx0ICJSHhE7CU5CAsa3tPPMkvfa76-XFNgkT5kPJYg.4I4B907z3cE2B6UhRUpCfdgbXuSiSh8muyX-pjQlhfgg.JPEG.cho980827/1590471744738.jpg?type=w800",
@@ -88,9 +88,9 @@ const myProfile = {
   pinnedPostId: null,
 };
 const initialProfile = {
-  User: {
-    communityId: 3,
-    nickName: "유유상종수",
+  user: {
+    communityId: 4,
+    nickname: "유유상종수",
     profileImage:
       "https://i.ibb.co/FbWvz1bB/2025030118134100-02-CB906-EA538-A35643-C1-E1484-C4-B947-D.jpg",
   },
@@ -112,7 +112,8 @@ export function useProfile() {
   const [profile, setProfile] = useState(initialProfile);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [error, setError] = useState(null);
-
+  const headers = getAuthHeaders();
+  console.log("🔑 토큰 보내는 중:", headers);
   // ===== 다른 사용자 프로필 조회 =====
   const getUserProfile = useCallback(
     async (communityId) => {
@@ -131,7 +132,7 @@ export function useProfile() {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              ...getAuthHeaders(),
+              ...headers,
             },
           }
         );
@@ -143,12 +144,13 @@ export function useProfile() {
         } else {
           console.error("프로필 조회 실패:", response.status);
           setError("프로필 조회에 실패했습니다");
-          setProfile(initialProfile);
+          setProfile(null);
         }
+        console.log("📡 응답:", response.status);
       } catch (error) {
         console.error("프로필 조회 에러:", error);
         setError(error.message);
-        setProfile(initialProfile);
+        setProfile(null);
       } finally {
         setLoadingProfile(false);
       }
@@ -156,8 +158,10 @@ export function useProfile() {
     [getAuthHeaders]
   );
 
-  // ===== 내 프로필 조회 =====
-  const getMyProfile = useCallback(async () => {
+  {
+    /** 
+    // ===== 내 프로필 조회 =====
+      const getMyProfile = useCallback(async () => {
     setLoadingProfile(true);
     setError(null);
 
@@ -190,13 +194,19 @@ export function useProfile() {
       setLoadingProfile(false);
     }
   }, [getAuthHeaders]);
+*/
+  }
 
   // ===== 컴포넌트 마운트 시 자동으로 내 프로필 가져오기 =====
   useEffect(() => {
     if (isAuthenticated && user) {
-      getMyProfile();
+      //getMyProfile();
     }
-  }, [isAuthenticated, user, getMyProfile]);
+  }, [
+    isAuthenticated,
+    user,
+    //getMyProfile
+  ]);
 
   // ===== 프로필 수정 =====
   const updateUserProfile = useCallback(
@@ -322,7 +332,7 @@ export function useProfile() {
         }
 
         // 팔로우 성공시 내 프로필 정보 다시 불러오기
-        await getMyProfile();
+        // await getMyProfile();
         console.log("✅ 팔로우 성공");
       } catch (error) {
         console.error("❌ 팔로우 오류:", error);
@@ -332,7 +342,11 @@ export function useProfile() {
         setLoadingProfile(false);
       }
     },
-    [getMyProfile, getAuthHeaders]
+    [
+      ,
+      // getMyProfile
+      getAuthHeaders,
+    ]
   );
 
   // ===== 언팔로우 =====
@@ -363,7 +377,7 @@ export function useProfile() {
           throw new Error(errorData.message || "언팔로우에 실패했습니다");
         }
 
-        await getMyProfile();
+        //await getMyProfile();
         console.log("✅ 언팔로우 성공");
       } catch (error) {
         console.error("❌ 언팔로우 오류:", error);
@@ -373,14 +387,17 @@ export function useProfile() {
         setLoadingProfile(false);
       }
     },
-    [getMyProfile, getAuthHeaders]
+    [
+      //getMyProfile,
+      getAuthHeaders,
+    ]
   );
 
   return {
     profile,
     myProfile, // 목업 데이터
     getUserProfile,
-    getMyProfile,
+    //getMyProfile,
     updateUserProfile,
     createUserProfile,
     followUser,

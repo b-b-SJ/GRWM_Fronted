@@ -13,37 +13,56 @@ const ProfilePage = () => {
     useProfile();
   const navigate = useNavigate();
   const param = useParams();
-  console.log("URL 파라미터 전체:", param, param.communityId);
-  console.log("현재 URL:", window.location.pathname);
+  //console.log("URL 파라미터 전체:", param, param.communityId);
+  //console.log("현재 URL:", window.location.pathname);
+  console.log("뭐가 undefined?", profile, profile.user);
   // 페이지가 처음 보일 때, communityId로 프로필 정보를 요청
   useEffect(() => {
-    if (1) {
-      getUserProfile(1);
+    if (param.communityId) {
+      getUserProfile(param.communityId);
     }
-  }, [getUserProfile, 1]);
-
+  }, [getUserProfile, param.communityId]);
+  console.log("왜 이름이 안뜨노", profile.user.nickname);
   // 로딩, 에러, 빈 상태 처리
   if (loadingProfile) return <div>로딩 중...</div>;
   if (error) return <div>에러: {error}</div>;
   if (!profile) return <div>프로필을 찾을 수 없습니다.</div>;
-
+  {
+    /**
+    archivedBadgeCount: 0;
+    bannerImage: null;
+    description: null;
+    followerCount: 0;
+    followingCount: 0;
+    pinnedPostId: null;
+    postCount: 0;
+    user: {
+    communityId: 3;
+    nickname: "무명3";
+    profileImage: null;}
+     */
+  }
   return (
     <div className=" bg-white ">
       <div className=" shadow-md">
         <div className="max-w-full aspect-[32/2]">
-          <img
-            src={profile.bannerImage}
-            alt="배너 이미지"
-            className="w-full h-full object-cover"
-          />
+          {profile.bannerImage ? (
+            <img
+              src={profile.bannerImage}
+              alt="배너 이미지"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gray-300"></div>
+          )}
         </div>
 
         <div className="mt-7 px-6 py-4 flex pb-12 border-b">
           {/**프필 */}
           <div className="">
-            {profile.User.profileImage ? (
+            {profile.user.profileImage ? (
               <img
-                src={profile.User.profileImage}
+                src={profile.user.profileImage}
                 alt="프로필 이미지"
                 className="w-48 h-48 rounded-full border-4 border-white shadow-sm object-cover"
               />
@@ -55,7 +74,7 @@ const ProfilePage = () => {
           </div>
           {/**닉넴,팔로워,팔로잉,게시물,미트볼 */}
           <div className="flex flex-col h-44 p-6 gap-y-6 ">
-            <h2 className="font-semibold text-2xl ">{profile.User.nickName}</h2>
+            <h2 className="font-semibold text-2xl ">{profile.user.nickname}</h2>
 
             <div className="flex flex-row gap-5 ml-2">
               {follow ? (
