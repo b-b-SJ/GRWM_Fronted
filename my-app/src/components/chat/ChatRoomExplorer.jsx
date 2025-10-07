@@ -4,7 +4,6 @@ import {
     Users,
     Lock,
     Unlock,
-    Filter,
     X,
     Key,
     MessageCircle,
@@ -125,23 +124,22 @@ const ChatRoomCard = ({ room, onJoinRoom, isJoined = false }) => {
                             <Unlock size={16} className="text-green-500 flex-shrink-0" />
                         )}
                     </div>
-                    <p className="text-gray-600 text-sm mb-2 line-clamp-2">
-                        {room.description || '설명이 없습니다.'}
-                    </p>
+                    <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
+                        {room.category}
+                    </span>
                 </div>
             </div>
 
+            <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                {room.description || '설명이 없습니다.'}
+            </p>
+
             <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4 text-sm text-gray-500">
-                    <div className="flex items-center space-x-1">
-                        <Users size={14} />
-                        <span>
-                            {room.currentMembers}
-                            {room.maxMembers > 0 ? `/${room.maxMembers}` : ''}
-                        </span>
-                    </div>
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                        {room.category}
+                <div className="flex items-center space-x-1 text-sm text-gray-500">
+                    <Users size={14} />
+                    <span>
+                        {room.currentMembers}
+                        {room.maxMembers > 0 ? `/${room.maxMembers}` : ''}
                     </span>
                 </div>
 
@@ -167,7 +165,7 @@ const ChatRoomCard = ({ room, onJoinRoom, isJoined = false }) => {
 const ChatRoomExplorer = ({
                               workspaceMode = '채팅룸',
                               onJoinRoom = (roomId) => console.log('Joining room:', roomId),
-                              joinedRoomIds = [] // 추가: 참여 중인 방 ID 배열
+                              joinedRoomIds = []
                           }) => {
     const [rooms, setRooms] = useState([]);
     const [filteredRooms, setFilteredRooms] = useState([]);
@@ -213,9 +211,8 @@ const ChatRoomExplorer = ({
 
                 const data = await response.json();
 
-                console.log('API 원본 응답:', data);
-
-                const formattedRooms = data.map(room => {
+                // 채팅방 정보 formatting
+                const formattedRooms = data.map(room =>{
                     console.log('Room 변환:', {
                         id: room.chatRoomId,
                         isPrivate: room.private || room.isPrivate || false,
@@ -253,12 +250,17 @@ const ChatRoomExplorer = ({
         fetchRooms();
     }, []);
 
-    // 카테고리 목록 동적 생성
-    const categories = ['전체', ...new Set(rooms.map(room => room.category))];
+    // 카테고리 목록 동적 생성 or 고정
+    // const categories = ['전체', ...new Set(rooms.map(room => room.category))];
+    const categories = ['전체', '일반', '프로젝트', '스터디', '취미', '기타'];
 
     // 필터링 로직
     useEffect(() => {
         let filtered = rooms;
+
+        if (selectedCategory !== '전체') {
+            filtered = filtered.filter(room => room.category === selectedCategory);
+        }
 
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
@@ -267,10 +269,6 @@ const ChatRoomExplorer = ({
                 room.category.toLowerCase().includes(query) ||
                 (room.description && room.description.toLowerCase().includes(query))
             );
-        }
-
-        if (selectedCategory !== '전체') {
-            filtered = filtered.filter(room => room.category === selectedCategory);
         }
 
         if (showPrivateOnly) {
@@ -282,7 +280,6 @@ const ChatRoomExplorer = ({
 
     // 채팅방 입장 처리
     const handleJoinRoom = async (room) => {
-        // isPrivate 체크를 먼저 하도록 변경
         if (room.isPrivate) {
             setPasswordModal({
                 isOpen: true,
@@ -292,7 +289,6 @@ const ChatRoomExplorer = ({
             return;
         }
 
-        // 이미 참여 중인 방이면 아무 동작도 하지 않음
         if (joinedRoomIds.includes(room.id)) {
             alert('이미 참여 중인 채팅방입니다.');
             return;
@@ -304,12 +300,10 @@ const ChatRoomExplorer = ({
     // 공개방 입장
     const joinPublicRoom = async (room) => {
         try {
-            // ChatStateContext의 joinChatRoom에 위임
             await onJoinRoom(room.id);
         } catch (error) {
             console.error('공개방 입장 오류:', error);
 
-            // 이미 참여 중인 경우 처리
             if (error.message && (error.message.includes('이미') || error.message.includes('already'))) {
                 alert('이미 참여 중인 채팅방입니다.');
                 return;
@@ -330,7 +324,6 @@ const ChatRoomExplorer = ({
                 throw new Error('로그인 토큰이 없습니다.');
             }
 
-            // 비밀번호 검증만 수행
             const verifyResponse = await fetch(
                 `http://localhost:8080/api/chat-room/${passwordModal.room.id}/verify`,
                 {
@@ -348,7 +341,6 @@ const ChatRoomExplorer = ({
                 throw new Error('비밀번호가 일치하지 않습니다.');
             }
 
-            // 검증 성공 후 ChatStateContext에 위임
             setPasswordModal({ isOpen: false, room: null, isLoading: false });
             await onJoinRoom(passwordModal.room.id);
 
@@ -371,7 +363,7 @@ const ChatRoomExplorer = ({
     }
 
     return (
-        <div className="flex-1 flex flex-col p-6 bg-gray-50 min-h-screen">
+        <div className="flex-1 flex flex-col p-6 bg-gray-50 max-h-screen">
             <div className="mb-6">
                 <div className="flex items-center space-x-2 mb-2">
                     {isStudyRoom ? (
@@ -393,29 +385,30 @@ const ChatRoomExplorer = ({
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                     <input
                         type="text"
-                        placeholder="채팅방 이름, 카테고리, 설명으로 검색..."
+                        placeholder="채팅방 이름이나 설명으로 검색..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                     />
                 </div>
 
-                <div className="flex items-center space-x-4 flex-wrap gap-2">
-                    <div className="flex items-center space-x-2">
-                        <Filter size={16} className="text-gray-500" />
-                        <span className="text-sm font-medium text-gray-700">필터:</span>
-                    </div>
+                <div className="flex flex-wrap gap-2">
+                    {categories.map(category => (
+                        <button
+                            key={category}
+                            onClick={() => setSelectedCategory(category)}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                selectedCategory === category
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                        >
+                            {category}
+                        </button>
+                    ))}
+                </div>
 
-                    <select
-                        value={selectedCategory}
-                        onChange={(e) => setSelectedCategory(e.target.value)}
-                        className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                    >
-                        {categories.map(category => (
-                            <option key={category} value={category}>{category}</option>
-                        ))}
-                    </select>
-
+                <div className="flex items-center justify-between">
                     <label className="flex items-center space-x-2 cursor-pointer">
                         <input
                             type="checkbox"
@@ -425,16 +418,16 @@ const ChatRoomExplorer = ({
                         />
                         <span className="text-sm text-gray-700">비공개방만 보기</span>
                     </label>
-                </div>
 
-                <div className="text-sm text-gray-500">
-                    총 {filteredRooms.length}개의 {workspaceMode}
+                    <div className="text-sm text-gray-500">
+                        총 {filteredRooms.length}개의 {workspaceMode}
+                    </div>
                 </div>
             </div>
 
-            <div className="flex-1">
+            <div className="flex-1 overflow-y-auto">
                 {filteredRooms.length > 0 ? (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 pb-4">
                         {filteredRooms.map(room => (
                             <ChatRoomCard
                                 key={room.id}
@@ -445,7 +438,7 @@ const ChatRoomExplorer = ({
                         ))}
                     </div>
                 ) : (
-                    <div className="flex-1 flex items-center justify-center py-20">
+                    <div className="flex items-center justify-center py-20">
                         <div className="text-center">
                             <Search size={64} className="text-gray-300 mx-auto mb-4" />
                             <h3 className="text-lg font-medium text-gray-500 mb-2">
