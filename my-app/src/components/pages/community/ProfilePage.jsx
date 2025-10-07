@@ -13,27 +13,30 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
   //const navigate = useNavigate();
   const param = useParams();
   const { user } = useAuth();
-
+  const currentProfileId = Number(param.communityId);
   console.log(
     "뭐가 undefined?",
     profile.user,
-    user.userId,
-    param.communityId,
-    String(user.userId)
+    profile,
+    user.userId, //현재 로그인 중인 유저
+    currentProfileId
   ); //숫자화 필요
 
   // 페이지가 처음 보일 때, communityId로 프로필 정보를 요청
   useEffect(() => {
-    if (param.communityId && user.userId) {
-      if (param.communityId === String(user.userId)) setIsMyProfile(true);
+    if (currentProfileId && user.userId) {
+      if (currentProfileId === user.userId) setIsMyProfile(true);
       else setIsMyProfile(false);
-      getUserProfile(param.communityId);
+      getUserProfile(currentProfileId);
     }
-  }, [getUserProfile, param.communityId, user.userId]);
+  }, [getUserProfile, currentProfileId, user.userId]);
   // 로딩, 에러, 빈 상태 처리
   if (loadingProfile) return <div>로딩 중...</div>;
   if (error) return <div>에러: {error}</div>;
   if (!profile) return <div>프로필을 찾을 수 없습니다.</div>;
+
+  //팔로잉 팔로우 버튼 토글
+  //useEffect(() => {}, []);
 
   {
     /**

@@ -7,7 +7,7 @@ export function usePost() {
       postId: "12",
 
       user: {
-        communityId: 3,
+        communityId: 4,
         userName: "유유상종",
         profileImage:
           "https://i.ibb.co/FbWvz1bB/2025030118134100-02-CB906-EA538-A35643-C1-E1484-C4-B947-D.jpg",

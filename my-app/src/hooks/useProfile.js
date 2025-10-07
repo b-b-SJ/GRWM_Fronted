@@ -146,7 +146,7 @@ export function useProfile() {
           setError("프로필 조회에 실패했습니다");
           setProfile(null);
         }
-        console.log("📡 응답:", response.status);
+        console.log("응답:", response.status);
       } catch (error) {
         console.error("프로필 조회 에러:", error);
         setError(error.message);
@@ -291,14 +291,10 @@ export function useProfile() {
         setLoadingProfile(false);
       }
     },
-    [
-      ,
-      // getMyProfile
-      getAuthHeaders,
-    ]
+    [getUserProfile, getAuthHeaders]
   );
 
-  // ===== 언팔로우 =====
+  //언팔로우
   const unfollowUser = useCallback(
     async (targetId) => {
       if (!targetId) {
@@ -326,7 +322,6 @@ export function useProfile() {
           throw new Error(errorData.message || "언팔로우에 실패했습니다");
         }
 
-        //await getMyProfile();
         console.log("언팔로우 성공");
       } catch (error) {
         console.error("언팔로우 오류:", error);
@@ -336,10 +331,7 @@ export function useProfile() {
         setLoadingProfile(false);
       }
     },
-    [
-      //getMyProfile,
-      getAuthHeaders,
-    ]
+    [getUserProfile, getAuthHeaders]
   );
 
   return {
