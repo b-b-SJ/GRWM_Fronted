@@ -9,34 +9,52 @@ import { useAuth } from "../../../hooks/AuthContext";
 // 프로필 페이지
 const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
   const [follow, setFollow] = useState(false);
-  const { profile, loadingProfile, error, getUserProfile } = useProfile();
+  const {
+    profile,
+    loadingProfile,
+    error,
+    getUserProfile,
+    followUser,
+    unfollowUser,
+  } = useProfile();
   //const navigate = useNavigate();
   const param = useParams();
   const { user } = useAuth();
   const currentProfileId = Number(param.communityId);
+  const [relationship, setRelationship] = useState(null);
+
   console.log(
     "뭐가 undefined?",
     profile.user,
     profile,
+    profile.relationship,
     user.userId, //현재 로그인 중인 유저
     currentProfileId
   ); //숫자화 필요
 
   // 페이지가 처음 보일 때, communityId로 프로필 정보를 요청
   useEffect(() => {
-    if (currentProfileId && user.userId) {
-      if (currentProfileId === user.userId) setIsMyProfile(true);
-      else setIsMyProfile(false);
-      getUserProfile(currentProfileId);
-    }
-  }, [getUserProfile, currentProfileId, user.userId]);
+    const loadProfile = async () => {
+      if (currentProfileId && user.userId) {
+        setIsMyProfile(currentProfileId === user.userId);
+
+        const data = await getUserProfile(currentProfileId);
+
+        if (data && data.relationship) {
+          // 안전하게 체크
+          setRelationship(data.relationship);
+        }
+      }
+    };
+
+    loadProfile();
+  }, [currentProfileId, user.userId]);
   // 로딩, 에러, 빈 상태 처리
   if (loadingProfile) return <div>로딩 중...</div>;
   if (error) return <div>에러: {error}</div>;
   if (!profile) return <div>프로필을 찾을 수 없습니다.</div>;
 
   //팔로잉 팔로우 버튼 토글
-  //useEffect(() => {}, []);
 
   {
     /**
@@ -92,10 +110,13 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
                 <button>프로필 편집</button>
               ) : (
                 <>
-                  {follow ? (
+                  {profile.relationship === "followedByMe" ? (
                     <button
                       className="group text-gray-50 text-xl ml-2 bg-blue-400 w-[150px] h-fit py-2 rounded-md shadow-md hover:bg-red-500 transition-colors"
-                      onClick={() => setFollow(!follow)}
+                      onClick={() => {
+                        //setRelationship("noRelationship");
+                        unfollowUser(currentProfileId);
+                      }}
                     >
                       <span className="group-hover:hidden">팔로우 중</span>
 
@@ -106,7 +127,10 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
                   ) : (
                     <button
                       className="text-gray-50 text-xl ml-2 bg-blue-400 w-[150px] h-fit py-2 rounded-md shadow-md hover:bg-blue-500 transition-colors"
-                      onClick={() => setFollow(!follow)}
+                      onClick={() => {
+                        //  setRelationship("isFollowing");
+                        followUser(currentProfileId);
+                      }}
                     >
                       팔로우
                     </button>

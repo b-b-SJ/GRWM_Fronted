@@ -283,6 +283,7 @@ export function useProfile() {
 
         // 팔로우 성공시 프로필 정보 다시 불러오기
         console.log("팔로우 성공");
+        await getUserProfile(targetId);
       } catch (error) {
         console.error(" 팔로우 오류:", error);
         setError(error.message);
@@ -323,6 +324,7 @@ export function useProfile() {
         }
 
         console.log("언팔로우 성공");
+        await getUserProfile(targetId);
       } catch (error) {
         console.error("언팔로우 오류:", error);
         setError(error.message);
