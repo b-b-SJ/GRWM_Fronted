@@ -114,7 +114,7 @@ export function useProfile() {
   const [error, setError] = useState(null);
   const headers = getAuthHeaders();
 
-  // ===== 다른 사용자 프로필 조회 =====
+  //프로필 조회
   const getUserProfile = useCallback(
     async (communityId) => {
       if (!communityId) {
@@ -158,57 +158,7 @@ export function useProfile() {
     [getAuthHeaders]
   );
 
-  {
-    /** 
-    // ===== 내 프로필 조회 =====
-      const getMyProfile = useCallback(async () => {
-    setLoadingProfile(true);
-    setError(null);
-
-    try {
-      const response = await fetch(
-        `http://localhost:8080/api/users/me/profile`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...getAuthHeaders(),
-          },
-        }
-      );
-
-      if (response.ok) {
-        const profileInfo = await response.json();
-        setProfile(profileInfo);
-        console.log("내 프로필 조회 성공:", profileInfo);
-      } else {
-        console.error(" 내 프로필 조회 실패:", response.status);
-        setError("프로필 조회에 실패했습니다");
-        setProfile(myProfile);
-      }
-    } catch (error) {
-      console.error("내 프로필 조회 에러:", error);
-      setError(error.message);
-      setProfile(myProfile);
-    } finally {
-      setLoadingProfile(false);
-    }
-  }, [getAuthHeaders]);
-*/
-  }
-
-  // ===== 컴포넌트 마운트 시 자동으로 내 프로필 가져오기 =====
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      //getMyProfile();
-    }
-  }, [
-    isAuthenticated,
-    user,
-    //getMyProfile
-  ]);
-
-  // ===== 프로필 수정 =====
+  //프로필 수정
   const updateUserProfile = useCallback(
     async (communityId, userData) => {
       if (!communityId || !userData) {
@@ -246,9 +196,9 @@ export function useProfile() {
 
         // 수정 후 다시 프로필 가져오기
         await getUserProfile(communityId);
-        console.log("✅ 프로필 수정 성공");
+        console.log("프로필 수정 성공");
       } catch (error) {
-        console.error("❌ 프로필 편집 오류:", error);
+        console.error("프로필 편집 오류:", error);
         setError(error.message);
         throw error;
       } finally {
@@ -258,7 +208,7 @@ export function useProfile() {
     [getUserProfile, getAuthHeaders]
   );
 
-  // ===== 프로필 생성 =====
+  // 프로필 생성
   const createUserProfile = useCallback(
     async (userData) => {
       setLoadingProfile(true);
@@ -277,7 +227,7 @@ export function useProfile() {
           {
             method: "POST",
             headers: {
-              "Content-Type": "application/json", // ⚠️ 수정
+              "Content-Type": "application/json", // 수정
               ...getAuthHeaders(),
             },
             body: JSON.stringify(requestData),
@@ -291,9 +241,9 @@ export function useProfile() {
 
         const newProfile = await response.json();
         setProfile(newProfile);
-        console.log("✅ 프로필 생성 성공:", newProfile);
+        console.log("프로필 생성 성공:", newProfile);
       } catch (error) {
-        console.error("❌ 프로필 생성 오류:", error);
+        console.error("프로필 생성 오류:", error);
         setError(error.message);
         throw error;
       } finally {
@@ -303,7 +253,7 @@ export function useProfile() {
     [getAuthHeaders]
   );
 
-  // ===== 팔로우 =====
+  // 팔로우
   const followUser = useCallback(
     async (targetId) => {
       if (!targetId) {
@@ -320,7 +270,7 @@ export function useProfile() {
           {
             method: "POST",
             headers: {
-              "Content-Type": "application/json", // ⚠️ 수정
+              "Content-Type": "application/json",
               ...getAuthHeaders(),
             },
           }
@@ -331,11 +281,10 @@ export function useProfile() {
           throw new Error(errorData.message || "팔로우에 실패했습니다");
         }
 
-        // 팔로우 성공시 내 프로필 정보 다시 불러오기
-        // await getMyProfile();
-        console.log("✅ 팔로우 성공");
+        // 팔로우 성공시 프로필 정보 다시 불러오기
+        console.log("팔로우 성공");
       } catch (error) {
-        console.error("❌ 팔로우 오류:", error);
+        console.error(" 팔로우 오류:", error);
         setError(error.message);
         throw error;
       } finally {
@@ -366,7 +315,7 @@ export function useProfile() {
           {
             method: "DELETE",
             headers: {
-              "Content-Type": "application/json", // ⚠️ 수정
+              "Content-Type": "application/json", // 수정
               ...getAuthHeaders(),
             },
           }
@@ -378,9 +327,9 @@ export function useProfile() {
         }
 
         //await getMyProfile();
-        console.log("✅ 언팔로우 성공");
+        console.log("언팔로우 성공");
       } catch (error) {
-        console.error("❌ 언팔로우 오류:", error);
+        console.error("언팔로우 오류:", error);
         setError(error.message);
         throw error;
       } finally {

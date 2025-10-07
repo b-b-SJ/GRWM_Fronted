@@ -6,7 +6,7 @@ import ProfilePage from "./ProfilePage";
 import TimeLinePage from "./TimeLinePage";
 import CommunitySidebar from "../../layout/CommunitySidebar";
 import SearchPage from "../../community/SearchPage";
-import MyProfilePage from "./MyProfilePage";
+
 /**
  * 임시 CommunityPage UI
  *
