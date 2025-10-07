@@ -99,13 +99,13 @@ export function usePost() {
       if (response.ok) {
         const data = await response.json();
         setPosts(data);
-        console.log("✅ 게시물 목록 조회 성공");
+        console.log("게시물 목록 조회 성공");
       } else {
-        console.error("❌ 게시물 목록 조회 실패:", response.status);
+        console.error(" 게시물 목록 조회 실패:", response.status);
         setError("게시물을 불러오는데 실패했습니다");
       }
     } catch (error) {
-      console.error("❌ 게시물 목록 조회 에러:", error);
+      console.error(" 게시물 목록 조회 에러:", error);
       setError("네트워크 에러가 발생했습니다");
     } finally {
       setLoading(false);
@@ -189,14 +189,14 @@ export function usePost() {
         setPosts((prevPosts) =>
           prevPosts.map((post) => (post.postId === postId ? updatedPost : post))
         );
-        console.log("✅ 게시글 수정 성공");
+        console.log(" 게시글 수정 성공");
         return updatedPost;
       } else {
-        console.error("❌ 게시글 수정 실패:", response.status);
+        console.error(" 게시글 수정 실패:", response.status);
         setError("게시글 수정에 실패했습니다");
       }
     } catch (error) {
-      console.error("❌ 게시글 수정 에러:", error);
+      console.error(" 게시글 수정 에러:", error);
       setError("네트워크 에러가 발생했습니다");
     } finally {
       setLoading(false);
@@ -223,13 +223,13 @@ export function usePost() {
         setPosts((prevPosts) =>
           prevPosts.filter((post) => post.postId !== postId)
         );
-        console.log("✅ 게시글 삭제 성공");
+        console.log("게시글 삭제 성공");
       } else {
-        console.error("❌ 게시글 삭제 실패:", response.status);
+        console.error(" 게시글 삭제 실패:", response.status);
         setError("게시글 삭제에 실패했습니다");
       }
     } catch (error) {
-      console.error("❌ 게시글 삭제 에러:", error);
+      console.error(" 게시글 삭제 에러:", error);
       setError("네트워크 에러가 발생했습니다");
     } finally {
       setLoading(false);
