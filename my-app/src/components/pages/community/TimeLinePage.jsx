@@ -26,10 +26,6 @@ const TimeLinePage = () => {
           해시태그
         </button>
       </nav>
-      <PostingStyle communityId={3} postId={"123"} />
-      <PostingStyle communityId={1} postId={"12"} />
-
-      <PostingStyle communityId={2} postId={"21"} />
 
       {timeLine === "main" ? <MainTimeLine /> : <HashtagTimeLine />}
     </div>

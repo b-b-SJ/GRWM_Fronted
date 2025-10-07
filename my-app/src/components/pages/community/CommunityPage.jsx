@@ -15,6 +15,7 @@ import MyProfilePage from "./MyProfilePage";
  */
 const CommunityPage = () => {
   const [comSidebarOpen, setComSidebarOpen] = useState(true);
+  const [isMyProfile, setIsMyProfile] = useState(true);
   const navigate = useNavigate();
   return (
     <div className="relative flex-col flex flex-1 ">
@@ -36,7 +37,15 @@ const CommunityPage = () => {
           <Routes>
             <Route path="/" element={<TimeLinePage />} />
             {/*<Route path="/profile/my" element={<MyProfilePage />} />*/}
-            <Route path="/profile/:communityId" element={<ProfilePage />} />
+            <Route
+              path="/profile/:communityId"
+              element={
+                <ProfilePage
+                  isMyProfile={isMyProfile}
+                  setIsMyProfile={setIsMyProfile}
+                />
+              }
+            />
 
             {/**userId 받는 시그로 처리해야됨 */}
             <Route path="search" element={<SearchPage />} />

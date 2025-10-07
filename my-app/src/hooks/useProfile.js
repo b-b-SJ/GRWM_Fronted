@@ -89,7 +89,7 @@ const myProfile = {
 };
 const initialProfile = {
   user: {
-    communityId: 4,
+    communityId: 0,
     nickname: "유유상종수",
     profileImage:
       "https://i.ibb.co/FbWvz1bB/2025030118134100-02-CB906-EA538-A35643-C1-E1484-C4-B947-D.jpg",
@@ -113,7 +113,7 @@ export function useProfile() {
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [error, setError] = useState(null);
   const headers = getAuthHeaders();
-  console.log("🔑 토큰 보내는 중:", headers);
+
   // ===== 다른 사용자 프로필 조회 =====
   const getUserProfile = useCallback(
     async (communityId) => {
@@ -232,7 +232,7 @@ export function useProfile() {
           {
             method: "PUT",
             headers: {
-              "Content-Type": "application/json", // ⚠️ 수정
+              "Content-Type": "application/json", // 수정
               ...getAuthHeaders(),
             },
             body: JSON.stringify(requestData),

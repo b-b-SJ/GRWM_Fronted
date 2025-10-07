@@ -4,29 +4,37 @@ import { useNavigate, useParams } from "react-router-dom";
 import { UserRound, Ellipsis, Award } from "lucide-react";
 import { useProfile } from "../../../hooks/useProfile";
 import PostingStyle from "../../community/PostingStyle";
+import { useAuth } from "../../../hooks/AuthContext";
 
 // 프로필 페이지
-const ProfilePage = () => {
+const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
   const [follow, setFollow] = useState(false);
-  // 수정된 훅 사용
-  const { profile, loadingProfile, error, getUserProfile, loadMockProfile } =
-    useProfile();
-  const navigate = useNavigate();
+  const { profile, loadingProfile, error, getUserProfile } = useProfile();
+  //const navigate = useNavigate();
   const param = useParams();
-  //console.log("URL 파라미터 전체:", param, param.communityId);
-  //console.log("현재 URL:", window.location.pathname);
-  console.log("뭐가 undefined?", profile, profile.user);
+  const { user } = useAuth();
+
+  console.log(
+    "뭐가 undefined?",
+    profile.user,
+    user.userId,
+    param.communityId,
+    String(user.userId)
+  ); //숫자화 필요
+
   // 페이지가 처음 보일 때, communityId로 프로필 정보를 요청
   useEffect(() => {
-    if (param.communityId) {
+    if (param.communityId && user.userId) {
+      if (param.communityId === String(user.userId)) setIsMyProfile(true);
+      else setIsMyProfile(false);
       getUserProfile(param.communityId);
     }
-  }, [getUserProfile, param.communityId]);
-  console.log("왜 이름이 안뜨노", profile.user.nickname);
+  }, [getUserProfile, param.communityId, user.userId]);
   // 로딩, 에러, 빈 상태 처리
   if (loadingProfile) return <div>로딩 중...</div>;
   if (error) return <div>에러: {error}</div>;
   if (!profile) return <div>프로필을 찾을 수 없습니다.</div>;
+
   {
     /**
     archivedBadgeCount: 0;
@@ -77,23 +85,32 @@ const ProfilePage = () => {
             <h2 className="font-semibold text-2xl ">{profile.user.nickname}</h2>
 
             <div className="flex flex-row gap-5 ml-2">
-              {follow ? (
-                <button
-                  className="group text-gray-50 text-xl ml-2 bg-blue-400 w-[150px] h-fit py-2 rounded-md shadow-md hover:bg-red-500 transition-colors"
-                  onClick={() => setFollow(!follow)}
-                >
-                  <span className="group-hover:hidden">팔로우 중</span>
-
-                  <span className="hidden group-hover:inline">언팔로우</span>
-                </button>
+              {isMyProfile ? (
+                <button>프로필 편집</button>
               ) : (
-                <button
-                  className="text-gray-50 text-xl ml-2 bg-blue-400 w-[150px] h-fit py-2 rounded-md shadow-md hover:bg-blue-500 transition-colors"
-                  onClick={() => setFollow(!follow)}
-                >
-                  팔로우
-                </button>
+                <>
+                  {follow ? (
+                    <button
+                      className="group text-gray-50 text-xl ml-2 bg-blue-400 w-[150px] h-fit py-2 rounded-md shadow-md hover:bg-red-500 transition-colors"
+                      onClick={() => setFollow(!follow)}
+                    >
+                      <span className="group-hover:hidden">팔로우 중</span>
+
+                      <span className="hidden group-hover:inline">
+                        언팔로우
+                      </span>
+                    </button>
+                  ) : (
+                    <button
+                      className="text-gray-50 text-xl ml-2 bg-blue-400 w-[150px] h-fit py-2 rounded-md shadow-md hover:bg-blue-500 transition-colors"
+                      onClick={() => setFollow(!follow)}
+                    >
+                      팔로우
+                    </button>
+                  )}
+                </>
               )}
+
               <button className="">
                 <Ellipsis size={32} />
               </button>
@@ -134,7 +151,11 @@ const ProfilePage = () => {
         <div className="p-4 pl-8">{profile.description}</div>
       </div>
       {/*게시글 내용 */}
-      <PostingStyle communityId={"youyousangjong"} postId={"12"} />
+      {profile.postCount === 0 ? (
+        <div>아직 게시글이 없습니다</div>
+      ) : (
+        <PostingStyle communityId={"youyousangjong"} postId={"12"} />
+      )}
     </div>
   );
 };
