@@ -141,14 +141,17 @@ export function usePost() {
 
   const getUserPostList = useCallback(async (communityId) => {
     //확인 필요
-
+    if (!communityId) {
+      console.error("communityId 필요합니다");
+      return;
+    }
     setLoading(true);
     setError(null);
 
     try {
       //특정 유저가 작성한 게시물 리스트
       const response = await fetch(
-        `http://localhost:8080/api/community-posts?communityId={communityId}`,
+        `http://localhost:8080/api/community-posts?communityId=${communityId}`,
         {
           method: "GET",
           headers: {

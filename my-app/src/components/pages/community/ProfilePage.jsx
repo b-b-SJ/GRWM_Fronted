@@ -24,6 +24,10 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
   const currentProfileId = Number(param.communityId);
   const [relationship, setRelationship] = useState(null);
 
+  useEffect(() => {
+    getUserPostList(currentProfileId);
+  }, [currentProfileId, getUserPostList]);
+  //const userPost = getUserPostList(currentProfileId);
   console.log(
     "뭐가 undefined?",
     profile.user,
@@ -183,7 +187,7 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
         <div>아직 게시글이 없습니다</div>
       ) : (
         //유저가 작성한 포스팅만 가져오는 api 연결 필요
-        <PostingStyle />
+        <h>저 글 적었습니다 저 여기에 분명히 있어요.</h>
       )}
     </div>
   );

@@ -8,7 +8,8 @@ const PostingModal = ({ setOpenPostModal, openPostModal, profilePic }) => {
   const [textContent, setTextContent] = useState("");
   const [hashtags, setHashtags] = useState([]);
   const [visibility, setVisibility] = useState("public");
-  const { user } = useAuth();
+  const { getUserProfile } = useProfile();
+
   const { createPost } = usePost();
   const fileInputRef = useRef(null);
   const handleButtonClick = () => {
@@ -33,6 +34,8 @@ const PostingModal = ({ setOpenPostModal, openPostModal, profilePic }) => {
     try {
       const result = await createPost(postData);
       if (result) {
+        //내가 내 프로필 보고 있을 때 글 쓰면 재렌더하고 싶음 여기서
+        //근데
         setOpenPostModal(false);
         alert("게시글이 등록되었습니다");
       }

@@ -108,7 +108,7 @@ const initialProfile = {
 export function useProfile() {
   const { user, getAuthHeaders, isAuthenticated } = useAuth();
   const communityId = user.userId;
-  console.log("오시는지?", communityId, user);
+
   const [profile, setProfile] = useState(initialProfile);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [error, setError] = useState(null);
