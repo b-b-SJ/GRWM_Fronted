@@ -608,7 +608,6 @@ ${JSON.stringify(messageData)}\0`;
                 isPending: true
             };
 
-            addMessage(chatRoomId, optimisticMessage);
         } else {
             console.warn('⚠️ WebSocket 미연결');
 
