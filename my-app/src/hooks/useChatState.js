@@ -582,7 +582,7 @@ export const ChatStateProvider = ({ children }) => {
             const messageData = {
                 chatRoomId: parseInt(chatRoomId),
                 content: content,
-                conmmunityId: currentUser.userId
+                communityId: currentUser.userId
                 // replytoMessageId: replyToId  //  답장 기능 구현 시 주석 해제
             };
 
