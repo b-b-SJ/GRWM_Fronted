@@ -43,7 +43,7 @@ const FixedSidebar = ({ currentUser }) => {
         communityNickname: currentUser?.communityNickname || '',
 
         // 알림 설정
-        chatNotifications: true,
+        plannerNotifications: true,
         trackerNotifications: true,
         communityNotifications: true,
         emailNotifications: false,
@@ -71,7 +71,7 @@ const FixedSidebar = ({ currentUser }) => {
             if (category && category !== '전체') {
                 // 카테고리별 조회
                 const categoryMap = {
-                    '채팅방': 'chat',
+                    '공유 플래너': 'planner',
                     '트래커': 'tracker',
                     '커뮤니티': 'community'
                 };
@@ -295,7 +295,7 @@ const FixedSidebar = ({ currentUser }) => {
                                         <Users size={20} className="text-white" />
                                     </div>
                                     <div className="flex-1">
-                                        <p className="font-medium text-gray-800">{currentUser.communityNickname || '스터디러버'}</p>
+                                        <p className="font-medium text-gray-800">{currentUser.communityNickname}</p>
                                         <p className="text-sm text-gray-500">커뮤니티 활동 중</p>
                                     </div>
                                 </div>
@@ -331,7 +331,7 @@ const FixedSidebar = ({ currentUser }) => {
 
                         {/* 알림 팝업 메뉴 */}
                         {showNotificationMenu && (
-                            <div className="absolute left-16 top-0 ml-2 bg-white rounded-lg shadow-xl border w-80 z-50">
+                            <div className="absolute left-16 top-0 ml-2 bg-white rounded-lg shadow-xl border w-96 z-50">
                                 {/* 헤더 */}
                                 <div className="px-4 py-3 border-b flex items-center justify-between">
                                     <h3 className="text-lg font-semibold text-gray-800">알림</h3>
@@ -346,7 +346,7 @@ const FixedSidebar = ({ currentUser }) => {
 
                                 {/* 탭 메뉴 */}
                                 <div className="flex border-b">
-                                    {['전체', '채팅방', '트래커', '커뮤니티'].map((tab) => (
+                                    {['전체', '공유 플래너', '트래커', '커뮤니티'].map((tab) => (
                                         <button
                                             key={tab}
                                             onClick={() => setActiveNotificationTab(tab)}
@@ -451,6 +451,7 @@ const FixedSidebar = ({ currentUser }) => {
                             <Moon size={18} className="text-gray-400 group-hover:text-white" />
                         )}
                     </button>
+
                 </div>
 
                 {/* 하단 메뉴 */}
@@ -548,14 +549,14 @@ const FixedSidebar = ({ currentUser }) => {
                                 <h3 className="text-lg font-semibold text-gray-800 mb-4">알림 설정</h3>
                                 <div className="space-y-1">
                                     <ToggleSetting
-                                        label="채팅방 알림"
-                                        description="새로운 메시지를 받았을 때 알림"
-                                        checked={settings.chatNotifications}
-                                        onChange={(checked) => handleSettingChange('chatNotifications', checked)}
+                                        label="공유 플래너 알림"
+                                        description="공유 플래너 관련 알림을 받았을 때 알림"
+                                        checked={settings.plannerNotifications}
+                                        onChange={(checked) => handleSettingChange('plannerNotifications', checked)}
                                     />
                                     <ToggleSetting
                                         label="트래커 알림"
-                                        description="목표 달성 및 업데이트 알림"
+                                        description="내일의 나에게 메시지 도착 시 알림"
                                         checked={settings.trackerNotifications}
                                         onChange={(checked) => handleSettingChange('trackerNotifications', checked)}
                                     />
