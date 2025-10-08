@@ -78,7 +78,7 @@ const PlannerSidebar = ({
 
   return (
     <div className={`${sidebarClassName}`}>
-      <div className="w-80 bg-white h-full border-r flex flex-col">
+      <div className="w-80 bg-white border-r flex flex-col">
         <div>
           {(viewMode === "daily" || viewMode === "weekly") && (
             <div className="p-4 shadow-sm shadow-gray-200">

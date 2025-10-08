@@ -45,7 +45,7 @@ const PlannerPage = () => {
           //<PlannerSidebar className="" viewMode={viewMode} >
 
           <PlannerSidebar
-            sidebarClassName="xl:block hidden"
+            sidebarClassName="md:block hidden"
             viewMode={viewMode}
             // year={calendar.year}
             //month={calendar.month}
