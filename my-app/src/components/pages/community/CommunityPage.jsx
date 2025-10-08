@@ -6,6 +6,7 @@ import ProfilePage from "./ProfilePage";
 import TimeLinePage from "./TimeLinePage";
 import CommunitySidebar from "../../layout/CommunitySidebar";
 import SearchPage from "../../community/SearchPage";
+import PostingModal from "../../community/PostingModal";
 
 /**
  * 임시 CommunityPage UI
@@ -16,6 +17,8 @@ import SearchPage from "../../community/SearchPage";
 const CommunityPage = () => {
   const [comSidebarOpen, setComSidebarOpen] = useState(true);
   const [isMyProfile, setIsMyProfile] = useState(true);
+  const [openPostModal, setOpenPostModal] = useState(false);
+
   const navigate = useNavigate();
   return (
     <div className="relative flex-col flex flex-1 ">
@@ -53,10 +56,19 @@ const CommunityPage = () => {
           </Routes>
         </div>
         {/* 글 새로 쓰는 버튼 */}
-        <button className="fixed flex bottom-7 right-7 w-20 h-20 rounded-full bg-gradient-to-r from-rose-400 to-rose-500 justify-center items-center">
+        <button
+          className="fixed flex bottom-7 right-7 w-20 h-20 rounded-full bg-gradient-to-r from-rose-400 to-rose-500 justify-center items-center"
+          onClick={() => setOpenPostModal(!openPostModal)}
+        >
           <CirclePlus className="text-gray-50" size={55} />
         </button>
       </div>
+      {openPostModal && (
+        <PostingModal
+          setOpenPostModal={setOpenPostModal}
+          openPostModal={openPostModal}
+        />
+      )}
     </div>
   );
 };

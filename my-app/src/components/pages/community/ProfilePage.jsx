@@ -1,14 +1,13 @@
 import React from "react";
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { UserRound, Ellipsis, Award } from "lucide-react";
 import { useProfile } from "../../../hooks/useProfile";
 import PostingStyle from "../../community/PostingStyle";
 import { useAuth } from "../../../hooks/AuthContext";
-
+import { usePost } from "../../../hooks/usePost";
 // 프로필 페이지
 const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
-  const [follow, setFollow] = useState(false);
   const {
     profile,
     loadingProfile,
@@ -17,7 +16,9 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
     followUser,
     unfollowUser,
   } = useProfile();
-  //const navigate = useNavigate();
+
+  const { getUserPostList } = usePost();
+
   const param = useParams();
   const { user } = useAuth();
   const currentProfileId = Number(param.communityId);
@@ -181,7 +182,8 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
       {profile.postCount === 0 ? (
         <div>아직 게시글이 없습니다</div>
       ) : (
-        <PostingStyle communityId={"youyousangjong"} postId={"12"} />
+        //유저가 작성한 포스팅만 가져오는 api 연결 필요
+        <PostingStyle />
       )}
     </div>
   );

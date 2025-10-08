@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
-
+import { useAuth } from "./AuthContext";
 export function usePost() {
-  //토큰에서 유저 아이디를 반환할 수 ㅣㅆ어서 url에 유저 아이디 포함 안시켜도 된다는
+  const { getAuthHeaders } = useAuth();
   const [posts, setPosts] = useState([
     {
       postId: "12",
@@ -30,7 +30,7 @@ export function usePost() {
       postId: "21",
 
       user: {
-        communityId: 2,
+        communityId: 5,
         userName: "규동",
         profileImage:
           "https://recipe1.ezmember.co.kr/cache/recipe/2021/12/13/4686a67d2f6e39e1899d1e2afaff26ee1.jpg",
@@ -120,6 +120,7 @@ export function usePost() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            ...getAuthHeaders(),
           },
           body: JSON.stringify(postData),
         }
@@ -152,6 +153,7 @@ export function usePost() {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            ...getAuthHeaders(),
           },
         }
       );
@@ -179,6 +181,7 @@ export function usePost() {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            ...getAuthHeaders(),
           },
           body: JSON.stringify(postData),
         }
@@ -215,6 +218,7 @@ export function usePost() {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
+            ...getAuthHeaders(),
           },
         }
       );
