@@ -89,10 +89,7 @@ export const ChatStateProvider = ({ children }) => {
             if (response.ok) {
                 const data = await response.json();
                 const nickname = data.nickname;
-
-                console.log('커뮤니티 정보:', data);
                 setCommunityNickname(nickname);
-                console.log('커뮤니티 닉네임 상태:', nickname);
                 return nickname;
             } else {
                 console.error('커뮤니티 정보 조회 실패:', response.status);
