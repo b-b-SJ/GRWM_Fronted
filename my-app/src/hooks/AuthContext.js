@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
                 const data = await response.json();
 
                 // API 응답에서 tokenType, accessToken, username, userId 추출
-                const { tokenType, accessToken, username, userId } = data;
+                const { tokenType, accessToken, username, userId, communityNickname } = data;
 
                 if (!accessToken) {
                     setError('서버 응답에 토큰이 없습니다.');
@@ -66,7 +66,8 @@ export const AuthProvider = ({ children }) => {
                 localStorage.setItem('userData', JSON.stringify({
                     userId: userId,
                     username: username,
-                    loginId: loginId
+                    loginId: loginId,
+                    communityNickname : communityNickname
                 }));
 
                 // 상태 업데이트
@@ -74,7 +75,8 @@ export const AuthProvider = ({ children }) => {
                 setUser({
                     userId: userId,
                     username: username,
-                    loginId: loginId
+                    loginId: loginId,
+                    communityNickname : communityNickname
                 });
 
                 return {
@@ -83,7 +85,8 @@ export const AuthProvider = ({ children }) => {
                         tokenType,
                         accessToken,
                         username,
-                        userId
+                        userId,
+                        communityNickname
                     }
                 };
             } else {
