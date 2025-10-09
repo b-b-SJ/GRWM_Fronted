@@ -7,10 +7,11 @@ const PostingModal = ({ setOpenPostModal, openPostModal, profilePic }) => {
   // useEffect(() => {}), []; //이거 할 때만 re렌더
   const [textContent, setTextContent] = useState("");
   const [hashtags, setHashtags] = useState([]);
+  const [imagesUrl, setImagesUrl] = useState([]);
   const [visibility, setVisibility] = useState("public");
   const { getUserProfile } = useProfile();
 
-  const { createPost } = usePost();
+  const { createPost, updatePost } = usePost();
   const fileInputRef = useRef(null);
   const handleButtonClick = () => {
     fileInputRef.current?.click(); // 숨겨진 input을 클릭!
@@ -19,30 +20,32 @@ const PostingModal = ({ setOpenPostModal, openPostModal, profilePic }) => {
   //post 등록 handler
 
   const handleSubmit = async () => {
-    // 이 객체가 createPost의 매개변수로 들어감
-    const postData = {
-      content: {
-        //이거 둘 중 하나라도 비어 있으면 업로드 안되게 막는 작업 필요
-        text: textContent, // state에서 가져온 텍스트
-        images: [], // -> 나중에 이미지 업로드 api랑 연결하면 뭐너흘듯
-      },
-      hashtags: hashtags, // state에서 가져온 해시태그 배열 -> #빼고 주기
-      visibility: visibility,
-    };
+    if (textContent) {
+      //나중에 imagesUrl 조건?도..넣기
+      // 이 객체가 createPost의 매개변수로 들어감
+      const postData = {
+        content: {
+          text: textContent, // state에서 가져온 텍스트
+          images: [], // -> 나중에 이미지 업로드 api랑 연결하면 뭐너흘듯
+        },
+        hashtags: hashtags, // state에서 가져온 해시태그 배열 -> #빼고 주기
+        visibility: visibility,
+      };
 
-    // 훅에서 가져온 함수 호출
-    try {
-      const result = await createPost(postData);
-      if (result) {
-        //내가 내 프로필 보고 있을 때 글 쓰면 재렌더하고 싶음 여기서
-        //근데
-        setOpenPostModal(false);
-        alert("게시글이 등록되었습니다");
+      // 훅에서 가져온 함수 호출
+      try {
+        const result = await createPost(postData);
+        if (result) {
+          //내가 내 프로필 보고 있을 때 글 쓰면 재렌더하고 싶음 여기서
+          //근데
+          setOpenPostModal(false);
+          alert("게시글이 등록되었습니다");
+        }
+      } catch (error) {
+        alert("게시글 작성 실패");
+        console.error(error);
       }
-    } catch (error) {
-      alert("게시글 작성 실패");
-      console.error(error);
-    }
+    } else alert("텍스트나 이미지를 넣으쇼");
   };
 
   //여기에서 간단한 인포 불러오는 api랑 연결-> useProfile에서 연결되게 코드 추가 작성해야됨

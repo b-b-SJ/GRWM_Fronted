@@ -1,16 +1,18 @@
 // PostingStyle.jsx - 수정 완료본
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import PostingModal from "./PostingModal";
 import {
   Heart,
   MessageSquare,
   EllipsisVertical,
   UserRound,
+  Trash,
 } from "lucide-react";
 
 const PostingStyle = ({ post, onDelete, isDeleting }) => {
   const [manageModal, setManageModal] = useState(false);
-
+  const [isEditing, setIsEditing] = useState(false);
   // 임시로 이렇게 해서 에러 방지
   if (!post) {
     return <div>게시물 데이터가 없습니다.</div>;
@@ -60,6 +62,10 @@ const PostingStyle = ({ post, onDelete, isDeleting }) => {
         {/* 삭제 버튼 - onDelete만 호출 */}
         <button className="flex ml-auto" onClick={() => onDelete(post.postId)}>
           <EllipsisVertical />
+        </button>
+        {/**임시 수정 버튼         */}
+        <button onClick={() => setIsEditing(true)}>
+          <Trash />
         </button>
       </div>
 

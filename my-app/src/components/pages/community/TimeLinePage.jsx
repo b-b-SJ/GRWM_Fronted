@@ -10,6 +10,14 @@ const TimeLinePage = () => {
   return (
     <div>
       <h1 className="bg-fuchsia-300 text-3xl p-4">타임라인 헤더 - 수정 예정</h1>
+      <nav className="flex flex-1 justify-normal">
+        <Link to={`/community/profile/1`}>
+          <div className="bg-rose-400 rounded-full text-white p-5">프1</div>
+        </Link>
+        <Link to={`/community/profile/2`}>
+          <div className="bg-blue-400 rounded-full text-white p-5">프2</div>
+        </Link>
+      </nav>
       <nav className="flex gap-4 p-4 bg-fuchsia-400 w-fit">
         <button
           className={`px-4 py-2 rounded-xl

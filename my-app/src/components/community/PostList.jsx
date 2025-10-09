@@ -7,7 +7,7 @@ const PostList = ({ posts, onPostsChange }) => {
   const { deletePost } = usePost();
   const [localPosts, setLocalPosts] = useState(posts);
   const [deletingPostId, setDeletingPostId] = useState(null);
-
+  const [editingPostId, setEditingPostId] = useState(null);
   // props.posts 변경 감지
   useEffect(() => {
     setLocalPosts(posts);
@@ -49,6 +49,7 @@ const PostList = ({ posts, onPostsChange }) => {
           post={post}
           onDelete={handlePostDeleted}
           isDeleting={deletingPostId === post.postId}
+          //onEdited={handleEdited}
         />
       ))}
     </div>

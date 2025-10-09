@@ -30,7 +30,7 @@ export function usePost() {
       postId: "21",
 
       user: {
-        communityId: 5,
+        communityId: 2,
         nickname: "규동",
         profileImage:
           "https://recipe1.ezmember.co.kr/cache/recipe/2021/12/13/4686a67d2f6e39e1899d1e2afaff26ee1.jpg",
@@ -93,13 +93,16 @@ export function usePost() {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            ...getAuthHeaders(),
           },
         }
       );
 
       if (response.ok) {
         const data = await response.json();
+        console.log("무슨 글을 썻는교", data);
         setPosts(data);
+
         console.log("게시물 목록 조회 성공");
       } else {
         console.error(" 게시물 목록 조회 실패:", response.status);
@@ -153,7 +156,7 @@ export function usePost() {
     try {
       //특정 유저가 작성한 게시물 리스트
       const response = await fetch(
-        `http://localhost:8080/api/community-posts?communityId=${communityId}?page=${page}&size=${size}`,
+        `http://localhost:8080/api/community-posts/user/${communityId}?page=${page}&size=${size}`,
         {
           method: "GET",
           headers: {
