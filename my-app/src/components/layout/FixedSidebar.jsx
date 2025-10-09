@@ -296,7 +296,6 @@ const FixedSidebar = ({ currentUser }) => {
                                     </div>
                                     <div className="flex-1">
                                         <p className="font-medium text-gray-800">{currentUser.communityNickname}</p>
-                                        <p className="text-sm text-gray-500">커뮤니티 활동 중</p>
                                     </div>
                                 </div>
                             </div>
