@@ -8,6 +8,7 @@ import MessageInput from './MessageInput';
  * ChatRoom 컴포넌트 - useChatState 연동, 말풍선 스타일 채팅 UI
  * - useChatState의 메시지 상태와 함수들을 활용
  * - WebSocket을 통한 실시간 메시지 처리
+ * - 참여자 목록 표시 기능 추가
  */
 const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
     const {
@@ -22,7 +23,8 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
         editChatRoomName,
         deleteChatRoom,
         createAnnouncement,
-        getMainAnnouncement
+        getMainAnnouncement,
+        getChatRoomMembers
     } = useChatState();
 
     const [loading, setLoading] = useState(true);
@@ -30,10 +32,13 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
     const [showMenu, setShowMenu] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+    const [showMembersModal, setShowMembersModal] = useState(false);
     const [editRoomName, setEditRoomName] = useState('');
     const [editDescription, setEditDescription] = useState('');
     const [announcementContent, setAnnouncementContent] = useState('');
     const [mainAnnouncement, setMainAnnouncement] = useState(null);
+    const [members, setMembers] = useState([]);
+    const [loadingMembers, setLoadingMembers] = useState(false);
 
     const menuRef = useRef(null);
 
@@ -87,6 +92,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
         setShowMenu(false);
     };
 
+    // 채팅방 나가기
     const handleLeaveRoom = async () => {
         if (window.confirm('이 채팅방을 나가시겠습니까?')) {
             try {
@@ -100,6 +106,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
         setShowMenu(false);
     };
 
+    // 공지사항 등록
     const handleCreateAnnouncement = async () => {
         try {
             await createAnnouncement(chatRoomId, announcementContent);
@@ -112,6 +119,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
         }
     };
 
+    // 공지사항 불러오기
     const loadMainAnnouncement = async () => {
         try {
             const announcement = await getMainAnnouncement(chatRoomId);
@@ -120,6 +128,25 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
             console.error('공지 조회 실패:', error);
             setMainAnnouncement(null);
         }
+    };
+
+    const loadMembers = async () => {
+        setLoadingMembers(true);
+        try {
+            const memberList = await getChatRoomMembers(chatRoomId);
+            setMembers(memberList);
+        } catch (error) {
+            console.error('참여자 목록 조회 실패:', error);
+            alert(`참여자 목록 조회 실패: ${error.message}`);
+        } finally {
+            setLoadingMembers(false);
+        }
+    };
+
+    const handleShowMembers = () => {
+        setShowMembersModal(true);
+        setShowMenu(false);
+        loadMembers();
     };
 
     useEffect(() => {
@@ -241,6 +268,10 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                     {showMenu && (
                         <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
                             <div className="py-1">
+                                <button onClick={handleShowMembers} className="flex items-center space-x-2 w-full px-4 py-2 text-left text-sm hover:bg-gray-100">
+                                    <Users size={16} />
+                                    <span>참여자 목록</span>
+                                </button>
                                 <button onClick={() => { setShowAnnouncementModal(true); setShowMenu(false); }} className="flex items-center space-x-2 w-full px-4 py-2 text-left text-sm hover:bg-gray-100">
                                     <MessageSquare size={16} />
                                     <span>공지 올리기</span>
@@ -375,6 +406,73 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                         <div className="flex space-x-3 mt-6">
                             <button onClick={() => { setShowAnnouncementModal(false); setAnnouncementContent(''); }} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">취소</button>
                             <button onClick={handleCreateAnnouncement} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700" disabled={!announcementContent.trim()}>공지 등록</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showMembersModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-[80vh] flex flex-col">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold">참여자 목록</h3>
+                            <span className="text-sm text-gray-500">
+                                {members.length}명
+                            </span>
+                        </div>
+
+                        {loadingMembers ? (
+                            <div className="flex-1 flex items-center justify-center py-8">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                            </div>
+                        ) : (
+                            <div className="flex-1 overflow-y-auto">
+                                {members.length === 0 ? (
+                                    <div className="text-center py-8 text-gray-500">
+                                        참여자가 없습니다.
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {members.map((member, index) => (
+                                            <div
+                                                key={member.communityId || index}
+                                                className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                                            >
+                                                {member.profileImage ? (
+                                                    <img
+                                                        src={member.profileImage}
+                                                        alt={member.nickname}
+                                                        className="w-10 h-10 rounded-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                                        <span className="text-blue-600 font-medium text-sm">
+                                                            {member.nickname?.charAt(0) || '?'}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium text-gray-900 truncate">
+                                                        {member.nickname}
+                                                    </p>
+                                                    {member.communityId === currentUser.userId && (
+                                                        <p className="text-xs text-gray-500">나</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        <div className="mt-4 pt-4 border-t">
+                            <button
+                                onClick={() => setShowMembersModal(false)}
+                                className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                            >
+                                닫기
+                            </button>
                         </div>
                     </div>
                 </div>
