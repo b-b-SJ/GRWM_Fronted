@@ -5,10 +5,11 @@ import { usePost } from "../../hooks/usePost";
 import PostingStyle from "./PostingStyle";
 // MainTimeLine.jsx
 const MainTimeLine = () => {
-  const { posts, loading, error, getUserPostList } = usePost();
+  const { posts, loading, error } = usePost();
 
   useEffect(() => {
-    getUserPostList(); // 팔로잉한 사람들의 게시물만 가져오기
+    //timeLine posts 글들을 api를 통해 불러옴
+    // 팔로잉한 사람들+본인의 게시물만 가져오기
   }, []);
 
   if (loading) return <div>로딩 중...</div>;

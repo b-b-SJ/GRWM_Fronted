@@ -8,7 +8,7 @@ export function usePost() {
 
       user: {
         communityId: 4,
-        userName: "유유상종",
+        nickname: "유유상종",
         profileImage:
           "https://i.ibb.co/FbWvz1bB/2025030118134100-02-CB906-EA538-A35643-C1-E1484-C4-B947-D.jpg",
       },
@@ -31,7 +31,7 @@ export function usePost() {
 
       user: {
         communityId: 5,
-        userName: "규동",
+        nickname: "규동",
         profileImage:
           "https://recipe1.ezmember.co.kr/cache/recipe/2021/12/13/4686a67d2f6e39e1899d1e2afaff26ee1.jpg",
       },
@@ -57,7 +57,7 @@ export function usePost() {
       postId: "123",
       user: {
         communityId: 1,
-        userName: "가을이다~",
+        nickname: "가을이다~",
         profileImage:
           "https://cdn.mos.cms.futurecdn.net/7CfzWqwoHSzqtyQrfvnTwN-1200-80.jpg",
       },
@@ -81,13 +81,14 @@ export function usePost() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const getPostList = useCallback(async () => {
+  //기본 타임라인에 뜰 게시글 부르는 거
+  const getPostList = useCallback(async (page = 0, size = 30) => {
     setLoading(true);
     setError(null);
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/community-posts`,
+        `http://localhost:8080/api/community-posts?page=${page}&size=${size}`,
         {
           method: "GET",
           headers: {
@@ -139,7 +140,8 @@ export function usePost() {
     }
   }, []);
 
-  const getUserPostList = useCallback(async (communityId) => {
+  //얘는 불러오는 단위 설정 필요함 - 새로 업데이트 된 거에도 포함
+  const getUserPosts = useCallback(async (communityId, page = 0, size = 30) => {
     //확인 필요
     if (!communityId) {
       console.error("communityId 필요합니다");
@@ -151,7 +153,7 @@ export function usePost() {
     try {
       //특정 유저가 작성한 게시물 리스트
       const response = await fetch(
-        `http://localhost:8080/api/community-posts?communityId=${communityId}`,
+        `http://localhost:8080/api/community-posts?communityId=${communityId}?page=${page}&size=${size}`,
         {
           method: "GET",
           headers: {
@@ -162,6 +164,9 @@ export function usePost() {
       );
 
       if (response.ok) {
+        const data = await response.json();
+        console.log("무슨 글을 썻는교", data);
+        setPosts(data.postList);
       } else {
         console.error("게시글 조회에 실패했습니다");
       }
@@ -231,13 +236,16 @@ export function usePost() {
           prevPosts.filter((post) => post.postId !== postId)
         );
         console.log("게시글 삭제 성공");
+        return true;
       } else {
         console.error(" 게시글 삭제 실패:", response.status);
         setError("게시글 삭제에 실패했습니다");
+        return false;
       }
     } catch (error) {
       console.error(" 게시글 삭제 에러:", error);
       setError("네트워크 에러가 발생했습니다");
+      return false;
     } finally {
       setLoading(false);
     }
@@ -248,7 +256,7 @@ export function usePost() {
     loading, // 로딩 상태
     error, // 에러 메시지
     getPostList, // 전체 게시물 가져오기
-    getUserPostList, // 특정 사용자 게시물 가져오기
+    getUserPosts, // 특정 사용자 게시물 가져오기
     createPost, // 게시물 생성
     updatePost, // 게시물 수정
     deletePost, // 게시물 삭제

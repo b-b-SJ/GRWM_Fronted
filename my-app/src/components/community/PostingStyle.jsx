@@ -1,14 +1,28 @@
-import React from "react";
+// PostingStyle.jsx - 수정 완료본
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Heart, MessageSquare, EllipsisVertical } from "lucide-react";
+import {
+  Heart,
+  MessageSquare,
+  EllipsisVertical,
+  UserRound,
+} from "lucide-react";
 
-const PostingStyle = ({ post }) => {
-  console.log("받은 post:", post); // undefined인지 확인
-  console.log("post.user:", post?.user); // ?. 사용해서 안전하게 확인
+const PostingStyle = ({ post, onDelete, isDeleting }) => {
+  const [manageModal, setManageModal] = useState(false);
 
   // 임시로 이렇게 해서 에러 방지
   if (!post) {
     return <div>게시물 데이터가 없습니다.</div>;
+  }
+
+  // 삭제 중일 때 표시
+  if (isDeleting) {
+    return (
+      <div className="bg-white border-b text-center py-4 text-gray-500">
+        삭제 중...
+      </div>
+    );
   }
 
   return (
@@ -19,11 +33,17 @@ const PostingStyle = ({ post }) => {
           to={`/community/profile/${post.user.communityId}`}
           onClick={(e) => e.stopPropagation()}
         >
-          <img
-            src={post.user.profileImage}
-            alt={`${post.user.userName}의 프로필 사진`}
-            className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-          />
+          {post.user.profileImage ? (
+            <img
+              src={post.user.profileImage}
+              alt={`${post.user.nickname}의 프로필 사진`}
+              className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+            />
+          ) : (
+            <div className="w-12 h-12 rounded-full border-4 border-white shadow-lg bg-gray-300 flex items-center justify-center">
+              <UserRound className="w-6 h-6 text-gray-500" />
+            </div>
+          )}
         </Link>
         <Link
           to={`/community/profile/${post.user.communityId}`}
@@ -31,12 +51,14 @@ const PostingStyle = ({ post }) => {
         >
           <div className="flex flex-col">
             <span className="font-semibold text-base">
-              {post.user.userName}
+              {post.user.nickname}
             </span>
             <span className="text-gray-700 text-sm">몇분전인지 표시</span>
           </div>
         </Link>
-        <button className="flex ml-auto">
+
+        {/* 삭제 버튼 - onDelete만 호출 */}
+        <button className="flex ml-auto" onClick={() => onDelete(post.postId)}>
           <EllipsisVertical />
         </button>
       </div>

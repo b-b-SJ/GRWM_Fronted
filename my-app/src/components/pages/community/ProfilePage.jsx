@@ -3,10 +3,12 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { UserRound, Ellipsis, Award } from "lucide-react";
 import { useProfile } from "../../../hooks/useProfile";
-import PostingStyle from "../../community/PostingStyle";
 import { useAuth } from "../../../hooks/AuthContext";
 import { usePost } from "../../../hooks/usePost";
+import PostList from "../../community/PostList";
+
 // 프로필 페이지
+
 const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
   const {
     profile,
@@ -17,17 +19,13 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
     unfollowUser,
   } = useProfile();
 
-  const { getUserPostList } = usePost();
+  const { posts, getUserPosts } = usePost();
 
   const param = useParams();
   const { user } = useAuth();
   const currentProfileId = Number(param.communityId);
   const [relationship, setRelationship] = useState(null);
 
-  useEffect(() => {
-    getUserPostList(currentProfileId);
-  }, [currentProfileId, getUserPostList]);
-  //const userPost = getUserPostList(currentProfileId);
   console.log(
     "뭐가 undefined?",
     profile.user,
@@ -44,7 +42,7 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
         setIsMyProfile(currentProfileId === user.userId);
 
         const data = await getUserProfile(currentProfileId);
-
+        await getUserPosts(currentProfileId);
         if (data && data.relationship) {
           // 안전하게 체크
           setRelationship(data.relationship);
@@ -54,6 +52,13 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
 
     loadProfile();
   }, [currentProfileId, user.userId]);
+
+  const handlePostsChange = async (postId) => {
+    console.log("게시물 삭제됨:", postId);
+    // 프로필과 게시물 목록 모두 새로고침
+    await getUserProfile(currentProfileId);
+    await getUserPosts(currentProfileId);
+  };
   // 로딩, 에러, 빈 상태 처리
   if (loadingProfile) return <div>로딩 중...</div>;
   if (error) return <div>에러: {error}</div>;
@@ -102,7 +107,7 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
               />
             ) : (
               <div className="w-48 h-48 rounded-full border-4 border-white shadow-lg bg-gray-300 flex items-center justify-center">
-                <UserRound className="w-24 h-24 text-gray-600" />
+                <UserRound className="w-24 h-24 text-gray-500" />
               </div>
             )}
           </div>
@@ -187,7 +192,9 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
         <div>아직 게시글이 없습니다</div>
       ) : (
         //유저가 작성한 포스팅만 가져오는 api 연결 필요
-        <h>저 글 적었습니다 저 여기에 분명히 있어요.</h>
+        <div>
+          <PostList posts={posts} onPostsChange={handlePostsChange} />
+        </div>
       )}
     </div>
   );
