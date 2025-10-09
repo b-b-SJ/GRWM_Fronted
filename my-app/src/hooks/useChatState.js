@@ -1,13 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './AuthContext';
+import { useWebSocket } from './WebSocketContext';
 import { useLocation } from 'react-router-dom';
 
 /**
  * useChatState 커스텀 훅
+ * - 채팅방 목록 및 CRUD 관리
  * - AuthContext와 연동하여 로그인한 유저의 채팅방 로딩
  * - 메시지 히스토리 URL 수정: /api/chatroom/{chatRoomId}/show (0930)
- * - 메시지 삭제 REST API 사용: /api/chatroom/{chatRoomId}/delete/{messageId} (0930)
- * - DTO 수정: communityId(전송) / senderId(수신), replytoMessageId 추가 (1002)
+ * - 참여자 및 공지사항 관리
+ * - WebSocket 로직은 WebSocketContext로 분리
  */
 
 // 카테고리 매핑 상수
@@ -31,27 +33,6 @@ const getCategoryIdByName = (categoryName) => {
 
 const ChatStateContext = createContext();
 
-// STOMP 메시지 파싱 유틸리티
-const parseStompMessage = (data) => {
-    try {
-        const lines = data.split('\n');
-        const headerEndIndex = lines.findIndex(line => line === '');
-
-        if (headerEndIndex === -1) {
-            console.error('잘못된 STOMP 메시지 형식');
-            return null;
-        }
-
-        const bodyLines = lines.slice(headerEndIndex + 1);
-        const messageBody = bodyLines.join('\n').replace(/\0$/, '');
-
-        return messageBody ? JSON.parse(messageBody) : null;
-    } catch (error) {
-        console.error('STOMP 메시지 파싱 오류:', error);
-        return null;
-    }
-};
-
 // 백엔드 연결 실패 시, 테스트 용 채팅방
 const getTestRooms = (username, isTemporary = false) => {
     return [
@@ -73,25 +54,59 @@ const getTestRooms = (username, isTemporary = false) => {
 
 export const ChatStateProvider = ({ children }) => {
     const { user, isAuthenticated, getAuthHeaders } = useAuth();
+    const { connectionStatus, connect, disconnect, sendMessage: wsSendMessage, addMessageHandler } = useWebSocket();
     const location = useLocation();
 
     const [selectedRoom, setSelectedRoom] = useState(null);
     const [messages, setMessages] = useState({});
-    const [connectionStatus, setConnectionStatus] = useState('disconnected');
     const [replyTo, setReplyTo] = useState(null);
     const [chatRooms, setChatRooms] = useState([]);
     const [isLoadingRooms, setIsLoadingRooms] = useState(false);
-    const websocketRef = useRef(null);
+    const [communityNickname, setCommunityNickname] = useState(null);
+
     const apiCallRef = useRef(null);
 
     const currentUser = user || {
         userId: null,
         username: '게스트',
-        loginId: null
+        loginId: null,
+        communityNickname: communityNickname || '게스트'
     };
 
     const isChatPage = location.pathname.startsWith('/workspace');
 
+    // 커뮤니티 닉네임 가져오기
+    const fetchCommunityNickname = useCallback(async () => {
+        if (!isAuthenticated || !currentUser.userId) {
+            return;
+        }
+        try {
+            const response = await fetch('/api/users/community/info', {
+                method: 'GET',
+                headers: getAuthHeaders()
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const nickname = data.nickname;
+
+                console.log('커뮤니티 정보:', data);
+                setCommunityNickname(nickname);
+                console.log('커뮤니티 닉네임 상태:', nickname);
+                return nickname;
+            } else {
+                console.error('커뮤니티 정보 조회 실패:', response.status);
+                setCommunityNickname(null);
+                return null;
+            }
+        } catch (error) {
+            console.error('커뮤니티 정보 조회 오류:', error);
+            setCommunityNickname(null);
+            return null;
+        }
+    }, [isAuthenticated, currentUser.userId, getAuthHeaders]);
+
+    // 토큰 유효성 확인
     const checkTokenValidity = useCallback(async () => {
         const token = localStorage.getItem('accessToken');
         if (!token) return false;
@@ -112,6 +127,7 @@ export const ChatStateProvider = ({ children }) => {
         }
     }, []);
 
+    // 채팅방 목록 조회
     const fetchChatRooms = useCallback(async (skipTokenCheck = false) => {
         if (!isAuthenticated || !currentUser.userId) {
             setChatRooms([]);
@@ -141,13 +157,12 @@ export const ChatStateProvider = ({ children }) => {
                 method: 'GET',
                 headers: {
                     ...getAuthHeaders(),
-                    'Cache-Control': 'no-cache'  // 캐시 방지
+                    'Cache-Control': 'no-cache'
                 }
             });
 
             if (response.ok) {
                 const rooms = await response.json();
-                // 백엔드 원본 응답 확인
                 console.log('=== 백엔드 원본 응답 ===');
                 console.log('전체 rooms:', rooms);
 
@@ -187,6 +202,70 @@ export const ChatStateProvider = ({ children }) => {
         }
     }, [currentUser.userId, currentUser.username, currentUser.isTemporary, isAuthenticated, getAuthHeaders, checkTokenValidity, user]);
 
+    // 메시지 추가 (내부 사용)
+    const addMessage = useCallback((chatRoomId, message) => {
+        setMessages(prev => ({
+            ...prev,
+            [chatRoomId]: [...(prev[chatRoomId] || []), message]
+        }));
+    }, []);
+
+    // 메시지 삭제 (내부 사용)
+    const deleteMessage = useCallback((chatRoomId, messageId, deleteType) => {
+        setMessages(prev => ({
+            ...prev,
+            [chatRoomId]: prev[chatRoomId]?.map(msg =>
+                msg.id === messageId
+                    ? { ...msg, isDeleted: true, deleteType }
+                    : msg
+            ) || []
+        }));
+    }, []);
+
+    // 채팅 히스토리 로드
+    const fetchChatHistory = useCallback(async (chatRoomId) => {
+        if (!chatRoomId) {
+            console.error('chatRoomId가 없습니다');
+            return;
+        }
+
+        try {
+            console.log('채팅 히스토리 로드:', chatRoomId);
+
+            const response = await fetch(`/api/chatroom/${chatRoomId}/show`, {
+                method: 'GET',
+                headers: getAuthHeaders()
+            });
+
+            if (response.ok) {
+                const msgs = await response.json();
+
+                const formattedMessages = msgs.map(msg => ({
+                    id: msg.messageId,
+                    content: msg.content,
+                    sender: msg.writerChatName,
+                    senderId: msg.senderId,
+                    timestamp: msg.createdAt,
+                    type: msg.type === 0 ? 'chat' :
+                        msg.type === 1 ? 'join' : 'leave',
+                    replyToMessageId: msg.replytoMessageId || null
+                }));
+
+                setMessages(prev => ({
+                    ...prev,
+                    [chatRoomId]: formattedMessages
+                }));
+
+                console.log('히스토리 로드 완료:', formattedMessages.length);
+            } else {
+                console.error('히스토리 조회 실패:', response.status);
+            }
+        } catch (error) {
+            console.error('히스토리 조회 오류:', error);
+        }
+    }, [getAuthHeaders]);
+
+    // 채팅방 생성
     const createChatRoom = useCallback(async (roomData) => {
         if (!isAuthenticated || !currentUser.userId) {
             throw new Error('로그인이 필요합니다.');
@@ -226,6 +305,7 @@ export const ChatStateProvider = ({ children }) => {
         return data;
     }, [currentUser.userId, isAuthenticated, getAuthHeaders]);
 
+    // 비밀번호 확인
     const verifyRoomPassword = useCallback(async (chatRoomId, password) => {
         if (!isAuthenticated || !currentUser.userId) {
             throw new Error('로그인이 필요합니다.');
@@ -248,17 +328,18 @@ export const ChatStateProvider = ({ children }) => {
         return true;
     }, [isAuthenticated, currentUser.userId, getAuthHeaders]);
 
+    // 채팅방 참여
     const joinChatRoom = useCallback(async (chatRoomId, chatName = null, isManager = false) => {
         if (!isAuthenticated || !currentUser.userId) {
             throw new Error('로그인이 필요합니다.');
         }
 
-        const finalChatName = chatName || currentUser.username || currentUser.loginId || '사용자';
+        const finalChatName = chatName || currentUser.communityNickname || currentUser.username || '사용자';
 
         const requestData = {
             userId: currentUser.userId,
             chatName: finalChatName,
-            isManager: isManager  // 파라미터로 받은 값 사용
+            isManager: isManager
         };
 
         console.log('=== JOIN API 호출 ===');
@@ -307,27 +388,24 @@ export const ChatStateProvider = ({ children }) => {
             console.error('JOIN API 에러:', error);
             throw error;
         }
-    }, [currentUser.userId, currentUser.username, currentUser.loginId, isAuthenticated, getAuthHeaders, fetchChatRooms]);
+    }, [currentUser.userId, currentUser.communityNickname, currentUser.username, isAuthenticated, getAuthHeaders, fetchChatRooms]);
 
-    // 채팅방을 떠날 때 UI 상태를 정리
+    // 채팅방 나가기 (UI 상태만 정리)
     const leaveRoom = useCallback(() => {
-        console.log('방 나가기');
-        if (websocketRef.current) {
-            websocketRef.current.close(1000, 'User left');
-        }
+        console.log('방 나가기 (UI 정리)');
+        disconnect();
         setSelectedRoom(null);
         setReplyTo(null);
-        setConnectionStatus('disconnected');
-    }, []);
+    }, [disconnect]);
 
-    // 채팅방 나가기
+    // 채팅방 탈퇴 (서버에서 나가기)
     const leaveChatRoom = useCallback(async (chatRoomId) => {
         if (!isAuthenticated || !currentUser.userId) {
             throw new Error('로그인이 필요합니다.');
         }
 
-        console.log('Request URL:', `/api/chat-room/${chatRoomId}/${currentUser.userId}/leave`); // 디버깅용
-        console.log('Headers:', getAuthHeaders()); // 디버깅용
+        console.log('Request URL:', `/api/chat-room/${chatRoomId}/leave`);
+        console.log('Headers:', getAuthHeaders());
 
         const response = await fetch(`/api/chat-room/${chatRoomId}/leave`, {
             method: 'DELETE',
@@ -354,7 +432,7 @@ export const ChatStateProvider = ({ children }) => {
         return true;
     }, [currentUser.userId, isAuthenticated, getAuthHeaders, selectedRoom, fetchChatRooms, leaveRoom]);
 
-    // 채팅방 정보
+    // 채팅방 정보 조회
     const getChatRoomInfo = useCallback(async (chatRoomId) => {
         if (!isAuthenticated || !currentUser.userId) {
             throw new Error('로그인이 필요합니다.');
@@ -372,9 +450,9 @@ export const ChatStateProvider = ({ children }) => {
         }
 
         return data;
-
     }, [isAuthenticated, currentUser.userId, getAuthHeaders]);
 
+    // 채팅방 이름/설명 수정
     const editChatRoomName = useCallback(async (chatRoomId, roomName, description = null) => {
         if (!isAuthenticated || !currentUser.userId) {
             throw new Error('로그인이 필요합니다.');
@@ -404,11 +482,11 @@ export const ChatStateProvider = ({ children }) => {
             throw new Error(data.message || '채팅방 정보 수정에 실패했습니다.');
         }
 
-
         await fetchChatRooms();
         return true;
     }, [isAuthenticated, currentUser.userId, getAuthHeaders, fetchChatRooms]);
 
+    // 채팅방 삭제
     const deleteChatRoom = useCallback(async (chatRoomId) => {
         if (!isAuthenticated || !currentUser.userId) {
             throw new Error('로그인이 필요합니다.');
@@ -440,12 +518,13 @@ export const ChatStateProvider = ({ children }) => {
         return true;
     }, [isAuthenticated, currentUser.userId, getAuthHeaders, selectedRoom, fetchChatRooms, leaveRoom]);
 
+    // 공지사항 생성
     const createAnnouncement = useCallback(async (chatRoomId, content) => {
         if (!isAuthenticated || !currentUser.userId) {
             throw new Error('로그인이 필요합니다.');
         }
 
-        const chatName = currentUser.username || currentUser.loginId || '사용자';
+        const chatName = currentUser.communityNickname || currentUser.username || '사용자';
 
         const requestData = {
             userId: currentUser.userId,
@@ -472,10 +551,9 @@ export const ChatStateProvider = ({ children }) => {
             console.error('공지 생성 실패:', result);
             throw new Error(result.message || '공지 생성에 실패했습니다.');
         }
+    }, [isAuthenticated, currentUser.communityNickname, currentUser.userId, currentUser.username, getAuthHeaders]);
 
-    }, [isAuthenticated, currentUser.userId, currentUser.username, currentUser.chatName, getAuthHeaders]);
-
-    // 공지사항 불러오기
+    // 메인 공지사항 조회
     const getMainAnnouncement = useCallback(async (chatRoomId) => {
         if (!isAuthenticated || !currentUser.userId) {
             throw new Error('로그인이 필요합니다.');
@@ -495,6 +573,55 @@ export const ChatStateProvider = ({ children }) => {
         return data;
     }, [isAuthenticated, currentUser.userId, getAuthHeaders]);
 
+    // 채팅방 참여자 목록 조회
+    const getChatRoomMembers = useCallback(async (chatRoomId) => {
+        if (!isAuthenticated || !currentUser.userId) {
+            throw new Error('로그인이 필요합니다.');
+        }
+
+        try {
+            const response = await fetch(`/api/chat-room/${chatRoomId}/users`, {
+                method: 'GET',
+                headers: getAuthHeaders()
+            });
+
+            console.log('참여자 목록 API 응답 상태:', response.status);
+            console.log('참여자 목록 API 응답 헤더:', response.headers.get('content-type'));
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.error('응답이 JSON 형식이 아닙니다:', contentType);
+                throw new Error('서버 응답 형식이 올바르지 않습니다.');
+            }
+
+            const text = await response.text();
+            console.log('참여자 목록 API 응답 본문:', text);
+
+            if (!text || text.trim() === '') {
+                console.error('빈 응답 받음');
+                return [];
+            }
+
+            if (!response.ok) {
+                let errorData = {};
+                try {
+                    errorData = JSON.parse(text);
+                } catch (e) {
+                    console.error('에러 응답 파싱 실패:', e);
+                }
+                throw new Error(errorData.message || `참여자 목록 조회 실패 (${response.status})`);
+            }
+
+            const members = JSON.parse(text);
+            console.log('파싱된 참여자 목록:', members);
+            return Array.isArray(members) ? members : [];
+        } catch (error) {
+            console.error('getChatRoomMembers 오류:', error);
+            throw error;
+        }
+    }, [isAuthenticated, currentUser.userId, getAuthHeaders]);
+
+    // 채팅방 생성 후 참여
     const createAndJoinRoom = useCallback(async (roomData) => {
         const newChatRoomId = await createChatRoom(roomData);
         const joinResult = await joinChatRoom(newChatRoomId, null, true);
@@ -506,110 +633,32 @@ export const ChatStateProvider = ({ children }) => {
         }
     }, [createChatRoom, joinChatRoom]);
 
-    // 채팅 히스토리 로드 - senderId와 replytoMessageId 추가
-    const fetchChatHistory = useCallback(async (chatRoomId) => {
-        if (!chatRoomId) {
-            console.error('chatRoomId가 없습니다');
-            return;
-        }
-
-        try {
-            console.log('채팅 히스토리 로드:', chatRoomId);
-
-            const response = await fetch(`/api/chatroom/${chatRoomId}/show`, {
-                method: 'GET',
-                headers: getAuthHeaders()
-            });
-
-            if (response.ok) {
-                const msgs = await response.json();
-
-                const formattedMessages = msgs.map(msg => ({
-                    id: msg.messageId,
-                    content: msg.content,
-                    sender: msg.writerChatName,
-                    senderId: msg.senderId,
-                    timestamp: msg.createdAt,
-                    type: msg.type === 0 ? 'chat' :
-                        msg.type === 1 ? 'join' : 'leave',
-                    replyToMessageId: msg.replytoMessageId || null  // 답장 기능용
-                }));
-
-                setMessages(prev => ({
-                    ...prev,
-                    [chatRoomId]: formattedMessages
-                }));
-
-                console.log('히스토리 로드 완료:', formattedMessages.length);
-            } else {
-                console.error('히스토리 조회 실패:', response.status);
-            }
-        } catch (error) {
-            console.error('히스토리 조회 오류:', error);
-        }
-    }, [getAuthHeaders]);
-
-    const addMessage = useCallback((chatRoomId, message) => {
-        setMessages(prev => ({
-            ...prev,
-            [chatRoomId]: [...(prev[chatRoomId] || []), message]
-        }));
-    }, []);
-
-    const deleteMessage = useCallback((chatRoomId, messageId, deleteType) => {
-        setMessages(prev => ({
-            ...prev,
-            [chatRoomId]: prev[chatRoomId]?.map(msg =>
-                msg.id === messageId
-                    ? { ...msg, isDeleted: true, deleteType }
-                    : msg
-            ) || []
-        }));
-    }, []);
-
-    // 메시지 전송 - communityId 사용 (백엔드 요구사항)
+    // 메시지 전송 (WebSocket 사용)
     const sendMessage = useCallback((chatRoomId, content, replyToId = null) => {
         if (!isAuthenticated || !currentUser.userId) {
             throw new Error('로그인이 필요합니다.');
         }
 
-        const ws = websocketRef.current;
         const replyToMessage = replyToId ? messages[chatRoomId]?.find(m => m.id === replyToId) : null;
 
-        if (ws && ws.readyState === WebSocket.OPEN && connectionStatus === 'connected') {
-            // 전송 페이로드: communityId 사용
-            // 답장 기능이 백엔드에 구현되면 아래 주석 해제하고 사용
-            const messageData = {
-                chatRoomId: parseInt(chatRoomId),
-                content: content,
-                communityId: currentUser.userId
-                // replytoMessageId: replyToId  //  답장 기능 구현 시 주석 해제
-            };
+        // WebSocket으로 메시지 전송 시도
+        const sent = wsSendMessage(chatRoomId, content, currentUser.userId, replyToId);
 
-            const sendFrame = `SEND
-destination:/app/chat.${chatRoomId}.sendMessage
-content-type:application/json
-
-${JSON.stringify(messageData)}\0`;
-
-            console.log('메시지 전송:', messageData);
-            ws.send(sendFrame);
-
+        if (sent) {
             // Optimistic UI 업데이트
             const optimisticMessage = {
                 id: `temp-${Date.now()}`,
                 content: content,
-                sender: currentUser.username,
+                sender: currentUser.communityNickname || currentUser.username,
                 senderId: currentUser.userId,
                 timestamp: new Date().toISOString(),
                 type: 'chat',
-                replyToMessageId: replyToId,  // 답장 기능용 (UI에서 사용)
-                replyTo: replyToMessage,      // 답장 대상 메시지 정보
+                replyToMessageId: replyToId,
+                replyTo: replyToMessage,
                 isPending: true
             };
-
         } else {
-            console.warn('⚠️ WebSocket 미연결');
+            console.warn(' WebSocket 미연결');
 
             // 테스트 메시지 (WebSocket 미연결 시)
             const testMessage = {
@@ -625,7 +674,7 @@ ${JSON.stringify(messageData)}\0`;
 
             addMessage(chatRoomId, testMessage);
         }
-    }, [currentUser.userId, currentUser.username, isAuthenticated, connectionStatus, messages, addMessage]);
+    }, [currentUser.userId, currentUser.username, currentUser.communityNickname, isAuthenticated, messages, wsSendMessage, addMessage]);
 
     // 메시지 삭제 - REST API 사용
     const requestDeleteMessage = useCallback(async (chatRoomId, messageId) => {
@@ -652,124 +701,8 @@ ${JSON.stringify(messageData)}\0`;
         }
     }, [currentUser.userId, isAuthenticated, getAuthHeaders, deleteMessage]);
 
-    // WebSocket 연결
-    const connectWebSocket = useCallback((chatRoomId) => {
-        if (!chatRoomId || !isAuthenticated || !currentUser.userId) {
-            console.error('WebSocket 연결 불가');
-            return;
-        }
-
-        console.log('WebSocket 연결 시작:', chatRoomId);
-
-        if (websocketRef.current && websocketRef.current.readyState !== WebSocket.CLOSED) {
-            websocketRef.current.close(1000, 'New connection');
-            websocketRef.current = null;
-        }
-
-        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsHost = process.env.NODE_ENV === 'production'
-            ? window.location.host
-            : 'localhost:8080';
-
-        const wsUrl = `${wsProtocol}//${wsHost}/ws/chatroom`;
-        console.log('연결 URL:', wsUrl);
-
-        setConnectionStatus('connecting');
-
-        const ws = new WebSocket(wsUrl);
-        websocketRef.current = ws;
-
-        ws.onopen = () => {
-            console.log('WebSocket 열림');
-
-            const accessToken = localStorage.getItem('accessToken');
-            const connectFrame = `CONNECT
-accept-version:1.2
-heart-beat:20000,20000
-Authorization:Bearer ${accessToken}
-
-\0`;
-
-            ws.send(connectFrame);
-        };
-
-        ws.onmessage = (event) => {
-            console.log('수신 (첫 100자):', event.data.substring(0, 100));
-
-            if (event.data.startsWith('CONNECTED')) {
-                console.log('STOMP 연결 성공');
-
-                const subscribeFrame = `SUBSCRIBE
-id:sub-${chatRoomId}
-destination:/topic/chat.${chatRoomId}
-
-\0`;
-
-                console.log('구독:', `/topic/chat.${chatRoomId}`);
-                ws.send(subscribeFrame);
-
-                setTimeout(async () => {
-                    console.log('구독 완료');
-                    setConnectionStatus('connected');
-
-                    await fetchChatHistory(chatRoomId);
-
-                    try {
-                        const isTokenValid = await checkTokenValidity();
-                        if (isTokenValid) {
-                            await fetchChatRooms(true);
-                        }
-                    } catch (err) {
-                        console.warn('목록 갱신 실패:', err);
-                    }
-                }, 500);
-            }
-            else if (event.data.startsWith('MESSAGE')) {
-                const messageData = parseStompMessage(event.data);
-                console.log('메시지 수신 원본:', messageData);
-
-                if (messageData) {
-                    const formattedMessage = {
-                        id: messageData.messageId,
-                        content: messageData.content,
-                        sender: messageData.writerChatName,
-                        senderId: messageData.senderId,
-                        timestamp: messageData.createdAt,
-                        type: messageData.type === 0 ? 'chat' :
-                            messageData.type === 1 ? 'join' : 'leave',
-                        replyToMessageId: messageData.replytoMessageId || null  // 답장 기능용
-                    };
-
-                    console.log('포맷된 메시지:', formattedMessage);
-                    addMessage(chatRoomId, formattedMessage);
-                }
-            }
-            else if (event.data.startsWith('ERROR')) {
-                console.error('STOMP ERROR:', event.data);
-                setConnectionStatus('error');
-            }
-        };
-
-        ws.onclose = (event) => {
-            console.log('WebSocket 종료:', event.code, event.reason);
-            setConnectionStatus('disconnected');
-
-            if (event.code !== 1000 && selectedRoom === chatRoomId) {
-                setTimeout(() => {
-                    console.log('재연결 시도...');
-                    connectWebSocket(chatRoomId);
-                }, 3000);
-            }
-        };
-
-        ws.onerror = (error) => {
-            console.error('WebSocket 오류:', error);
-            setConnectionStatus('error');
-        };
-
-    }, [isAuthenticated, currentUser.userId, selectedRoom, checkTokenValidity, fetchChatRooms, fetchChatHistory, addMessage]);
-
-    const joinRoom = useCallback((chatRoomId) => {
+    // 채팅방 입장 (WebSocket 연결 + 히스토리 로드)
+    const joinRoom = useCallback(async (chatRoomId) => {
         if (!isAuthenticated || !currentUser.userId) {
             console.error('로그인 필요');
             return;
@@ -784,12 +717,42 @@ destination:/topic/chat.${chatRoomId}
             [chatRoomId]: prev[chatRoomId] || []
         }));
 
-        connectWebSocket(chatRoomId);
-    }, [connectWebSocket, isAuthenticated, currentUser.userId]);
+        // WebSocket 연결
+        connect(chatRoomId);
 
+        // 히스토리 로드
+        await fetchChatHistory(chatRoomId);
+
+        // 채팅방 목록 갱신
+        try {
+            const isTokenValid = await checkTokenValidity();
+            if (isTokenValid) {
+                await fetchChatRooms(true);
+            }
+        } catch (err) {
+            console.warn('목록 갱신 실패:', err);
+        }
+    }, [connect, isAuthenticated, currentUser.userId, fetchChatHistory, checkTokenValidity, fetchChatRooms]);
+
+    // WebSocket 메시지 핸들러 등록
+    useEffect(() => {
+        const handleMessage = (message) => {
+            if (selectedRoom) {
+                addMessage(selectedRoom, message);
+            }
+        };
+
+        const unsubscribe = addMessageHandler(handleMessage);
+
+        return () => {
+            unsubscribe();
+        };
+    }, [selectedRoom, addMessageHandler, addMessage]);
+
+    // 초기 로드 및 페이지 전환 처리
     useEffect(() => {
         if (isAuthenticated && currentUser.userId && isChatPage) {
-            console.log('채팅 페이지 - 목록 로드');
+            fetchCommunityNickname();
             fetchChatRooms();
         } else if (!isChatPage) {
             setChatRooms([]);
@@ -804,15 +767,7 @@ destination:/topic/chat.${chatRoomId}
                 leaveRoom();
             }
         }
-    }, [isAuthenticated, currentUser.userId, isChatPage, fetchChatRooms, selectedRoom, leaveRoom]);
-
-    useEffect(() => {
-        return () => {
-            if (websocketRef.current) {
-                websocketRef.current.close(1000, 'Unmount');
-            }
-        };
-    }, []);
+    }, [isAuthenticated, currentUser.userId, isChatPage, fetchChatRooms, fetchCommunityNickname, selectedRoom, leaveRoom]);
 
     const value = {
         selectedRoom,
@@ -840,13 +795,13 @@ destination:/topic/chat.${chatRoomId}
         deleteChatRoom,
         createAnnouncement,
         getMainAnnouncement,
+        getChatRoomMembers,
         sendMessage,
         requestDeleteMessage,
         joinRoom,
         leaveRoom,
-        connectWebSocket
+        fetchCommunityNickname
     };
-
     return (
         <ChatStateContext.Provider value={value}>
             {children}

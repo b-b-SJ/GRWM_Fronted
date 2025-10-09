@@ -7,6 +7,7 @@ import TrackerPage from './components/pages/TrackerPage';
 import CommunityPage from "./components/pages/community/CommunityPage";
 import WorkspacePage from './components/pages/WorkspacePage';
 import { ChatStateProvider } from './hooks/useChatState';
+import { WebSocketProvider } from './hooks/WebSocketContext';
 import AuthPage from './components/pages/auth/AuthPage';
 import { AuthProvider } from './hooks/AuthContext';
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -15,6 +16,7 @@ const App = () => {
     return (
         <AuthProvider>
             <BrowserRouter>
+                <WebSocketProvider>
                 <ChatStateProvider>
                         <Routes>
                             <Route path="auth" element={<AuthPage />} />
@@ -31,6 +33,7 @@ const App = () => {
                             <Route path="*" element={<Navigate to="/auth" replace />} />
                         </Routes>
                 </ChatStateProvider>
+                </WebSocketProvider>
             </BrowserRouter>
         </AuthProvider>
     );
