@@ -24,7 +24,7 @@ const App = () => {
 
                             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                                 <Route path="main" element={<MainPage />} />
-                                <Route path="planner" element={<PlannerPage />} />
+                                <Route path="planner/*" element={<PlannerPage />} />
                                 <Route path="tracker" element={<TrackerPage />} />
                                 <Route path="workspace/*" element={<WorkspacePage />} />
                                 <Route path="community" element={<CommunityPage />} />

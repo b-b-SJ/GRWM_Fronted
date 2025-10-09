@@ -20,7 +20,7 @@ const Navigation = ({ toggleSidebar, currentUser, currentPage }) => {
             label: '플래너',
             path: '/planner',
             subMenus: [
-                { label: '개인 플래너', path: '/planner/personal' },
+                { label: '개인 플래너', path: '/planner' },
                 { label: '공유 플래너', path: '/planner/shared' }
             ]
         },
@@ -88,7 +88,7 @@ const Navigation = ({ toggleSidebar, currentUser, currentPage }) => {
     // 서브메뉴 클릭 시 이동
     const handleSubMenuClick = (path) => {
         // workspace와 tracker 관련 서브메뉴는 구현되어 있으므로 이동 허용
-        if (path.startsWith('/workspace') || path.startsWith('/tracker')) {
+        if (path.startsWith('/workspace') || path.startsWith('/tracker')|| path.startsWith('/planner')) {
             navigate(path);
         } else {
             // 다른 서브메뉴는 아직 구현되지 않음을 알림
