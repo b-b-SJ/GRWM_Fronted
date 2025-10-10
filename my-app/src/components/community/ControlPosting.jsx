@@ -76,7 +76,12 @@ const ControlPosting = ({
           left: `${position.x}px`,
         }}
       >
-        <button className="flex items-center gap-2 p-2">
+        <button
+          className="flex items-center gap-2 p-2"
+          onClick={() => {
+            alert("신고되었습니다");
+          }}
+        >
           <span>게시글 신고</span>
         </button>
       </div>,
