@@ -77,7 +77,8 @@ export function usePost() {
       updatedAt: null,
     },
   ]);
-
+  const [comments, setComments] = useState([]);
+  const [likedUsers, setLikedUsers] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -131,7 +132,7 @@ export function usePost() {
       );
       if (response.ok) {
         const newPost = await response.json();
-        setPosts((prevPosts) => [newPost, ...prevPosts]); // 새 게시물을 맨 위에 추가
+
         console.log("게시글 업로드 성공:", newPost);
         return newPost;
       } else {
@@ -200,9 +201,7 @@ export function usePost() {
 
       if (response.ok) {
         const updatedPost = await response.json();
-        setPosts((prevPosts) =>
-          prevPosts.map((post) => (post.postId === postId ? updatedPost : post))
-        );
+
         console.log(" 게시글 수정 성공");
         return updatedPost;
       } else {
@@ -235,9 +234,6 @@ export function usePost() {
       );
 
       if (response.ok) {
-        setPosts((prevPosts) =>
-          prevPosts.filter((post) => post.postId !== postId)
-        );
         console.log("게시글 삭제 성공");
         return true;
       } else {
@@ -254,6 +250,162 @@ export function usePost() {
     }
   }, []);
 
+  const likePost = useCallback(async (postId) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/community-posts/${postId}/like`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+          },
+        }
+      );
+
+      if (response.ok) {
+        const likeCount = await response.json();
+        console.log("좋아요 성공");
+        return likeCount;
+      } else {
+        console.error(" 좋아요 실패:", response.status);
+        setError("좋아요를 실패했어요");
+      }
+    } catch (error) {
+      console.error(" 에러:", error);
+      setError("네트워크 에러가 발생했습니다");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const cancelLike = useCallback(async (postId) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/community-posts/${postId}/like`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+          },
+        }
+      );
+
+      if (response.ok) {
+        const likeCount = await response.json();
+        console.log("좋아요 취소 성공");
+        return likeCount;
+      } else {
+        console.error(" 좋아요 취소 실패:", response.status);
+        setError("좋아요 취소를 실패했어요");
+      }
+    } catch (error) {
+      console.error(" 에러:", error);
+      setError("네트워크 에러가 발생했습니다");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const getPostLlikedUserList = useCallback(async (postId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/community-posts/${postId}/likes`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+          },
+        }
+      );
+      if (response.ok) {
+        const likes = response.json();
+        console.log("좋아요한 유저 반환 성공");
+        setLikedUsers(likes);
+      } else {
+        console.error(" 좋아요 유저 반환 실패:", response.status);
+        setError("좋아요한 유저 반환을 실패했어요");
+      }
+    } catch (error) {
+      console.error(" 에러:", error);
+      setError("네트워크 에러가 발생했습니다");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const createComment = useCallback(async (postId, commentData) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/community-posts/${postId}/comments`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+          },
+          body: JSON.stringify(commentData),
+        }
+      );
+      if (response.ok) {
+        console.log("댓글 작성 성공");
+        return true;
+      } else {
+        console.error(" 댓글 작성 실패:", response.status);
+        setError("댓글 작성을 실패했어요");
+        return false;
+      }
+    } catch (error) {
+      console.error(" 에러:", error);
+      setError("네트워크 에러가 발생했습니다");
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const getCommentList = useCallback(async (postId) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/community-posts/${postId}/comments`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+          },
+        }
+      );
+      if (response.ok) {
+        const comments = response.json();
+        console.log("댓글 반환 성공");
+        setComments(comments);
+      } else {
+        console.error(" 댓글 반환 실패:", response.status);
+        setError("댓글 반환을 실패했어요");
+      }
+    } catch (error) {
+      console.error(" 에러:", error);
+      setError("네트워크 에러가 발생했습니다");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     posts, // 게시물 배열
     loading, // 로딩 상태
@@ -263,5 +415,10 @@ export function usePost() {
     createPost, // 게시물 생성
     updatePost, // 게시물 수정
     deletePost, // 게시물 삭제
+    likePost,
+    cancelLike,
+    getPostLlikedUserList,
+    createComment,
+    getCommentList,
   };
 }

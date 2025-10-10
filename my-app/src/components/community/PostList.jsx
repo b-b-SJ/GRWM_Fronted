@@ -3,7 +3,7 @@ import { usePost } from "../../hooks/usePost";
 import PostingStyle from "./PostingStyle";
 
 const PostList = ({ posts, onPostsChange }) => {
-  const { deletePost } = usePost();
+  const { deletePost, likePost, cancelLike } = usePost();
   const [localPosts, setLocalPosts] = useState(posts);
   const [deletingPostId, setDeletingPostId] = useState(null);
 
@@ -12,7 +12,7 @@ const PostList = ({ posts, onPostsChange }) => {
     setLocalPosts(posts);
   }, [posts]);
 
-  // ✅ 삭제 처리
+  // 삭제 처리
   const handlePostDeleted = async (postId) => {
     if (window.confirm("정말 삭제하시겠습니까?")) {
       try {
@@ -35,7 +35,44 @@ const PostList = ({ posts, onPostsChange }) => {
     }
   };
 
-  // ✅ 수정 완료 처리
+  const handleLikePost = async (postId) => {
+    try {
+      const updatedLikeCount = await likePost(postId);
+
+      // 화면 업뎃
+      if (updatedLikeCount !== undefined) {
+        setLocalPosts((prev) =>
+          prev.map((post) =>
+            post.postId === postId
+              ? { ...post, likeCount: updatedLikeCount }
+              : post
+          )
+        );
+      }
+    } catch (error) {
+      console.error("좋아요 오류:", error);
+    }
+  };
+
+  const handleCancelLike = async (postId) => {
+    try {
+      const updatedLikeCount = await cancelLike(postId);
+
+      // 화면 업뎃
+      if (updatedLikeCount !== undefined) {
+        setLocalPosts((prev) =>
+          prev.map((post) =>
+            post.postId === postId
+              ? { ...post, likeCount: updatedLikeCount }
+              : post
+          )
+        );
+      }
+    } catch (error) {
+      console.error("좋아요 취소 오류:", error);
+    }
+  };
+  // 수정 완료 처리
   const handlePostChanged = (mode, updatedPost) => {
     console.log("게시물 변경:", mode, updatedPost);
 
@@ -71,6 +108,8 @@ const PostList = ({ posts, onPostsChange }) => {
           onDelete={handlePostDeleted}
           onPostChanged={handlePostChanged}
           isDeleting={deletingPostId === post.postId}
+          likePost={handleLikePost}
+          cancelLike={handleCancelLike}
         />
       ))}
     </div>

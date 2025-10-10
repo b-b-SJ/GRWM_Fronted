@@ -9,11 +9,18 @@ import {
   EllipsisVertical,
 } from "lucide-react";
 
-const PostingStyle = ({ post, onDelete, isDeleting, onPostChanged }) => {
+const PostingStyle = ({
+  post,
+  onDelete,
+  isDeleting,
+  onPostChanged,
+  likePost,
+  cancelLike,
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const [manageModal, setManageModal] = useState(false);
   const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
-
+  const [isLiked, setIsLiked] = useState(false);
   if (!post) {
     return <div className="text-center py-4">게시물 데이터가 없습니다.</div>;
   }
@@ -66,10 +73,10 @@ const PostingStyle = ({ post, onDelete, isDeleting, onPostChanged }) => {
           >
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-base hover:underline">
+                <span className="font-semibold text-base ">
                   {post.user.nickname}
                 </span>
-                {post.isEdited && (
+                {post.edited && (
                   <span className="text-xs text-gray-400">• 수정됨</span>
                 )}
               </div>
@@ -145,9 +152,26 @@ const PostingStyle = ({ post, onDelete, isDeleting, onPostChanged }) => {
             <MessageSquare size={18} />
             <span>댓글 {post.commentCount}</span>
           </button>
-          <button className="flex items-center gap-2 hover:text-red-500 transition-colors">
-            <Heart size={18} />
-            <span>좋아요 {post.likeCount}</span>
+          <button
+            className="flex items-center gap-2 hover:text-red-500 transition-colors"
+            onClick={() => {
+              // ✅ 현재 상태를 기준으로 판단
+              if (isLiked) {
+                cancelLike(post.postId);
+              } else {
+                likePost(post.postId);
+              }
+              // 그 다음 상태 변경
+              setIsLiked(!isLiked);
+            }}
+          >
+            <Heart
+              size={18}
+              fill={isLiked ? "red" : "none"} // 채움 여부
+              stroke={isLiked ? "red" : "currentColor"} // 테두리 색
+              className={isLiked ? "text-red-500" : "text-gray-500"}
+            />
+            <span> {post.likeCount} 좋아요</span>
           </button>
         </div>
       </div>
