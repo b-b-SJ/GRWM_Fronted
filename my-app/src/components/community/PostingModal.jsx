@@ -1,105 +1,150 @@
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "../../hooks/AuthContext";
-import { useProfile } from "../../hooks/useProfile";
 import { usePost } from "../../hooks/usePost";
 import { Image } from "lucide-react";
-const PostingModal = ({ setOpenPostModal, openPostModal, profilePic }) => {
-  // useEffect(() => {}), []; //이거 할 때만 re렌더
+
+const PostingModal = ({
+  setOpenPostModal,
+  openPostModal,
+  mode = "create",
+  existingPost = null,
+  onPostChanged, // ✅ 콜백 받기
+}) => {
   const [textContent, setTextContent] = useState("");
   const [hashtags, setHashtags] = useState([]);
   const [imagesUrl, setImagesUrl] = useState([]);
   const [visibility, setVisibility] = useState("public");
-  const { getUserProfile } = useProfile();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { createPost, updatePost } = usePost();
   const fileInputRef = useRef(null);
-  const handleButtonClick = () => {
-    fileInputRef.current?.click(); // 숨겨진 input을 클릭!
-  };
 
-  //post 등록 handler
+  // ✅ 수정 모드일 때 기존 데이터 채우기
+  useEffect(() => {
+    if (mode === "edit" && existingPost) {
+      setTextContent(existingPost.content.text || "");
+      setHashtags(existingPost.hashtags || []);
+      setImagesUrl(existingPost.content.images || []);
+      setVisibility(existingPost.visibility || "public");
+    }
+  }, [mode, existingPost]);
+
+  const handleButtonClick = () => {
+    fileInputRef.current?.click();
+  };
 
   const handleSubmit = async () => {
-    if (textContent) {
-      //나중에 imagesUrl 조건?도..넣기
-      // 이 객체가 createPost의 매개변수로 들어감
-      const postData = {
-        content: {
-          text: textContent, // state에서 가져온 텍스트
-          images: [], // -> 나중에 이미지 업로드 api랑 연결하면 뭐너흘듯
-        },
-        hashtags: hashtags, // state에서 가져온 해시태그 배열 -> #빼고 주기
-        visibility: visibility,
-      };
+    if (!textContent.trim()) {
+      alert("텍스트를 입력해주세요");
+      return;
+    }
 
-      // 훅에서 가져온 함수 호출
-      try {
-        const result = await createPost(postData);
+    setIsSubmitting(true);
+
+    const postData = {
+      content: {
+        text: textContent,
+        images: imagesUrl,
+      },
+      hashtags: hashtags,
+      visibility: visibility,
+    };
+
+    try {
+      let result;
+
+      if (mode === "create") {
+        result = await createPost(postData);
         if (result) {
-          //내가 내 프로필 보고 있을 때 글 쓰면 재렌더하고 싶음 여기서
-          //근데
-          setOpenPostModal(false);
           alert("게시글이 등록되었습니다");
         }
-      } catch (error) {
-        alert("게시글 작성 실패");
-        console.error(error);
+      } else {
+        // 수정 모드
+        result = await updatePost(existingPost.postId, postData);
+        if (result) {
+          alert("게시물이 수정되었습니다!");
+        }
       }
-    } else alert("텍스트나 이미지를 넣으쇼");
+
+      // ✅ 부모에게 변경 알림
+      if (onPostChanged && result) {
+        onPostChanged(mode, result);
+      }
+
+      // 모달 닫기
+      setOpenPostModal(false);
+    } catch (error) {
+      alert("처리 실패");
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  //여기에서 간단한 인포 불러오는 api랑 연결-> useProfile에서 연결되게 코드 추가 작성해야됨
-
-  //해시태그 부분에서는 띄어쓰기 받으면 바로 해시태그 형태?가 되도록..-> 받는 area가 글 작성 부분이랑 구분 되어 있음
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50"
+      // onClick={() => setOpenPostModal(false)}
+    >
       <div
-        className="bg-white p-6 rounded-lg max-w-xl mx-auto mt-56"
-        onClick={(e) => {
-          e.stopPropagation();
-        }}
+        className="bg-white p-6 rounded-lg max-w-xl w-full mx-4 mb-16"
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className=" space-y-2 mx-2">
-          <buttons className="space=content-between">
+        <div className="space-y-4">
+          {/* 헤더 */}
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold">
+              {mode === "create" ? "새 게시물" : "게시물 수정"}
+            </h2>
             <button
-              className="pb-3 pr-4" //오른쪽으로..
+              className="text-gray-500 hover:text-gray-700"
               onClick={() => setOpenPostModal(false)}
             >
               닫기
             </button>
-            <button className="pl-8" onClick={handleSubmit}>
-              등록
-            </button>
-          </buttons>
-          <img />
+          </div>
 
+          {/* 텍스트 입력 */}
           <textarea
             value={textContent}
             onChange={(e) => setTextContent(e.target.value)}
             placeholder="무슨 일이 일어나고 있나요?"
-            style={{
-              resize: "none", // 크기 조절 막기
-              width: "100%",
-              height: "150px", // 원하는 높이
-              overflowY: "auto", // 스크롤 활성화
-              padding: "12px",
-              fontSize: "16px",
-              border: "1px solid #ccc",
-              borderRadius: "8px",
-            }}
+            className="w-full h-40 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-rose-400"
           />
-        </div>
-        <button
-          onClick={handleButtonClick}
-          className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-        >
-          <Image size={20} />
-          <span>이미지 추가</span>
-        </button>
 
-        <input type="file" accept="image/*" multiple className="hidden" />
+          {/* 이미지 추가 버튼 */}
+          <button
+            onClick={handleButtonClick}
+            className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          >
+            <Image size={20} />
+            <span>이미지 추가</span>
+          </button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+          />
+
+          {/* 등록/수정 버튼 */}
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="w-full bg-rose-400 text-white py-3 rounded-lg hover:bg-rose-500 disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            {isSubmitting
+              ? "처리 중..."
+              : mode === "create"
+              ? "등록"
+              : "수정 완료"}
+          </button>
+        </div>
       </div>
     </div>
   );
 };
+
 export default PostingModal;

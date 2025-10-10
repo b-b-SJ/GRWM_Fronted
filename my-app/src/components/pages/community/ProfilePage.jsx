@@ -1,13 +1,10 @@
-import React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { UserRound, Ellipsis, Award } from "lucide-react";
 import { useProfile } from "../../../hooks/useProfile";
 import { useAuth } from "../../../hooks/AuthContext";
 import { usePost } from "../../../hooks/usePost";
 import PostList from "../../community/PostList";
-
-// 프로필 페이지
 
 const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
   const {
@@ -20,127 +17,120 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
   } = useProfile();
 
   const { posts, getUserPosts } = usePost();
-
   const param = useParams();
   const { user } = useAuth();
   const currentProfileId = Number(param.communityId);
-  const [relationship, setRelationship] = useState(null);
 
-  console.log(
-    "뭐가 undefined?",
-    profile.user,
-    profile,
-    profile.relationship,
-    user.userId, //현재 로그인 중인 유저
-    currentProfileId
-  ); //숫자화 필요
-
-  // 페이지가 처음 보일 때, communityId로 프로필 정보를 요청
+  // 초기 로드
   useEffect(() => {
     const loadProfile = async () => {
       if (currentProfileId && user.userId) {
         setIsMyProfile(currentProfileId === user.userId);
-
-        const data = await getUserProfile(currentProfileId);
+        await getUserProfile(currentProfileId);
         await getUserPosts(currentProfileId);
-        if (data && data.relationship) {
-          // 안전하게 체크
-          setRelationship(data.relationship);
-        }
       }
     };
-
     loadProfile();
   }, [currentProfileId, user.userId]);
 
-  const handlePostsChange = async (postId) => {
-    console.log("게시물 삭제됨:", postId);
-    // 프로필과 게시물 목록 모두 새로고침
+  // ✅ 게시물 변경 핸들러 (생성, 수정, 삭제 모두 처리)
+  const handlePostsChange = async (mode, data) => {
+    console.log(`게시물 ${mode}됨:`, data);
+
+    // 프로필 정보 새로고침 (postCount 업데이트)
     await getUserProfile(currentProfileId);
-    await getUserPosts(currentProfileId);
+
+    // create나 delete는 목록 전체 새로고침
+    // edit는 PostList가 이미 업데이트했으니 안 해도 됨
+    if (mode === "create" || mode === "delete") {
+      await getUserPosts(currentProfileId);
+    }
   };
-  // 로딩, 에러, 빈 상태 처리
-  if (loadingProfile) return <div>로딩 중...</div>;
-  if (error) return <div>에러: {error}</div>;
-  if (!profile) return <div>프로필을 찾을 수 없습니다.</div>;
 
-  //팔로잉 팔로우 버튼 토글
-
-  {
-    /**
-    archivedBadgeCount: 0;
-    bannerImage: null;
-    description: null;
-    followerCount: 0;
-    followingCount: 0;
-    pinnedPostId: null;
-    postCount: 0;
-    user: {
-    communityId: 3;
-    nickname: "무명3";
-    profileImage: null;}
-     */
+  if (loadingProfile) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-lg text-gray-500">로딩 중...</div>
+      </div>
+    );
   }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-lg text-red-500">에러: {error}</div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-lg text-gray-500">프로필을 찾을 수 없습니다.</div>
+      </div>
+    );
+  }
+
   return (
-    <div className=" bg-white ">
-      <div className=" shadow-md">
+    <div className="bg-white min-h-screen mt-10">
+      {/* 프로필 헤더 */}
+      <div className="shadow-sm">
+        {/* 배너 */}
         <div className="max-w-full aspect-[32/2]">
           {profile.bannerImage ? (
             <img
               src={profile.bannerImage}
-              alt="배너 이미지"
+              alt="배너"
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full bg-gray-300"></div>
+            <div className="w-full h-full bg-gray-400"></div>
           )}
         </div>
 
+        {/* 프로필 정보 */}
         <div className="mt-7 px-6 py-4 flex pb-12 border-b">
-          {/**프필 */}
-          <div className="">
+          {/* 프로필 사진 */}
+          <div>
             {profile.user.profileImage ? (
               <img
                 src={profile.user.profileImage}
-                alt="프로필 이미지"
-                className="w-48 h-48 rounded-full border-4 border-white shadow-sm object-cover"
+                alt="프로필"
+                className="w-48 h-48 rounded-full border-4 border-white shadow-lg object-cover"
               />
             ) : (
-              <div className="w-48 h-48 rounded-full border-4 border-white shadow-lg bg-gray-300 flex items-center justify-center">
-                <UserRound className="w-24 h-24 text-gray-500" />
+              <div className="w-48 h-48 rounded-full border-4 border-white shadow-lg bg-gray-200 flex items-center justify-center">
+                <UserRound className="w-24 h-24 text-gray-400" />
               </div>
             )}
           </div>
-          {/**닉넴,팔로워,팔로잉,게시물,미트볼 */}
-          <div className="flex flex-col h-44 p-6 gap-y-6 ">
-            <h2 className="font-semibold text-2xl ">{profile.user.nickname}</h2>
 
-            <div className="flex flex-row gap-5 ml-2">
+          {/* 닉네임, 팔로우 버튼, 통계 */}
+          <div className="flex flex-col flex-1 p-6 gap-y-6">
+            <h2 className="font-bold text-2xl">{profile.user.nickname}</h2>
+
+            {/* 팔로우 버튼 */}
+            <div className="flex items-center gap-5">
               {isMyProfile ? (
-                <button>프로필 편집</button>
+                <button className="px-6 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">
+                  프로필 편집
+                </button>
               ) : (
                 <>
                   {profile.relationship === "followedByMe" ? (
                     <button
-                      className="group text-gray-50 text-xl ml-2 bg-blue-400 w-[150px] h-fit py-2 rounded-md shadow-md hover:bg-red-500 transition-colors"
-                      onClick={() => {
-                        //setRelationship("noRelationship");
-                        unfollowUser(currentProfileId);
-                      }}
+                      className="group px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-red-500 transition-colors"
+                      onClick={() => unfollowUser(currentProfileId)}
                     >
                       <span className="group-hover:hidden">팔로우 중</span>
-
                       <span className="hidden group-hover:inline">
                         언팔로우
                       </span>
                     </button>
                   ) : (
                     <button
-                      className="text-gray-50 text-xl ml-2 bg-blue-400 w-[150px] h-fit py-2 rounded-md shadow-md hover:bg-blue-500 transition-colors"
-                      onClick={() => {
-                        //  setRelationship("isFollowing");
-                        followUser(currentProfileId);
-                      }}
+                      className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                      onClick={() => followUser(currentProfileId)}
                     >
                       팔로우
                     </button>
@@ -148,27 +138,24 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
                 </>
               )}
 
-              <button className="">
-                <Ellipsis size={32} />
+              <button className="p-2 hover:bg-gray-100 rounded-full">
+                <Ellipsis size={24} />
               </button>
             </div>
-            {/**게시물 팔로워 팔로잉 */}
 
-            <div className="flex justify-evenly text-center text-lg">
+            {/* 통계 */}
+            <div className="flex gap-8 text-center">
               <div>
-                <p className="text-gray-500">게시물</p>
-
-                <p className="font-bold">{profile.postCount}</p>
+                <p className="text-gray-500 text-sm">게시물</p>
+                <p className="font-bold text-lg">{profile.postCount}</p>
               </div>
-              <button>
-                <p className="text-gray-500">팔로워</p>
-
-                <p className="font-bold">{profile.followerCount}</p>
+              <button className="hover:opacity-70 transition-opacity">
+                <p className="text-gray-500 text-sm">팔로워</p>
+                <p className="font-bold text-lg">{profile.followerCount}</p>
               </button>
-              <button>
-                <p className="text-gray-500">팔로잉</p>
-
-                <p className="font-bold">{profile.followingCount}</p>
+              <button className="hover:opacity-70 transition-opacity">
+                <p className="text-gray-500 text-sm">팔로잉</p>
+                <p className="font-bold text-lg">{profile.followingCount}</p>
               </button>
             </div>
           </div>
@@ -179,23 +166,25 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
               className="text-rose-400 col-start-1 row-start-1"
               size={60}
             />
-            <div className="font-bold text-4xl col-start-1 row-start-1 drop-shadow-md">
+            <div className="font-bold text-4xl col-start-1 row-start-1 drop-shadow-md ">
               {profile.achievedBadgeCount}
             </div>
           </button>
         </div>
-        {/**바이오 */}
-        <div className="p-4 pl-8">{profile.description}</div>
+
+        {/* 바이오 */}
+        {profile.description && (
+          <div className="p-6 text-gray-700">{profile.description}</div>
+        )}
       </div>
-      {/*게시글 내용 */}
-      {profile.postCount === 0 ? (
-        <div>아직 게시글이 없습니다</div>
-      ) : (
-        //유저가 작성한 포스팅만 가져오는 api 연결 필요
-        <div>
-          <PostList posts={posts} onPostsChange={handlePostsChange} />
-        </div>
-      )}
+
+      {/* ✅ 게시물 목록 */}
+      <div className="">
+        <PostList
+          posts={posts}
+          onPostsChange={handlePostsChange} // ✅ 콜백 전달
+        />
+      </div>
     </div>
   );
 };

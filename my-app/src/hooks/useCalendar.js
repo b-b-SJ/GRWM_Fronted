@@ -151,5 +151,6 @@ export function useCalendar() {
     weekFound,
     weekNames,
     timeTable,
+    groupDatesByWeek,
   };
 }

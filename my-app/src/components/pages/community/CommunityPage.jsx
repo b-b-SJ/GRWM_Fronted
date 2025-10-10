@@ -18,8 +18,17 @@ const CommunityPage = () => {
   const [comSidebarOpen, setComSidebarOpen] = useState(true);
   const [isMyProfile, setIsMyProfile] = useState(true);
   const [openPostModal, setOpenPostModal] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0); // ✅ 새로고침 트리거
 
-  const navigate = useNavigate();
+  // ✅ 새 글 작성 완료 시
+  const handleNewPostCreated = (mode, data) => {
+    console.log("새 게시물 작성:", mode, data);
+
+    if (mode === "create") {
+      // 페이지 새로고침 트리거
+      setRefreshKey((prev) => prev + 1);
+    }
+  };
   return (
     <div className="relative flex-col flex flex-1 ">
       <div className="flex flex-1  overflow-y-auto">
@@ -36,24 +45,33 @@ const CommunityPage = () => {
         </button>
 
         {comSidebarOpen === true && <CommunitySidebar />}
-        <div className="flex flex-col col-span-1 mt-6 lg:ms-48 lg:me-60">
-          <Routes>
-            <Route path="/" element={<TimeLinePage />} />
-            {/*<Route path="/profile/my" element={<MyProfilePage />} />*/}
-            <Route
-              path="/profile/:communityId"
-              element={
-                <ProfilePage
-                  isMyProfile={isMyProfile}
-                  setIsMyProfile={setIsMyProfile}
-                />
-              }
-            />
 
-            {/**userId 받는 시그로 처리해야됨 */}
-            <Route path="search" element={<SearchPage />} />
-            <Route path="*" element={<TimeLinePage />} />
-          </Routes>
+        {/*메인콘텐츠 */}
+        <div className="flex-1 min-w-0">
+          <div className="max-w-3xl mx-auto w-full px-4">
+            <Routes>
+              {/*  key로 강제 리렌더링 */}
+              <Route
+                path="/"
+                element={<TimeLinePage key={`timeline-${refreshKey}`} />}
+              />
+              <Route
+                path="/profile/:communityId"
+                element={
+                  <ProfilePage
+                    key={`profile-${refreshKey}`}
+                    isMyProfile={isMyProfile}
+                    setIsMyProfile={setIsMyProfile}
+                  />
+                }
+              />
+              <Route path="search" element={<SearchPage />} />
+              <Route
+                path="*"
+                element={<TimeLinePage key={`default-${refreshKey}`} />}
+              />
+            </Routes>
+          </div>
         </div>
         {/* 글 새로 쓰는 버튼 */}
         <button
@@ -67,6 +85,8 @@ const CommunityPage = () => {
         <PostingModal
           setOpenPostModal={setOpenPostModal}
           openPostModal={openPostModal}
+          mode="create"
+          onPostChanged={handleNewPostCreated}
         />
       )}
     </div>

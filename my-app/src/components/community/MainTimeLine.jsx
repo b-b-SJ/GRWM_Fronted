@@ -1,9 +1,7 @@
-//메인 탐라
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
 import { usePost } from "../../hooks/usePost";
 import PostList from "./PostList";
-// MainTimeLine.jsx
+
 const MainTimeLine = () => {
   const { posts, loading, error, getPostList } = usePost();
 
@@ -11,20 +9,46 @@ const MainTimeLine = () => {
     const loadTimeLine = async () => {
       try {
         await getPostList();
-        console.log(posts);
       } catch (error) {
-        alert("탐라 못 불러오겟서영");
+        console.error("타임라인 로드 실패:", error);
       }
     };
     loadTimeLine();
   }, []);
 
-  if (loading) return <div>로딩 중...</div>;
-  if (error) return <div>에러: {error}</div>;
-  console.log("main:", posts);
+  // ✅ 게시물 변경 핸들러
+  const handlePostsChange = async (mode, data) => {
+    console.log(`타임라인 게시물 ${mode}됨:`, data);
+
+    // create나 delete는 목록 새로고침
+    if (mode === "create" || mode === "delete") {
+      await getPostList();
+    }
+    // edit는 PostList가 이미 처리함
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-lg text-gray-500">로딩 중...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-lg text-red-500">에러: {error}</div>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <PostList posts={posts.postList} />
+      <PostList
+        posts={posts.postList || []}
+        onPostsChange={handlePostsChange} // ✅ 콜백 전달
+      />
     </div>
   );
 };
