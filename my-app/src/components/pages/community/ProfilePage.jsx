@@ -14,13 +14,14 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
     getUserProfile,
     followUser,
     unfollowUser,
+    blockUser,
   } = useProfile();
 
   const { posts, getUserPosts } = usePost();
   const param = useParams();
   const { user } = useAuth();
   const currentProfileId = Number(param.communityId);
-
+  const [showBlockModal, setShowBlockModal] = useState(false);
   // 초기 로드
   useEffect(() => {
     const loadProfile = async () => {
@@ -138,13 +139,19 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
                 </>
               )}
 
-              <button className="p-2 hover:bg-gray-100 rounded-full">
-                <Ellipsis size={24} />
-              </button>
+              {/* 블락 접근 */}
+              {!isMyProfile && (
+                <button
+                  className="p-2 hover:bg-gray-100 rounded-full"
+                  onClick={() => setShowBlockModal(!showBlockModal)} //나중에 모달 만들면 쓰기 -> blockUser(currentProfileId),
+                >
+                  <Ellipsis size={24} />
+                </button>
+              )}
             </div>
 
             {/* 통계 */}
-            <div className="flex gap-8 text-center">
+            <div className="flex gap-8 text-center justify-center">
               <div>
                 <p className="text-gray-500 text-sm">게시물</p>
                 <p className="font-bold text-lg">{profile.postCount}</p>

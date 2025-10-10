@@ -208,7 +208,8 @@ export function useProfile() {
     [getUserProfile, getAuthHeaders]
   );
 
-  // 프로필 생성
+  {
+    /*/ 프로필 생성    -> 안쑴
   const createUserProfile = useCallback(
     async (userData) => {
       setLoadingProfile(true);
@@ -251,7 +252,8 @@ export function useProfile() {
       }
     },
     [getAuthHeaders]
-  );
+  );*/
+  }
 
   // 팔로우
   const followUser = useCallback(
@@ -336,16 +338,47 @@ export function useProfile() {
     [getUserProfile, getAuthHeaders]
   );
 
+  const blockUser = useCallback(async (targetId) => {
+    setLoadingProfile(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/users/blocks/${targetId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json", // 수정
+            ...getAuthHeaders(),
+          },
+        }
+      );
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "팔로우에 실패했습니다");
+      }
+
+      // 팔로우 성공시 프로필 정보 다시 불러오기
+      console.log("블락 성공");
+      await getUserProfile(targetId);
+    } catch (error) {
+      console.error(" 블락 오류:", error);
+      setError(error.message);
+      throw error;
+    } finally {
+      setLoadingProfile(false);
+    }
+  });
   return {
     profile,
     myProfile, // 목업 데이터
     getUserProfile,
     //getMyProfile,
     updateUserProfile,
-    createUserProfile,
+    //   createUserProfile,
     followUser,
     unfollowUser,
     error,
     loadingProfile,
+    blockUser,
   };
 }
