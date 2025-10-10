@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import PostingModal from "./PostingModal";
-import ManagePostingModal from "./ManagePostingModal";
+import ControlPosting from "./ControlPosting";
 import {
   Heart,
   MessageSquare,
@@ -177,7 +177,7 @@ const PostingStyle = ({
       </div>
 
       {manageModal && (
-        <ManagePostingModal
+        <ControlPosting
           onDelete={onDelete}
           setIsEditing={setIsEditing}
           setManageModal={setManageModal}
