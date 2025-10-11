@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MoreVertical, Users, ArrowLeft, Edit, Trash2, MessageSquare, LogOut } from 'lucide-react';
+import { MoreVertical, Users, ArrowLeft, Edit, Trash2, MessageSquare, LogOut, RefreshCw, AlertCircle } from 'lucide-react';
 import { useChatState } from '../../hooks/useChatState';
 import ChatMessages from './ChatMessages';
 import MessageInput from './MessageInput';
@@ -9,11 +9,13 @@ import MessageInput from './MessageInput';
  * - useChatState의 메시지 상태와 함수들을 활용
  * - WebSocket을 통한 실시간 메시지 처리
  * - 참여자 목록 표시 기능 추가
+ * - 재연결 기능 추가
  */
 const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
     const {
         messages,
         connectionStatus,
+        reconnectAttempts,
         currentUser,
         sendMessage,
         requestDeleteMessage,
@@ -24,7 +26,8 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
         deleteChatRoom,
         createAnnouncement,
         getMainAnnouncement,
-        getChatRoomMembers
+        getChatRoomMembers,
+        reconnectWebSocket
     } = useChatState();
 
     const [loading, setLoading] = useState(true);
@@ -149,6 +152,13 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
         loadMembers();
     };
 
+    // 수동 재연결
+    const handleReconnect = () => {
+        if (reconnectWebSocket) {
+            reconnectWebSocket();
+        }
+    };
+
     useEffect(() => {
         if (chatRoomId) {
             setLoading(true);
@@ -242,6 +252,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
 
     return (
         <div className="flex-1 flex flex-col bg-white h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)] overflow-hidden">
+            {/* 헤더 */}
             <div className="bg-white border-b px-6 py-4 flex items-center justify-between flex-shrink-0">
                 <div className="flex items-center space-x-4">
                     <button onClick={onBack} className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors">
@@ -258,6 +269,9 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                             </div>
                             {currentRoom.isPrivate && <span>• 비공개</span>}
                             <span>• {connectionStatus === 'connected' ? '온라인' : connectionStatus === 'error' ? '오프라인' : '연결 중'}</span>
+                            {reconnectAttempts > 0 && connectionStatus === 'disconnected' && (
+                                <span className="text-amber-600">• 재연결 중 ({reconnectAttempts}/5)</span>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -299,44 +313,74 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                 </div>
             </div>
 
+            {/* 공지사항 영역 */}
             {mainAnnouncement && (
                 <div className="bg-amber-50 px-6 py-3 border-b border-amber-200 flex-shrink-0">
                     <div className="flex items-start space-x-2">
                         <MessageSquare size={16} className="text-amber-600 mt-0.5 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                            {/* 첫 줄: 공지사항 타이틀 + 시간 */}
                             <div className="flex items-center justify-between mb-1">
                                 <p className="text-sm font-medium text-amber-800">공지사항</p>
                                 <p className="text-xs text-amber-600 flex-shrink-0 ml-4">
                                     {new Date(mainAnnouncement.createdAt).toLocaleString('ko-KR')}
                                 </p>
                             </div>
-                            {/* 둘째 줄: 공지 내용 + 작성자 (우측) */}
                             <div className="flex items-start justify-between gap-4">
                                 <p className="text-sm text-amber-700 whitespace-pre-wrap flex-1">
                                     {mainAnnouncement.content}
                                 </p>
                                 <span className="text-xs text-amber-600 flex-shrink-0 self-start">
-                        {mainAnnouncement.writerChatName || '관리자'}
-                    </span>
+                                    {mainAnnouncement.writerChatName || '관리자'}
+                                </span>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
 
+            {/* 연결 상태 알림 - 에러 */}
             {connectionStatus === 'error' && (
-                <div className="bg-red-50 px-6 py-2 border-b flex-shrink-0">
-                    <p className="text-sm text-red-700">실시간 채팅 서버에 연결할 수 없습니다. 테스트 모드로 동작합니다.</p>
+                <div className="bg-red-50 px-6 py-3 border-b flex-shrink-0">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                            <AlertCircle size={16} className="text-red-600" />
+                            <p className="text-sm text-red-700">
+                                실시간 채팅 서버에 연결할 수 없습니다.
+                                {reconnectAttempts >= 5 && ' 최대 재연결 횟수를 초과했습니다.'}
+                            </p>
+                        </div>
+                        <button
+                            onClick={handleReconnect}
+                            className="flex items-center space-x-2 px-3 py-1.5 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
+                        >
+                            <RefreshCw size={14} />
+                            <span>재연결</span>
+                        </button>
+                    </div>
                 </div>
             )}
 
+            {/* 연결 상태 알림 - 연결 중 */}
             {connectionStatus === 'connecting' && (
                 <div className="bg-yellow-50 px-6 py-2 border-b flex-shrink-0">
-                    <p className="text-sm text-yellow-700">채팅 서버에 연결하는 중...</p>
+                    <div className="flex items-center space-x-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
+                        <p className="text-sm text-yellow-700">채팅 서버에 연결하는 중...</p>
+                    </div>
                 </div>
             )}
 
+            {/* 연결 상태 알림 - 자동 재연결 중 */}
+            {connectionStatus === 'disconnected' && reconnectAttempts > 0 && reconnectAttempts < 5 && (
+                <div className="bg-amber-50 px-6 py-2 border-b flex-shrink-0">
+                    <div className="flex items-center space-x-2">
+                        <RefreshCw size={16} className="text-amber-600 animate-spin" />
+                        <p className="text-sm text-amber-700">자동 재연결 중... ({reconnectAttempts}/5)</p>
+                    </div>
+                </div>
+            )}
+
+            {/* 메시지 영역 */}
             {roomMessages.length === 0 ? (
                 <div className="flex-1 flex items-center justify-center p-8 bg-gray-50">
                     <div className="text-center">
@@ -349,11 +393,8 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                 <ChatMessages
                     messages={roomMessages.map(msg => {
                         const isOwnMessage = (
-                            // senderId가 존재하고, 두 ID가 일치하는지 확인
                             msg.senderId !== undefined && msg.senderId === currentUser.userId
                         );
-
-                        console.log('--- 메시지 디버깅 시작 ---');
 
                         return {
                             ...msg,
@@ -365,6 +406,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                 />
             )}
 
+            {/* 메시지 입력 영역 */}
             <MessageInput
                 onSendMessage={handleSendMessage}
                 disabled={connectionStatus === 'connecting'}
@@ -372,6 +414,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                 onCancelReply={handleCancelReply}
             />
 
+            {/* 채팅방 수정 모달 */}
             {showEditModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                     <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
@@ -394,6 +437,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                 </div>
             )}
 
+            {/* 공지 작성 모달 */}
             {showAnnouncementModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                     <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
@@ -411,6 +455,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                 </div>
             )}
 
+            {/* 참여자 목록 모달 */}
             {showMembersModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                     <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-[80vh] flex flex-col">
