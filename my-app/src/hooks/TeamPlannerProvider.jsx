@@ -6,7 +6,7 @@ const TeamPlannerContext = createContext(null);
 export const TeamPlannerProvider = ({ children }) => {
     const [planners, setPlanners] = useState([]);
     const [currentPlanner, setCurrentPlanner] = useState(null);
-    const [members, setMembers] = useState([]);
+    const [members, setMembers] = useState([]); // MemberDto 배열
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const { user, isAuthenticated, getAuthHeaders } = useAuth();
@@ -19,10 +19,10 @@ export const TeamPlannerProvider = ({ children }) => {
         throw new Error(errorMessage);
     };
 
-    // 현재 유저의 정보
     const currentUser = user || {
         userId: null,
         username: '게스트',
+        loginId: null,
     };
 
     // 인증 체크
@@ -36,7 +36,7 @@ export const TeamPlannerProvider = ({ children }) => {
 
     /**
      * 플래너 생성
-     * @param {Object} plannerData - { title, description, profileImageLink }
+     * @param {Object} plannerData - { title, description, profileImage }
      * @returns {Promise<number>} plannerId
      */
     const createPlanner = useCallback(async (plannerData) => {
@@ -54,7 +54,7 @@ export const TeamPlannerProvider = ({ children }) => {
                 body: JSON.stringify({
                     title: plannerData.title,
                     description: plannerData.description,
-                    profileImage: plannerData.profileImage || plannerData.profileImageLink || '',
+                    profileImage: plannerData.profileImage || '',
                     creatorId: currentUser.userId
                 }),
             });
@@ -198,41 +198,154 @@ export const TeamPlannerProvider = ({ children }) => {
      * 멤버 추가
      * @param {number} plannerId
      * @param {number} memberId
-     * @param {string} memberRole - "manager" or "member"
+     * @param {string} role - "manager" or "member"
      * @returns {Promise<void>}
      */
-    const addMember = useCallback(async (plannerId, memberId, memberRole) => {
+    const addMember = useCallback(async (plannerId, memberId, role) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/member/${memberId}/${role}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
 
+            if (!response.ok) {
+                throw new Error('멤버 추가에 실패했습니다.');
+            }
+
+            // 멤버 목록 다시 불러오기
+            await fetchMembers(plannerId);
+        } catch (error) {
+            handleError(error, '멤버 추가 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
     }, [isAuthenticated, getAuthHeaders]);
 
     /**
-     * 멤버 목록 조회
+     * 멤버 목록 조회 (활성 멤버만)
+     * API 응답: MemberDto[]
+     * MemberDto: { userId, username, nickname, profileImage, email, role, status }
      * @param {number} plannerId
-     * @returns {Promise<Array>} members
+     * @returns {Promise<Array>} MemberDto 배열
      */
     const fetchMembers = useCallback(async (plannerId) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/member`,
+                {
+                    method: 'GET',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
 
+            if (!response.ok) {
+                throw new Error('멤버 목록을 불러오는데 실패했습니다.');
+            }
+
+            const data = await response.json();
+            console.log('받아온 멤버 목록 (MemberDto[]):', data);
+
+            // MemberDto 구조 확인 로그
+            if (data && data.length > 0) {
+                console.log('첫 번째 멤버 DTO:', data[0]);
+                console.log('MemberDto 필드:', Object.keys(data[0]));
+            }
+
+            // status가 'active'인 멤버만 필터링
+            const activeMembers = data.filter(member => member.status === 'active');
+            setMembers(activeMembers);
+            return activeMembers;
+        } catch (error) {
+            handleError(error, '멤버 목록 조회 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
     }, [isAuthenticated, getAuthHeaders]);
 
     /**
-     * 멤버 삭제
+     * 멤버 삭제 (status를 'withdrawn'으로 변경)
      * @param {number} plannerId
      * @param {number} memberId
      * @returns {Promise<void>}
      */
     const removeMember = useCallback(async (plannerId, memberId) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/member/${memberId}`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
 
+            if (!response.ok) {
+                throw new Error('멤버 삭제에 실패했습니다.');
+            }
+
+            // 로컬 상태에서 제거 (status가 withdrawn이 되므로)
+            setMembers(prev => prev.filter(m => m.userId !== memberId));
+        } catch (error) {
+            handleError(error, '멤버 삭제 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
     }, [isAuthenticated, getAuthHeaders]);
 
     /**
-     * 멤버 역할/별명 작성
+     * 멤버 별명(nickname) 업데이트
      * @param {number} plannerId
      * @param {number} memberId
-     * @param {string} roleName
+     * @param {string} nickname - 새로운 별명
      * @returns {Promise<void>}
      */
-    const updateMemberRole = useCallback(async (plannerId, memberId, roleName) => {
+    const updateMemberNickname = useCallback(async (plannerId, memberId, nickname) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/member/${memberId}/${nickname}`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
 
+            if (!response.ok) {
+                throw new Error('멤버 별명 업데이트에 실패했습니다.');
+            }
+
+            // 멤버 목록 다시 불러오기
+            await fetchMembers(plannerId);
+        } catch (error) {
+            handleError(error, '멤버 별명 업데이트 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
     }, [isAuthenticated, getAuthHeaders]);
 
     // Context value
@@ -240,7 +353,7 @@ export const TeamPlannerProvider = ({ children }) => {
         // State
         planners,
         currentPlanner,
-        members,
+        members, // MemberDto[] 배열
         loading,
         error,
         user, // 현재 사용자 정보 제공
@@ -259,7 +372,7 @@ export const TeamPlannerProvider = ({ children }) => {
         addMember,
         fetchMembers,
         removeMember,
-        updateMemberRole,
+        updateMemberNickname, // updateMemberRole에서 이름 변경
     };
 
     return (
@@ -269,7 +382,7 @@ export const TeamPlannerProvider = ({ children }) => {
     );
 };
 
-// 커스텀 훅
+// Custom Hook
 export const useTeamPlanner = () => {
     const context = useContext(TeamPlannerContext);
     if (!context) {

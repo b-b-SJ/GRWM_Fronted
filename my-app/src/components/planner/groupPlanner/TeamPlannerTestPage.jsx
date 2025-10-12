@@ -17,7 +17,7 @@ function TeamPlannerTestPage() {
         addMember,
         fetchMembers,
         removeMember,
-        updateMemberRole,
+        updateMemberNickname, // updateMemberRole에서 변경됨
     } = useTeamPlanner();
 
     const [createForm, setCreateForm] = useState({
@@ -34,12 +34,12 @@ function TeamPlannerTestPage() {
 
     const [memberForm, setMemberForm] = useState({
         memberId: '',
-        memberRole: 'member',
+        role: 'member', // memberRole -> role
     });
 
-    const [roleForm, setRoleForm] = useState({
+    const [nicknameForm, setNicknameForm] = useState({
         memberId: '',
-        roleName: '',
+        nickname: '', // roleName -> nickname
     });
 
     useEffect(() => {
@@ -70,7 +70,7 @@ function TeamPlannerTestPage() {
         }
     };
 
-    // 플래너 수정
+    // 플래너 수정 (업데이트)
     const handleUpdatePlanner = async () => {
         if (!currentPlanner) {
             alert('플래너를 먼저 선택해주세요.');
@@ -95,16 +95,54 @@ function TeamPlannerTestPage() {
         }
     };
 
+    // 멤버 추가
     const handleAddMember = async () => {
-        // 멤버 추가
+        if (!currentPlanner) {
+            alert('플래너를 먼저 선택해주세요.');
+            return;
+        }
+        try {
+            await addMember(
+                currentPlanner.plannerId,
+                Number(memberForm.memberId),
+                memberForm.role // memberRole -> role
+            );
+            alert('멤버 추가 완료!');
+            setMemberForm({ memberId: '', role: 'member' });
+        } catch (err) {
+            alert('멤버 추가 실패: ' + err.message);
+        }
     };
 
+    // 멤버 삭제
     const handleRemoveMember = async (memberId) => {
-       // 멤버 삭제
+        if (!window.confirm('정말 삭제하시겠습니까?')) return;
+        if (!currentPlanner) return;
+        try {
+            await removeMember(currentPlanner.plannerId, memberId);
+            alert('멤버 삭제 완료!');
+        } catch (err) {
+            alert('멤버 삭제 실패: ' + err.message);
+        }
     };
 
-    const handleUpdateMemberRole = async () => {
-        // 멤버 역할 업데이트
+    // 멤버 별명 업데이트
+    const handleUpdateMemberNickname = async () => {
+        if (!currentPlanner) {
+            alert('플래너를 먼저 선택해주세요.');
+            return;
+        }
+        try {
+            await updateMemberNickname(
+                currentPlanner.plannerId,
+                Number(nicknameForm.memberId),
+                nicknameForm.nickname // roleName -> nickname
+            );
+            alert('멤버 별명 업데이트 완료!');
+            setNicknameForm({ memberId: '', nickname: '' });
+        } catch (err) {
+            alert('멤버 별명 업데이트 실패: ' + err.message);
+        }
     };
 
     return (
@@ -175,7 +213,7 @@ function TeamPlannerTestPage() {
                                 <button onClick={() => {
                                     console.log('선택된 planner:', planner);
                                     setCurrentPlanner(planner);
-                                }}>선택</button>
+                                }}>선택  |</button>
                                 <button onClick={() => {
                                     const id = planner.plannerId;
                                     console.log('삭제할 ID:', id);
@@ -184,7 +222,7 @@ function TeamPlannerTestPage() {
                                         return;
                                     }
                                     handleDeletePlanner(id);
-                                }}>삭제</button>
+                                }}>|  삭제</button>
                             </div>
                         ))
                     )}
@@ -224,6 +262,85 @@ function TeamPlannerTestPage() {
                         </div>
                     </section>
 
+                    <section style={{ marginBottom: '30px', border: '1px solid #ccc', padding: '15px' }}>
+                        <h2>4. 멤버 추가</h2>
+                        <div>
+                            <div style={{ marginBottom: '10px' }}>
+                                <label>Member ID (User ID): </label>
+                                <input
+                                    type="number"
+                                    value={memberForm.memberId}
+                                    onChange={(e) => setMemberForm({ ...memberForm, memberId: e.target.value })}
+                                />
+                            </div>
+                            <div style={{ marginBottom: '10px' }}>
+                                <label>Role: </label>
+                                <select
+                                    value={memberForm.role}
+                                    onChange={(e) => setMemberForm({ ...memberForm, role: e.target.value })}
+                                >
+                                    <option value="member">member</option>
+                                    <option value="manager">manager</option>
+                                </select>
+                            </div>
+                            <button onClick={handleAddMember}>멤버 추가</button>
+                        </div>
+                    </section>
+
+                    <section style={{ marginBottom: '30px', border: '1px solid #ccc', padding: '15px' }}>
+                        <h2>5. 멤버 목록 (MemberDto)</h2>
+                        <button onClick={() => fetchMembers(currentPlanner.plannerId)}>새로고침</button>
+                        <div style={{ marginTop: '10px' }}>
+                            {members.length === 0 ? (
+                                <p>멤버가 없습니다.</p>
+                            ) : (
+                                members.map((member) => (
+                                    <div
+                                        key={member.userId}
+                                        style={{
+                                            border: '1px solid #ddd',
+                                            padding: '10px',
+                                            margin: '5px 0',
+                                            backgroundColor: '#f9f9f9',
+                                        }}
+                                    >
+                                        <p><strong>전체 데이터:</strong> {JSON.stringify(member)}</p>
+                                        <p><strong>User ID:</strong> {member.userId}</p>
+                                        <p><strong>Username:</strong> {member.username}</p>
+                                        <p><strong>Nickname:</strong> {member.nickname || '(없음)'}</p>
+                                        <p><strong>Email:</strong> {member.email}</p>
+                                        <p><strong>Role:</strong> {member.role}</p>
+                                        <p><strong>Status:</strong> {member.status}</p>
+                                        <p><strong>Profile Image:</strong> {member.profileImage || '없음'}</p>
+                                        <button onClick={() => handleRemoveMember(member.userId)}>멤버 삭제</button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </section>
+
+                    <section style={{ marginBottom: '30px', border: '1px solid #ccc', padding: '15px' }}>
+                        <h2>6. 멤버 별명(Nickname) 업데이트</h2>
+                        <div>
+                            <div style={{ marginBottom: '10px' }}>
+                                <label>Member ID: </label>
+                                <input
+                                    type="number"
+                                    value={nicknameForm.memberId}
+                                    onChange={(e) => setNicknameForm({ ...nicknameForm, memberId: e.target.value })}
+                                />
+                            </div>
+                            <div style={{ marginBottom: '10px' }}>
+                                <label>Nickname (별명): </label>
+                                <input
+                                    type="text"
+                                    value={nicknameForm.nickname}
+                                    onChange={(e) => setNicknameForm({ ...nicknameForm, nickname: e.target.value })}
+                                />
+                            </div>
+                            <button onClick={handleUpdateMemberNickname}>별명 업데이트</button>
+                        </div>
+                    </section>
                 </>
             )}
         </div>
