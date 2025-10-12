@@ -7,6 +7,9 @@ import { useAuth } from './AuthContext';
  * - 메시지 송수신 관리
  * - 연결 상태 관리 및 재연결 로직
  * - 채팅 히스토리 및 채팅방 목록 갱신 트리거
+ * - 페이지 이동 후 재진입 시 WebSocket 연결 문제 해결
+ * - connect() 호출 시 연결 상태 강제 초기화
+ * - isConnectingRef 플래그 개선
  */
 
 const WebSocketContext = createContext();
@@ -156,7 +159,7 @@ export const WebSocketProvider = ({ children }) => {
         }
 
         // 이미 연결 중이면 중복 연결 방지
-        if (isConnectingRef.current) {
+        if (isConnectingRef.current && websocketRef.current?.readyState === WebSocket.CONNECTING) {
             console.warn('이미 연결 시도 중입니다.');
             return;
         }
@@ -166,6 +169,7 @@ export const WebSocketProvider = ({ children }) => {
         // 기존 연결 완전히 정리
         cleanupConnection();
 
+        // 연결 플래그 설정
         isConnectingRef.current = true;
 
         // WebSocket URL 설정
@@ -180,165 +184,172 @@ export const WebSocketProvider = ({ children }) => {
         setConnectionStatus('connecting');
         setCurrentChatRoomId(chatRoomId);
 
-        const ws = new WebSocket(wsUrl);
-        websocketRef.current = ws;
+        try {
+            const ws = new WebSocket(wsUrl);
+            websocketRef.current = ws;
 
-        // WebSocket 연결 성공
-        ws.onopen = () => {
-            console.log('WebSocket 연결 열림');
+            // WebSocket 연결 성공
+            ws.onopen = () => {
+                console.log('WebSocket 연결 열림');
 
-            // STOMP CONNECT 프레임 전송
-            const accessToken = localStorage.getItem('accessToken');
-            const connectFrame = `CONNECT
+                // STOMP CONNECT 프레임 전송
+                const accessToken = localStorage.getItem('accessToken');
+                const connectFrame = `CONNECT
 accept-version:1.2
 heart-beat:20000,20000
 Authorization:Bearer ${accessToken}
 
 \0`;
 
-            console.log('STOMP CONNECT 프레임 전송');
-            ws.send(connectFrame);
+                console.log('STOMP CONNECT 프레임 전송');
+                ws.send(connectFrame);
 
-            // 하트비트 시작
-            startHeartbeat(ws);
-        };
+                // 하트비트 시작
+                startHeartbeat(ws);
+            };
 
-        // 메시지 수신 처리
-        ws.onmessage = (event) => {
-            console.log('WebSocket 메시지 수신 (첫 100자):', event.data.substring(0, 100));
+            // 메시지 수신 처리
+            ws.onmessage = (event) => {
+                console.log('WebSocket 메시지 수신 (첫 100자):', event.data.substring(0, 100));
 
-            // STOMP CONNECTED 프레임
-            if (event.data.startsWith('CONNECTED')) {
-                console.log('STOMP 연결 성공');
+                // STOMP CONNECTED 프레임
+                if (event.data.startsWith('CONNECTED')) {
+                    console.log('STOMP 연결 성공');
 
-                // 구독 ID 생성 (중복 구독 방지)
-                const subId = `sub-${chatRoomId}-${Date.now()}`;
-                subscriptionIdRef.current = subId;
+                    // 구독 ID 생성 (중복 구독 방지)
+                    const subId = `sub-${chatRoomId}-${Date.now()}`;
+                    subscriptionIdRef.current = subId;
 
-                // 채팅방 토픽 구독
-                const subscribeFrame = `SUBSCRIBE
+                    // 채팅방 토픽 구독
+                    const subscribeFrame = `SUBSCRIBE
 id:${subId}
 destination:/topic/chat.${chatRoomId}
 
 \0`;
 
-                console.log('📡 채팅방 구독:', `/topic/chat.${chatRoomId}`, 'ID:', subId);
-                ws.send(subscribeFrame);
+                    console.log('채팅방 구독:', `/topic/chat.${chatRoomId}`, 'ID:', subId);
+                    ws.send(subscribeFrame);
 
-                // 구독 완료 후 히스토리 로드 및 상태 업데이트
-                setTimeout(async () => {
-                    console.log('구독 완료');
-                    setConnectionStatus('connected');
-                    isConnectingRef.current = false;
-                    setReconnectAttempts(0);
+                    // 구독 완료 후 히스토리 로드 및 상태 업데이트
+                    setTimeout(async () => {
+                        console.log('구독 완료');
+                        setConnectionStatus('connected');
+                        isConnectingRef.current = false;
+                        setReconnectAttempts(0);
 
-                    // 채팅 히스토리 로드
-                    if (historyLoadCallbackRef.current) {
-                        console.log('채팅 히스토리 로드 시작');
-                        await historyLoadCallbackRef.current(chatRoomId);
-                    }
-
-                    // 토큰 유효성 확인 및 채팅방 목록 갱신
-                    try {
-                        if (tokenValidityCallbackRef.current && roomListRefreshCallbackRef.current) {
-                            const isTokenValid = await tokenValidityCallbackRef.current();
-                            if (isTokenValid) {
-                                console.log('채팅방 목록 갱신');
-                                await roomListRefreshCallbackRef.current(true);
-                            }
+                        // 채팅 히스토리 로드
+                        if (historyLoadCallbackRef.current) {
+                            console.log('채팅 히스토리 로드 시작');
+                            await historyLoadCallbackRef.current(chatRoomId);
                         }
-                    } catch (err) {
-                        console.warn('채팅방 목록 갱신 실패:', err);
+
+                        // 토큰 유효성 확인 및 채팅방 목록 갱신
+                        try {
+                            if (tokenValidityCallbackRef.current && roomListRefreshCallbackRef.current) {
+                                const isTokenValid = await tokenValidityCallbackRef.current();
+                                if (isTokenValid) {
+                                    console.log('채팅방 목록 갱신');
+                                    await roomListRefreshCallbackRef.current(true);
+                                }
+                            }
+                        } catch (err) {
+                            console.warn('채팅방 목록 갱신 실패:', err);
+                        }
+                    }, 500);
+                }
+                // STOMP MESSAGE 프레임 (실제 채팅 메시지)
+                else if (event.data.startsWith('MESSAGE')) {
+                    const messageData = parseStompMessage(event.data);
+
+                    if (messageData) {
+                        // 메시지 포맷팅
+                        const formattedMessage = {
+                            id: messageData.messageId,
+                            content: messageData.content,
+                            sender: messageData.writerChatName,
+                            senderId: messageData.senderId,
+                            timestamp: messageData.createdAt,
+                            type: messageData.type === 0 ? 'chat' :
+                                messageData.type === 1 ? 'join' : 'leave',
+                            replyToMessageId: messageData.replytoMessageId || null
+                        };
+
+                        console.log('채팅 메시지 수신:', formattedMessage);
+
+                        // 등록된 메시지 핸들러들에게 전달
+                        notifyMessageHandlers(formattedMessage);
                     }
-                }, 500);
-            }
-            // STOMP MESSAGE 프레임 (실제 채팅 메시지)
-            else if (event.data.startsWith('MESSAGE')) {
-                const messageData = parseStompMessage(event.data);
-                console.log('채팅 메시지 수신 (원본):', messageData);
-
-                if (messageData) {
-                    // 메시지 포맷팅
-                    const formattedMessage = {
-                        id: messageData.messageId,
-                        content: messageData.content,
-                        sender: messageData.writerChatName,
-                        senderId: messageData.senderId,
-                        timestamp: messageData.createdAt,
-                        type: messageData.type === 0 ? 'chat' :
-                            messageData.type === 1 ? 'join' : 'leave',
-                        replyToMessageId: messageData.replytoMessageId || null
-                    };
-
-                    console.log('포맷된 메시지:', formattedMessage);
-
-                    // 등록된 메시지 핸들러들에게 전달
-                    notifyMessageHandlers(formattedMessage);
                 }
-            }
-            // STOMP ERROR 프레임
-            else if (event.data.startsWith('ERROR')) {
-                console.error('STOMP ERROR:', event.data);
-                setConnectionStatus('error');
-            }
-            // STOMP RECEIPT 프레임
-            else if (event.data.startsWith('RECEIPT')) {
-                console.log('STOMP RECEIPT:', event.data);
-            }
-            // 기타 프레임 (하트비트 응답 등)
-            else if (event.data === '\n') {
-                console.log('Heartbeat received');
-            }
-            // 기타 프레임
-            else {
-                console.log('기타 STOMP 프레임:', event.data.substring(0, 50));
-            }
-        };
-
-        // WebSocket 연결 종료
-        ws.onclose = (event) => {
-            console.log('WebSocket 연결 종료:', {
-                code: event.code,
-                reason: event.reason,
-                wasClean: event.wasClean
-            });
-
-            isConnectingRef.current = false;
-            setConnectionStatus('disconnected');
-
-            // 하트비트 정리
-            if (heartbeatIntervalRef.current) {
-                clearInterval(heartbeatIntervalRef.current);
-                heartbeatIntervalRef.current = null;
-            }
-
-            // 정상 종료(1000)가 아니고 현재 채팅방이 유효한 경우 자동 재연결 시도
-            if (event.code !== 1000 && currentChatRoomId === chatRoomId && !isManualReconnect) {
-                const attempts = reconnectAttempts + 1;
-                setReconnectAttempts(attempts);
-
-                // 최대 5번까지만 자동 재연결 시도
-                if (attempts <= 5) {
-                    const delay = Math.min(3000 * attempts, 15000); // 최대 15초
-                    console.log(`🔄 ${delay / 1000}초 후 재연결 시도... (${attempts}/5)`);
-
-                    reconnectTimeoutRef.current = setTimeout(() => {
-                        console.log('자동 재연결 시도 실행');
-                        connect(chatRoomId, false);
-                    }, delay);
-                } else {
-                    console.error('최대 재연결 횟수 초과. 수동 재연결이 필요합니다.');
+                // STOMP ERROR 프레임
+                else if (event.data.startsWith('ERROR')) {
+                    console.error('STOMP ERROR:', event.data);
                     setConnectionStatus('error');
+                    isConnectingRef.current = false;
                 }
-            }
-        };
+                // STOMP RECEIPT 프레임
+                else if (event.data.startsWith('RECEIPT')) {
+                    console.log('STOMP RECEIPT:', event.data);
+                }
+                // 기타 프레임 (하트비트 응답 등)
+                else if (event.data === '\n') {
+                    console.log('Heartbeat received');
+                }
+                // 기타 프레임
+                else {
+                    console.log('기타 STOMP 프레임:', event.data.substring(0, 50));
+                }
+            };
 
-        // WebSocket 에러
-        ws.onerror = (error) => {
-            console.error('WebSocket 오류:', error);
+            // WebSocket 연결 종료
+            ws.onclose = (event) => {
+                console.log('WebSocket 연결 종료:', {
+                    code: event.code,
+                    reason: event.reason,
+                    wasClean: event.wasClean
+                });
+
+                isConnectingRef.current = false;
+                setConnectionStatus('disconnected');
+
+                // 하트비트 정리
+                if (heartbeatIntervalRef.current) {
+                    clearInterval(heartbeatIntervalRef.current);
+                    heartbeatIntervalRef.current = null;
+                }
+
+                // 정상 종료(1000)가 아니고 현재 채팅방이 유효한 경우 자동 재연결 시도
+                if (event.code !== 1000 && currentChatRoomId === chatRoomId && !isManualReconnect) {
+                    const attempts = reconnectAttempts + 1;
+                    setReconnectAttempts(attempts);
+
+                    // 최대 5번까지만 자동 재연결 시도
+                    if (attempts <= 5) {
+                        const delay = Math.min(3000 * attempts, 15000); // 최대 15초
+                        console.log(`재연결 시도 예약: ${delay / 1000}초 후 (${attempts}/5)`);
+
+                        reconnectTimeoutRef.current = setTimeout(() => {
+                            console.log('자동 재연결 시도 실행');
+                            connect(chatRoomId, false);
+                        }, delay);
+                    } else {
+                        console.error('최대 재연결 횟수 초과. 수동 재연결이 필요합니다.');
+                        setConnectionStatus('error');
+                    }
+                }
+            };
+
+            // WebSocket 에러
+            ws.onerror = (error) => {
+                console.error('WebSocket 오류:', error);
+                isConnectingRef.current = false;
+                setConnectionStatus('error');
+            };
+
+        } catch (error) {
+            console.error('WebSocket 생성 실패:', error);
             isConnectingRef.current = false;
             setConnectionStatus('error');
-        };
+        }
 
     }, [isAuthenticated, currentChatRoomId, notifyMessageHandlers, cleanupConnection, startHeartbeat, reconnectAttempts]);
 
@@ -356,7 +367,7 @@ destination:/topic/chat.${chatRoomId}
 
     // WebSocket 연결 해제
     const disconnect = useCallback(() => {
-        console.log('🔌 WebSocket 연결 해제 요청');
+        console.log('WebSocket 연결 해제 요청');
 
         // WebSocket 연결 종료
         if (websocketRef.current) {
@@ -416,7 +427,6 @@ id:${subscriptionIdRef.current}
             chatRoomId: parseInt(chatRoomId),
             content: content,
             communityId: userId
-            // replytoMessageId: replyToId  // 답장 기능 구현 시 주석 해제
         };
 
         // STOMP SEND 프레임 생성

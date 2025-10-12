@@ -10,6 +10,7 @@ import { useLocation } from 'react-router-dom';
  * - 메시지 히스토리 URL 수정: /api/chatroom/{chatRoomId}/show (0930)
  * - 참여자 및 공지사항 관리
  * - WebSocket 로직은 WebSocketContext로 분리
+ * - reconnectWebSocket 함수 추가 (WebSocket reconnect 노출)
  */
 
 // 카테고리 매핑 상수
@@ -54,7 +55,14 @@ const getTestRooms = (username, isTemporary = false) => {
 
 export const ChatStateProvider = ({ children }) => {
     const { user, isAuthenticated, getAuthHeaders } = useAuth();
-    const { connectionStatus, connect, disconnect, sendMessage: wsSendMessage, addMessageHandler } = useWebSocket();
+    const {
+        connectionStatus,
+        connect,
+        disconnect,
+        reconnect: wsReconnect,  // WebSocket의 reconnect 함수
+        sendMessage: wsSendMessage,
+        addMessageHandler
+    } = useWebSocket();
     const location = useLocation();
 
     const [selectedRoom, setSelectedRoom] = useState(null);
@@ -160,8 +168,7 @@ export const ChatStateProvider = ({ children }) => {
 
             if (response.ok) {
                 const rooms = await response.json();
-                console.log('=== 백엔드 원본 응답 ===');
-                console.log('전체 rooms:', rooms);
+                console.log('백엔드 원본 응답:', rooms);
 
                 if (rooms.length > 0) {
                     console.log('첫 번째 방 필드들:', Object.keys(rooms[0]));
@@ -339,7 +346,7 @@ export const ChatStateProvider = ({ children }) => {
             isManager: isManager
         };
 
-        console.log('=== JOIN API 호출 ===');
+        console.log('JOIN API 호출');
         console.log('URL:', `/api/chat-room/${chatRoomId}/join`);
         console.log('요청 데이터:', requestData);
 
@@ -410,7 +417,7 @@ export const ChatStateProvider = ({ children }) => {
         });
 
         let data = {};
-        if (response.status !== 204) { // 204 No Content가 아닐 경우만 본문 읽기 시도
+        if (response.status !== 204) {
             try {
                 data = await response.json();
             } catch (e) {
@@ -655,7 +662,7 @@ export const ChatStateProvider = ({ children }) => {
                 isPending: true
             };
         } else {
-            console.warn(' WebSocket 미연결');
+            console.warn('WebSocket 미연결');
 
             // 테스트 메시지 (WebSocket 미연결 시)
             const testMessage = {
@@ -731,6 +738,12 @@ export const ChatStateProvider = ({ children }) => {
         }
     }, [connect, isAuthenticated, currentUser.userId, fetchChatHistory, checkTokenValidity, fetchChatRooms]);
 
+    // WebSocket 재연결 함수 (외부 노출용)
+    const reconnectWebSocket = useCallback(() => {
+        console.log('WebSocket 재연결 요청 (useChatState)');
+        wsReconnect();
+    }, [wsReconnect]);
+
     // WebSocket 메시지 핸들러 등록
     useEffect(() => {
         const handleMessage = (message) => {
@@ -746,25 +759,24 @@ export const ChatStateProvider = ({ children }) => {
         };
     }, [selectedRoom, addMessageHandler, addMessage]);
 
-    // 초기 로드 및 페이지 전환 처리
+    // 채팅 페이지 진입 시 처리
     useEffect(() => {
         if (isAuthenticated && currentUser.userId && isChatPage) {
+            console.log('채팅 페이지 진입');
             fetchCommunityNickname();
             fetchChatRooms();
-        } else if (!isChatPage) {
-            setChatRooms([]);
-            setMessages({});
-            if (selectedRoom) {
-                leaveRoom();
-            }
-        } else if (!isAuthenticated) {
-            setChatRooms([]);
-            setMessages({});
-            if (selectedRoom) {
-                leaveRoom();
-            }
         }
-    }, [isAuthenticated, currentUser.userId, isChatPage, fetchChatRooms, fetchCommunityNickname, selectedRoom, leaveRoom]);
+    }, [isAuthenticated, currentUser.userId, isChatPage, fetchChatRooms, fetchCommunityNickname]);
+
+    // 로그아웃 시에만 연결 해제
+    useEffect(() => {
+        if (!isAuthenticated && selectedRoom) {
+            console.log('로그아웃 감지 - WebSocket 연결 해제');
+            leaveRoom();
+            setChatRooms([]);
+            setMessages({});
+        }
+    }, [isAuthenticated]);
 
     const value = {
         selectedRoom,
@@ -797,7 +809,8 @@ export const ChatStateProvider = ({ children }) => {
         requestDeleteMessage,
         joinRoom,
         leaveRoom,
-        fetchCommunityNickname
+        fetchCommunityNickname,
+        reconnectWebSocket  // WebSocket 재연결 함수 추가
     };
     return (
         <ChatStateContext.Provider value={value}>
