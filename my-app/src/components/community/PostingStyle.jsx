@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import PostingModal from "./PostingModal";
 import ControlPosting from "./ControlPosting";
 import {
@@ -21,6 +21,8 @@ const PostingStyle = ({
   const [manageModal, setManageModal] = useState(false);
   const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
   const [isLiked, setIsLiked] = useState(false);
+  const navigate = useNavigate();
+
   if (!post) {
     return <div className="text-center py-4">게시물 데이터가 없습니다.</div>;
   }
@@ -47,7 +49,12 @@ const PostingStyle = ({
 
   return (
     <>
-      <div className="border-b bg-white hover:drop-shadow-sm transition-colors">
+      <div
+        className="border-b bg-white hover:drop-shadow-md transition-colors"
+        onClick={() => {
+          navigate(`/community/post/${post.postId}`);
+        }}
+      >
         {/* 작성자 정보 */}
         <div className="p-5 flex items-center gap-3">
           <Link
@@ -154,7 +161,8 @@ const PostingStyle = ({
           </button>
           <button
             className="flex items-center gap-2 hover:text-red-500 transition-colors"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               // ✅ 현재 상태를 기준으로 판단
               if (isLiked) {
                 cancelLike(post.postId);

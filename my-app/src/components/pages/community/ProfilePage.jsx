@@ -5,7 +5,7 @@ import { useProfile } from "../../../hooks/useProfile";
 import { useAuth } from "../../../hooks/AuthContext";
 import { usePost } from "../../../hooks/usePost";
 import PostList from "../../community/PostList";
-
+import ProfileEditModal from "../../community/ProfileEditModal";
 const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
   const {
     profile,
@@ -15,6 +15,7 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
     followUser,
     unfollowUser,
     blockUser,
+    updateUserProfile,
   } = useProfile();
 
   const { posts, getUserPosts } = usePost();
@@ -22,6 +23,7 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
   const { user } = useAuth();
   const currentProfileId = Number(param.communityId);
   const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [manageModal, setManageModal] = useState(false);
   // 초기 로드
   useEffect(() => {
@@ -35,7 +37,17 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
     loadProfile();
   }, [currentProfileId, user.userId]);
 
-  // ✅ 게시물 변경 핸들러 (생성, 수정, 삭제 모두 처리)
+  // updateUserProfile 함수를 호출하는 핸들러 추가
+  const handleSaveProfile = async (formData) => {
+    try {
+      await updateUserProfile(currentProfileId, formData);
+      alert("프로필이 수정되었습니다!");
+    } catch (error) {
+      alert("프로필 수정에 실패했습니다.");
+    }
+  };
+
+  // 게시물 변경 핸들러 (생성, 수정, 삭제 모두 처리)
   const handlePostsChange = async (mode, data) => {
     console.log(`게시물 ${mode}됨:`, data);
 
@@ -124,7 +136,10 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
             {/* 팔로우 버튼 */}
             <div className="flex items-center gap-5">
               {isMyProfile ? (
-                <button className="px-6 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">
+                <button
+                  className="px-6 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                  onClick={() => setIsEditModalOpen(true)}
+                >
                   프로필 편집
                 </button>
               ) : (
@@ -214,6 +229,12 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
           onPostsChange={handlePostsChange} // ✅ 콜백 전달
         />
       </div>
+      <ProfileEditModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        currentProfile={profile}
+        onSave={handleSaveProfile}
+      />
     </div>
   );
 };

@@ -55,22 +55,6 @@ const mockProfiles = [
   },
 ];
 
-const initialProfile1 = {
-  user: {
-    communityId: "gangganggang",
-    nickName: "걍가라123",
-    profileImage:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRma0qHwnrmZJGctiNBnYrEDpPttke-V5Ru4A&s",
-  },
-  description: null,
-  bannerImage:
-    "https://s7d9.scene7.com/is/image/daltile/AO_MN44_24x24_Gray_Polished?$PRODUCTIMAGE$",
-  postCount: 0,
-  followerCount: 0,
-  followingCount: 0,
-  achievedBadgeCount: 0,
-  pinnedPostId: null,
-};
 const myProfile = {
   user: {
     communityId: 1,
@@ -107,7 +91,6 @@ const initialProfile = {
 
 export function useProfile() {
   const { user, getAuthHeaders, isAuthenticated } = useAuth();
-  const communityId = user.userId;
 
   const [profile, setProfile] = useState(initialProfile);
   const [loadingProfile, setLoadingProfile] = useState(false);
@@ -126,16 +109,13 @@ export function useProfile() {
       setError(null);
 
       try {
-        const response = await fetch(
-          `http://localhost:8080/api/users/${communityId}/profile`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              ...headers,
-            },
-          }
-        );
+        const response = await fetch(`/api/users/${communityId}/profile`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...headers,
+          },
+        });
 
         if (response.ok) {
           const profileInfo = await response.json();
@@ -161,6 +141,14 @@ export function useProfile() {
   //프로필 수정
   const updateUserProfile = useCallback(
     async (communityId, userData) => {
+      // 디버깅 시작
+      console.log("=== 프로필 수정 디버깅 ===");
+      console.log("communityId:", communityId);
+      console.log("user.userId:", user.userId);
+      console.log("같은지?:", communityId === user.userId);
+      console.log("토큰:", localStorage.getItem("accessToken"));
+      console.log("userData:", userData);
+
       if (!communityId || !userData) {
         console.error("communityId와 userData가 필요합니다");
         return;
@@ -177,24 +165,23 @@ export function useProfile() {
           bannerImage: userData.bannerImage,
         };
 
-        const response = await fetch(
-          `http://localhost:8080/api/users/${communityId}/profile`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json", // 수정
-              ...getAuthHeaders(),
-            },
-            body: JSON.stringify(requestData),
-          }
-        );
+        const headers = getAuthHeaders();
+        console.log("헤더:", headers);
+
+        const response = await fetch(`/api/users/profile`, {
+          method: "PUT",
+          headers: getAuthHeaders(),
+          body: JSON.stringify(requestData),
+        });
+
+        console.log("응답 상태:", response.status);
 
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || "프로필 편집에 실패했습니다");
+          const errorText = await response.text();
+          console.error("에러 응답:", errorText);
+          throw new Error(errorText || "프로필 편집에 실패했습니다");
         }
 
-        // 수정 후 다시 프로필 가져오기
         await getUserProfile(communityId);
         console.log("프로필 수정 성공");
       } catch (error) {
@@ -205,7 +192,7 @@ export function useProfile() {
         setLoadingProfile(false);
       }
     },
-    [getUserProfile, getAuthHeaders]
+    [getUserProfile, getAuthHeaders, user]
   );
 
   {

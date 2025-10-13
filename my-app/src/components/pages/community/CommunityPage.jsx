@@ -7,6 +7,7 @@ import TimeLinePage from "./TimeLinePage";
 import CommunitySidebar from "../../layout/CommunitySidebar";
 import SearchPage from "../../community/SearchPage";
 import PostingModal from "../../community/PostingModal";
+import DetailedPostPage from "./DetailedPostPage";
 
 /**
  * 임시 CommunityPage UI
@@ -66,6 +67,7 @@ const CommunityPage = () => {
                 }
               />
               <Route path="search" element={<SearchPage />} />
+              <Route path="post/:postId" element={<DetailedPostPage />} />
               <Route
                 path="*"
                 element={<TimeLinePage key={`default-${refreshKey}`} />}

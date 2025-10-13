@@ -6,7 +6,7 @@ export function useImgConverter() {
   const [isUploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
 
-  // 🖼️ 이미지 1개 업로드
+  // 이미지 1개 업로드
   const getImageUrl = useCallback(
     async (imageFile) => {
       const formData = new FormData();
@@ -17,8 +17,8 @@ export function useImgConverter() {
           `http://localhost:8080/api/profile/upload-image`,
           {
             method: "POST",
-            mode: "cors", // ✅ CORS 모드 명시
-            credentials: "include", // ✅ 쿠키/인증 포함
+            mode: "cors", // CORS 모드 명시
+            credentials: "include", // 쿠키/인증 포함
             headers: {
               ...getAuthHeaders(),
             },

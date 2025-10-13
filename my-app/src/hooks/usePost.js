@@ -144,6 +144,41 @@ export function usePost() {
     }
   }, []);
 
+  const showPostDetail = useCallback(async (postId) => {
+    //확인 필요
+    if (!postId) {
+      console.error("postId 필요합니다");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+
+    try {
+      //특정 유저가 작성한 게시물 리스트
+      const response = await fetch(`/api/community-posts/${postId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("디테일", data);
+        return data;
+      } else {
+        console.error("게시글 조회에 실패했습니다");
+        return null;
+      }
+    } catch (error) {
+      console.error("포스팅 조회 에러", error);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   //얘는 불러오는 단위 설정 필요함 - 새로 업데이트 된 거에도 포함
   const getUserPosts = useCallback(async (communityId, page = 0, size = 30) => {
     //확인 필요
@@ -420,5 +455,6 @@ export function usePost() {
     getPostLlikedUserList,
     createComment,
     getCommentList,
+    showPostDetail,
   };
 }
