@@ -143,7 +143,7 @@ const Navigation = ({ toggleSidebar, currentUser, currentPage }) => {
                 {/* 메인 로고 : 클릭 시 메인 페이지로 이동 */}
                 <Link to="/main" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
                     <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">G</span>
+                        <span className="text-white font-bold text-sm">🚀</span>
                     </div>
                     <h1 className="text-xl font-semibold text-gray-800">GRWM</h1>
                 </Link>
