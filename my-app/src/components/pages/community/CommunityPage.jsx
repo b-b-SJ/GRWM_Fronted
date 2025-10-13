@@ -5,7 +5,7 @@ import ProfilePage from "./ProfilePage";
 //import MainTimeLine from "../../community/MainTimeLine";
 import TimeLinePage from "./TimeLinePage";
 import CommunitySidebar from "../../layout/CommunitySidebar";
-import SearchPage from "../../community/SearchPage";
+import SearchPage from "./SearchPage";
 import PostingModal from "../../community/PostingModal";
 import DetailedPostPage from "./DetailedPostPage";
 

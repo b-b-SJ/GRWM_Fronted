@@ -54,10 +54,42 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
     // 프로필 정보 새로고침 (postCount 업데이트)
     await getUserProfile(currentProfileId);
 
-    // create나 delete는 목록 전체 새로고침
-    // edit는 PostList가 이미 업데이트했으니 안 해도 됨
     if (mode === "create" || mode === "delete") {
       await getUserPosts(currentProfileId);
+    }
+  };
+
+  const handleMenuClick = (e) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+
+    setModalPosition({
+      top: `${rect.right - 10 + window.scrollX}px`,
+      left: `${rect.bottom + 100 + window.scrollY}px`,
+    });
+
+    setManageModal(!manageModal);
+  };
+
+  const handleBlock = async () => {
+    // 사용자 확인
+    const confirmBlock = window.confirm(
+      `${profile.user.nickname}님을 차단하시겠습니까?\n차단하면 서로의 게시물을 볼 수 없게 됩니다.`
+    );
+
+    if (!confirmBlock) return; // 취소하면 함수 종료
+
+    try {
+      await blockUser(currentProfileId);
+      alert("차단되었습니다.");
+
+      // 4. 모달 닫기
+      setManageModal(false);
+
+      //navigate("/community"); // 커뮤니티 메인으로 이동
+    } catch (error) {
+      alert("차단에 실패했습니다. 다시 시도해주세요.");
+      console.error("차단 실패:", error);
     }
   };
 
@@ -84,17 +116,6 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
       </div>
     );
   }
-  const handleMenuClick = (e) => {
-    e.stopPropagation();
-    const rect = e.currentTarget.getBoundingClientRect();
-
-    setModalPosition({
-      top: `${rect.right - 10 + window.scrollX}px`,
-      left: `${rect.bottom + 100 + window.scrollY}px`,
-    });
-
-    setManageModal(!manageModal);
-  };
   return (
     <div className="bg-white min-h-screen mt-10">
       {/* 프로필 헤더 */}
@@ -176,14 +197,23 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
                 </button>
               )}
               {manageModal && (
-                <button
-                  className="bg-red-400 "
-                  onClick={() => {
-                    alert("신고되었습니다");
-                  }}
-                >
-                  신고하다
-                </button>
+                <div className="absolute bg-white shadow-lg rounded-lg p-2 border">
+                  <button
+                    className="w-full px-4 py-2 text-left hover:bg-gray-100 rounded text-red-500"
+                    onClick={handleBlock}
+                  >
+                    차단하기
+                  </button>
+                  <button
+                    className="w-full px-4 py-2 text-left hover:bg-gray-100 rounded"
+                    onClick={() => {
+                      alert("신고되었습니다");
+                      setManageModal(false);
+                    }}
+                  >
+                    신고하기
+                  </button>
+                </div>
               )}
             </div>
 

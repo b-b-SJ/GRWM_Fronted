@@ -6,7 +6,7 @@ import CommentSection from "../../community/CommentSection";
 import { usePost } from "../../../hooks/usePost";
 
 const DetailedPostPage = () => {
-  const { postId } = useParams(); // ⭐ URL에서 postId 가져오기
+  const { postId } = useParams(); //URL에서 postId 가져오기
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,21 +17,21 @@ const DetailedPostPage = () => {
   useEffect(() => {
     const fetchPost = async () => {
       setLoading(true);
-      setError(null); // ⭐ 추가
+      setError(null);
 
       try {
-        console.log("가져올 postId:", postId); // ⭐ 디버깅
-        const data = await showPostDetail(postId); // ⭐ 응답 받기
+        console.log("가져올 postId:", postId);
+        const data = await showPostDetail(postId);
 
-        console.log("받은 데이터:", data); // ⭐ 디버깅
+        console.log("받은 데이터:", data);
 
         if (data) {
-          setPost(data); // ⭐ post에 저장
+          setPost(data);
         } else {
           setError("게시물을 불러올 수 없습니다");
         }
       } catch (err) {
-        console.error("에러:", err); // ⭐ 디버깅
+        console.error("에러:", err);
         setError("네트워크 에러가 발생했습니다");
       } finally {
         setLoading(false);
@@ -39,10 +39,9 @@ const DetailedPostPage = () => {
     };
 
     if (postId) {
-      // ⭐ postId가 있을 때만 실행
       fetchPost();
     }
-  }, [postId, showPostDetail]); // ⭐ 의존성 배열 수정
+  }, [postId, showPostDetail]);
 
   if (loading) return <div>로딩 중...</div>;
   if (error) return <div>에러: {error}</div>;
@@ -54,7 +53,10 @@ const DetailedPostPage = () => {
       <PostingStyle post={post} />
 
       {/* 여기에 댓글 컴포넌트 추가 */}
-      <CommentSection postId={postId} />
+      <CommentSection
+        postId={post.postId}
+        postAuthorId={post.user?.communityId}
+      />
     </div>
   );
 };
