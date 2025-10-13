@@ -16,6 +16,7 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
     unfollowUser,
     blockUser,
     updateUserProfile,
+    unblockUser,
   } = useProfile();
 
   const { posts, getUserPosts } = usePost();
@@ -83,7 +84,7 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
       await blockUser(currentProfileId);
       alert("차단되었습니다.");
 
-      // 4. 모달 닫기
+      //모달 닫기
       setManageModal(false);
 
       //navigate("/community"); // 커뮤니티 메인으로 이동
@@ -116,6 +117,91 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
       </div>
     );
   }
+
+  // 🚫 차단된 사용자 프로필 처리 (조기 반환)
+  if (
+    profile.relationship === "isBlockedByMe" ||
+    profile.relationship === "isBlockingMe"
+  ) {
+    return (
+      <div className="bg-white min-h-screen mt-10">
+        <div className="shadow-sm">
+          {/* 배너 */}
+          <div className="max-w-full aspect-[32/2]">
+            {profile.bannerImage ? (
+              <img
+                src={profile.bannerImage}
+                alt="배너"
+                className="w-full h-full object-cover opacity-50"
+              />
+            ) : (
+              <div className="w-full h-full bg-gray-400"></div>
+            )}
+          </div>
+
+          {/* 기본 프로필 정보만 */}
+          <div className="mt-7 px-6 py-4 flex pb-12 border-b">
+            {/* 프로필 사진 */}
+            <div>
+              {profile.user.profileImage ? (
+                <img
+                  src={profile.user.profileImage}
+                  alt="프로필"
+                  className="w-48 h-48 rounded-full border-4 border-white shadow-lg object-cover opacity-50"
+                />
+              ) : (
+                <div className="w-48 h-48 rounded-full border-4 border-white shadow-lg bg-gray-200 flex items-center justify-center">
+                  <UserRound className="w-24 h-24 text-gray-400" />
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col flex-1 p-6 gap-y-6">
+              <h2 className="font-bold text-2xl text-gray-400">
+                {profile.user.nickname}
+              </h2>
+
+              {profile.relationship === "isBlockedByMe" ? (
+                <button
+                  className="group px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors w-fit"
+                  onClick={async () => {
+                    const confirm = window.confirm("차단을 해제하시겠습니까?");
+                    if (confirm) {
+                      // 차단 해제 API 호출 (useProfile에 unblockUser 함수 필요)
+                      await unblockUser(currentProfileId);
+                      alert("차단이 해제되었습니다.");
+                    }
+                  }}
+                >
+                  <span className="group-hover:hidden">차단 중</span>
+                  <span className="hidden group-hover:inline">차단 해제</span>
+                </button>
+              ) : (
+                <div className="px-6 py-2 bg-red-600 text-white rounded-lg w-fit">
+                  차단 당함
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 차단 안내 메시지 */}
+          <div className="p-12 text-center">
+            <div className="inline-block p-8 bg-gray-50 rounded-lg">
+              <p className="text-gray-600 text-lg mb-2">
+                {profile.relationship === "isBlockedByMe"
+                  ? "차단한 사용자입니다"
+                  : "차단당한 사용자입니다"}
+              </p>
+              <p className="text-gray-500 text-sm">
+                이 사용자의 게시물과 활동을 볼 수 없습니다
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white min-h-screen mt-10">
       {/* 프로필 헤더 */}

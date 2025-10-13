@@ -354,7 +354,47 @@ export function useProfile() {
     } finally {
       setLoadingProfile(false);
     }
-  });
+  }, []);
+
+  const unblockUser = useCallback(
+    async (targetId) => {
+      if (!targetId) {
+        console.error("targetId가 필요합니다");
+        return;
+      }
+
+      setLoadingProfile(true);
+      setError(null);
+
+      try {
+        const response = await fetch(
+          `http://localhost:8080/api/users/blocks/${targetId}`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json", // 수정
+              ...getAuthHeaders(),
+            },
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "언블락에 실패했습니다");
+        }
+
+        console.log("언블락 성공");
+        await getUserProfile(targetId);
+      } catch (error) {
+        console.error("언블락 오류:", error);
+        setError(error.message);
+        throw error;
+      } finally {
+        setLoadingProfile(false);
+      }
+    },
+    [getUserProfile, getAuthHeaders]
+  );
   return {
     profile,
     myProfile, // 목업 데이터
@@ -367,5 +407,6 @@ export function useProfile() {
     error,
     loadingProfile,
     blockUser,
+    unblockUser,
   };
 }
