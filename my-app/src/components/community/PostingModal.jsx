@@ -8,7 +8,7 @@ const PostingModal = ({
   openPostModal,
   mode = "create",
   existingPost = null,
-  onPostChanged, // ✅ 콜백 받기
+  onPostChanged, // 콜백 받기
 }) => {
   const [textContent, setTextContent] = useState("");
   const [hashtags, setHashtags] = useState([]);
@@ -19,7 +19,7 @@ const PostingModal = ({
   const { createPost, updatePost } = usePost();
   const fileInputRef = useRef(null);
 
-  // ✅ 수정 모드일 때 기존 데이터 채우기
+  // 수정 모드일 때 기존 데이터 채우기
   useEffect(() => {
     if (mode === "edit" && existingPost) {
       setTextContent(existingPost.content.text || "");
@@ -66,7 +66,7 @@ const PostingModal = ({
         }
       }
 
-      // ✅ 부모에게 변경 알림
+      // 부모에게 변경 알림
       if (onPostChanged && result) {
         onPostChanged(mode, result);
       }

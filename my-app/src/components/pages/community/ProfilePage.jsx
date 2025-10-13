@@ -21,7 +21,8 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
   const param = useParams();
   const { user } = useAuth();
   const currentProfileId = Number(param.communityId);
-  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
+  const [manageModal, setManageModal] = useState(false);
   // 초기 로드
   useEffect(() => {
     const loadProfile = async () => {
@@ -71,7 +72,17 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
       </div>
     );
   }
+  const handleMenuClick = (e) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
 
+    setModalPosition({
+      top: `${rect.right - 10 + window.scrollX}px`,
+      left: `${rect.bottom + 100 + window.scrollY}px`,
+    });
+
+    setManageModal(!manageModal);
+  };
   return (
     <div className="bg-white min-h-screen mt-10">
       {/* 프로필 헤더 */}
@@ -143,9 +154,20 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
               {!isMyProfile && (
                 <button
                   className="p-2 hover:bg-gray-100 rounded-full"
-                  onClick={() => setShowBlockModal(!showBlockModal)} //나중에 모달 만들면 쓰기 -> blockUser(currentProfileId),
+                  onClick={() => setManageModal(!manageModal)}
+                  style={manageModal.modal} //나중에 모달 만들면 쓰기 -> blockUser(currentProfileId),
                 >
                   <Ellipsis size={24} />
+                </button>
+              )}
+              {manageModal && (
+                <button
+                  className="bg-red-400 "
+                  onClick={() => {
+                    alert("신고되었습니다");
+                  }}
+                >
+                  신고하다
                 </button>
               )}
             </div>

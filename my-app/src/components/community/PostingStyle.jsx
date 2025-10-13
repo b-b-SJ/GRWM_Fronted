@@ -38,8 +38,8 @@ const PostingStyle = ({
     const rect = e.currentTarget.getBoundingClientRect();
 
     setModalPosition({
-      x: rect.right - 160 + window.scrollX,
-      y: rect.bottom + 4 + window.scrollY,
+      x: rect.right - 10 + window.scrollX,
+      y: rect.bottom + 1 + window.scrollY,
     });
 
     setManageModal(!manageModal);
