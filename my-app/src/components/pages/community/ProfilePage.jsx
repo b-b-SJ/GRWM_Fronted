@@ -6,6 +6,7 @@ import { useAuth } from "../../../hooks/AuthContext";
 import { usePost } from "../../../hooks/usePost";
 import PostList from "../../community/PostList";
 import ProfileEditModal from "../../community/ProfileEditModal";
+import FollowListModal from "../../community/FollowListModal";
 const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
   const {
     profile,
@@ -26,6 +27,9 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
   const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [manageModal, setManageModal] = useState(false);
+  const [openFollowListModal, setOpenFollowListModal] = useState(false);
+  const [listViewMode, setListViewMode] = useState(null);
+
   // 초기 로드
   useEffect(() => {
     const loadProfile = async () => {
@@ -309,11 +313,23 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
                 <p className="text-gray-500 text-sm">게시물</p>
                 <p className="font-bold text-lg">{profile.postCount}</p>
               </div>
-              <button className="hover:opacity-70 transition-opacity">
+              <button
+                className="hover:opacity-70 transition-opacity"
+                onClick={() => {
+                  setOpenFollowListModal(true);
+                  setListViewMode("follower");
+                }}
+              >
                 <p className="text-gray-500 text-sm">팔로워</p>
                 <p className="font-bold text-lg">{profile.followerCount}</p>
               </button>
-              <button className="hover:opacity-70 transition-opacity">
+              <button
+                className="hover:opacity-70 transition-opacity"
+                onClick={() => {
+                  setOpenFollowListModal(true);
+                  setListViewMode("following");
+                }}
+              >
                 <p className="text-gray-500 text-sm">팔로잉</p>
                 <p className="font-bold text-lg">{profile.followingCount}</p>
               </button>
@@ -351,6 +367,14 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
         currentProfile={profile}
         onSave={handleSaveProfile}
       />
+      {openFollowListModal && (
+        <FollowListModal
+          mode={listViewMode}
+          openFollowListModal={openFollowListModal}
+          setOpenFollowListModal={setOpenFollowListModal}
+          targetId={currentProfileId}
+        />
+      )}
     </div>
   );
 };

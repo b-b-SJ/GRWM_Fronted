@@ -22,6 +22,8 @@ Response: {List<Post> posts, int totalCount, boolean hasMore}
   }
   const searchHashtag = useCallback(
     async (keyword, page = 0, size = 30) => {
+      setLoading(true);
+      setError(null);
       try {
         const response = await fetch(
           `/api/search/hashtags?keyword=${encodeURIComponent(
@@ -58,6 +60,8 @@ Response: {List<Post> posts, int totalCount, boolean hasMore}
 
   const searchUser = useCallback(
     async (keyword, page = 0, size = 30) => {
+      setLoading(true);
+      setError(null);
       try {
         const response = await fetch(
           `/api/search/users?keyword=${encodeURIComponent(
@@ -94,6 +98,8 @@ Response: {List<Post> posts, int totalCount, boolean hasMore}
 
   const searchPost = useCallback(
     async (keyword, page = 0, size = 30) => {
+      setLoading(true);
+      setError(null);
       try {
         const response = await fetch(
           `/api/search/posts?keyword=${encodeURIComponent(
