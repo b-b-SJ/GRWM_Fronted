@@ -303,7 +303,7 @@ export function usePost() {
 
       if (response.ok) {
         const likeCount = await response.json();
-        console.log("좋아요 성공");
+        console.log("좋아요 성공", likeCount);
         return likeCount;
       } else {
         console.error(" 좋아요 실패:", response.status);
