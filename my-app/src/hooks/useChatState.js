@@ -722,7 +722,7 @@ export const ChatStateProvider = ({ children }) => {
         }
     }, [currentUser.userId, currentUser.username, currentUser.communityNickname, isAuthenticated, messages, wsSendMessage, addMessage]);
 
-    // 메시지 삭제 - REST API 사용 (백엔드에서 WebSocket 브로드캐스트 없음)
+    // 메시지 삭제 - REST API 사용 (백엔드 ws 추가 전까지)
     const requestDeleteMessage = useCallback(async (chatRoomId, messageId, canDeleteForEveryone) => {
         if (!isAuthenticated || !currentUser.userId) {
             throw new Error('로그인이 필요합니다.');
