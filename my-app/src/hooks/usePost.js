@@ -101,10 +101,9 @@ export function usePost() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log("무슨 글을 썻는교", data);
         setPosts(data);
 
-        console.log("게시물 목록 조회 성공");
+        console.log("게시물 목록 조회 성공", data);
       } else {
         console.error(" 게시물 목록 조회 실패:", response.status);
         setError("게시물을 불러오는데 실패했습니다");
