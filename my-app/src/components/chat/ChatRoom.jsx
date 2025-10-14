@@ -4,13 +4,6 @@ import { useChatState } from '../../hooks/useChatState';
 import ChatMessages from './ChatMessages';
 import MessageInput from './MessageInput';
 
-/**
- * ChatRoom 컴포넌트 - useChatState 연동, 말풍선 스타일 채팅 UI
- * - useChatState의 메시지 상태와 함수들을 활용
- * - WebSocket을 통한 실시간 메시지 처리
- * - 참여자 목록 표시 기능 추가
- * - 재연결 기능 추가
- */
 const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
     const {
         messages,
@@ -21,6 +14,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
         requestDeleteMessage,
         replyTo,
         setReplyTo,
+        setMessages,
         leaveChatRoom,
         editChatRoomName,
         deleteChatRoom,
@@ -49,10 +43,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
         room.roomId == chatRoomId || room.chatRoomId == chatRoomId
     );
 
-    // 사용자가 방장인지 확인 - 백엔드에서 isManager로 전달
     const isManager = currentRoom?.isManager === true;
-
-    // chatRoomId에 해당하는 메시지들 (useChatState에서 관리)
     const roomMessages = messages[chatRoomId] || [];
 
     useEffect(() => {
@@ -95,7 +86,6 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
         setShowMenu(false);
     };
 
-    // 채팅방 나가기
     const handleLeaveRoom = async () => {
         if (window.confirm('이 채팅방을 나가시겠습니까?')) {
             try {
@@ -109,7 +99,6 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
         setShowMenu(false);
     };
 
-    // 공지사항 등록
     const handleCreateAnnouncement = async () => {
         try {
             await createAnnouncement(chatRoomId, announcementContent);
@@ -122,7 +111,6 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
         }
     };
 
-    // 공지사항 불러오기
     const loadMainAnnouncement = async () => {
         try {
             const announcement = await getMainAnnouncement(chatRoomId);
@@ -152,7 +140,6 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
         loadMembers();
     };
 
-    // 수동 재연결
     const handleReconnect = () => {
         if (reconnectWebSocket) {
             reconnectWebSocket();
@@ -177,7 +164,8 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
 
     const handleSendMessage = (content) => {
         try {
-            sendMessage(chatRoomId, content, replyTo?.id);
+            const replyMessageId = replyTo?.id || null;
+            sendMessage(chatRoomId, content, replyMessageId);
             setReplyTo(null);
         } catch (error) {
             console.error('메시지 전송 실패:', error);
@@ -185,14 +173,30 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
         }
     };
 
-    const handleDeleteMessage = (messageId, deleteForEveryone = false) => {
+    // 메시지 삭제 핸들러 - 5분 기준 처리
+    const handleDeleteMessage = async (messageId, canDeleteForEveryone) => {
         try {
-            if (deleteForEveryone) {
-                requestDeleteMessage(chatRoomId, messageId);
+            console.log('메시지 삭제 시도:', { messageId, canDeleteForEveryone });
+
+            if (canDeleteForEveryone) {
+                // 5분 이내 - 모두에게서 삭제
+                if (window.confirm('모든 사용자에게서 이 메시지를 삭제하시겠습니까?')) {
+                    await requestDeleteMessage(chatRoomId, messageId, true);
+                    console.log('모두에게서 삭제 완료');
+                }
+            } else {
+                // 5분 경과 - 나에게서만 삭제
+                if (window.confirm('나에게서만 이 메시지를 삭제하시겠습니까?\n(다른 사용자에게는 계속 표시됩니다)')) {
+                    setMessages(prev => ({
+                        ...prev,
+                        [chatRoomId]: prev[chatRoomId]?.filter(msg => msg.id !== messageId) || []
+                    }));
+                    console.log('나에게서만 삭제 완료');
+                }
             }
         } catch (error) {
             console.error('메시지 삭제 실패:', error);
-            setError('메시지 삭제에 실패했습니다.');
+            alert(error.message || '메시지 삭제에 실패했습니다.');
         }
     };
 
@@ -338,7 +342,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                 </div>
             )}
 
-            {/* 연결 상태 알림 - 에러 */}
+            {/* 연결 상태 알림 */}
             {connectionStatus === 'error' && (
                 <div className="bg-red-50 px-6 py-3 border-b flex-shrink-0">
                     <div className="flex items-center justify-between">
@@ -360,7 +364,6 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                 </div>
             )}
 
-            {/* 연결 상태 알림 - 연결 중 */}
             {connectionStatus === 'connecting' && (
                 <div className="bg-yellow-50 px-6 py-2 border-b flex-shrink-0">
                     <div className="flex items-center space-x-2">
@@ -370,7 +373,6 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                 </div>
             )}
 
-            {/* 연결 상태 알림 - 자동 재연결 중 */}
             {connectionStatus === 'disconnected' && reconnectAttempts > 0 && reconnectAttempts < 5 && (
                 <div className="bg-amber-50 px-6 py-2 border-b flex-shrink-0">
                     <div className="flex items-center space-x-2">
@@ -396,9 +398,21 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                             msg.senderId !== undefined && msg.senderId === currentUser.userId
                         );
 
+                        if (msg.type === 'system') {
+                            return msg;
+                        }
+
+                        let replyToMessage = null;
+                        if (msg.replyMessageId || msg.replyToMessageId) {
+                            const replyId = msg.replyMessageId || msg.replyToMessageId;
+                            replyToMessage = roomMessages.find(m => m.id === replyId);
+                        }
+
                         return {
                             ...msg,
-                            isOwn: isOwnMessage
+                            isOwn: isOwnMessage,
+                            replyMessageId: msg.replyToMessageId || msg.replyMessageId || null,
+                            replyTo: replyToMessage || msg.replyTo || null
                         };
                     })}
                     onReply={handleReplyToMessage}
@@ -422,16 +436,39 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">채팅방 이름</label>
-                                <input type="text" value={editRoomName} onChange={(e) => setEditRoomName(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" maxLength={50} />
+                                <input
+                                    type="text"
+                                    value={editRoomName}
+                                    onChange={(e) => setEditRoomName(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    maxLength={50}
+                                />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">채팅방 설명</label>
-                                <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 resize-none" maxLength={200} />
+                                <textarea
+                                    value={editDescription}
+                                    onChange={(e) => setEditDescription(e.target.value)}
+                                    rows={3}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                    maxLength={200}
+                                />
                             </div>
                         </div>
                         <div className="flex space-x-3 mt-6">
-                            <button onClick={() => setShowEditModal(false)} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">취소</button>
-                            <button onClick={handleSaveEdit} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700" disabled={!editRoomName.trim()}>저장</button>
+                            <button
+                                onClick={() => setShowEditModal(false)}
+                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleSaveEdit}
+                                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                disabled={!editRoomName.trim()}
+                            >
+                                저장
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -444,12 +481,30 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                         <h3 className="text-lg font-semibold mb-4">공지 작성</h3>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">공지 내용</label>
-                            <textarea value={announcementContent} onChange={(e) => setAnnouncementContent(e.target.value)} rows={4} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 resize-none" placeholder="공지 내용을 입력하세요..." maxLength={500} />
+                            <textarea
+                                value={announcementContent}
+                                onChange={(e) => setAnnouncementContent(e.target.value)}
+                                rows={4}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                placeholder="공지 내용을 입력하세요..."
+                                maxLength={500}
+                            />
                             <p className="text-xs text-gray-500 mt-1">{announcementContent.length}/500자</p>
                         </div>
                         <div className="flex space-x-3 mt-6">
-                            <button onClick={() => { setShowAnnouncementModal(false); setAnnouncementContent(''); }} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">취소</button>
-                            <button onClick={handleCreateAnnouncement} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700" disabled={!announcementContent.trim()}>공지 등록</button>
+                            <button
+                                onClick={() => { setShowAnnouncementModal(false); setAnnouncementContent(''); }}
+                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleCreateAnnouncement}
+                                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                                disabled={!announcementContent.trim()}
+                            >
+                                공지 등록
+                            </button>
                         </div>
                     </div>
                 </div>

@@ -7,10 +7,13 @@ import { useLocation } from 'react-router-dom';
  * useChatState 커스텀 훅
  * - 채팅방 목록 및 CRUD 관리
  * - AuthContext와 연동하여 로그인한 유저의 채팅방 로딩
- * - 메시지 히스토리 URL 수정: /api/chatroom/{chatRoomId}/show (0930)
+ * - 메시지 히스토리 URL: /api/chatroom/{chatRoomId}/show
  * - 참여자 및 공지사항 관리
  * - WebSocket 로직은 WebSocketContext로 분리
- * - reconnectWebSocket 함수 추가 (WebSocket reconnect 노출)
+ * - reconnectWebSocket 함수 추가
+ * - replyMessageId 지원
+ * - 입장/퇴장 시스템 메시지
+ * - 5분 기준 메시지 삭제 (REST API)
  */
 
 // 카테고리 매핑 상수
@@ -57,11 +60,14 @@ export const ChatStateProvider = ({ children }) => {
     const { user, isAuthenticated, getAuthHeaders } = useAuth();
     const {
         connectionStatus,
+        reconnectAttempts,
         connect,
         disconnect,
-        reconnect: wsReconnect,  // WebSocket의 reconnect 함수
+        reconnect: wsReconnect,
         sendMessage: wsSendMessage,
-        addMessageHandler
+        deleteMessage: wsDeleteMessage,
+        addMessageHandler,
+        addDeleteHandler
     } = useWebSocket();
     const location = useLocation();
 
@@ -214,13 +220,13 @@ export const ChatStateProvider = ({ children }) => {
         }));
     }, []);
 
-    // 메시지 삭제 (내부 사용)
-    const deleteMessage = useCallback((chatRoomId, messageId, deleteType) => {
+    // WebSocket으로 받은 메시지 삭제 이벤트 처리
+    const handleDeletedMessage = useCallback((chatRoomId, messageId) => {
         setMessages(prev => ({
             ...prev,
             [chatRoomId]: prev[chatRoomId]?.map(msg =>
                 msg.id === messageId
-                    ? { ...msg, isDeleted: true, deleteType }
+                    ? { ...msg, isDeleted: true, content: '(삭제된 메시지입니다.)' }
                     : msg
             ) || []
         }));
@@ -244,16 +250,33 @@ export const ChatStateProvider = ({ children }) => {
             if (response.ok) {
                 const msgs = await response.json();
 
-                const formattedMessages = msgs.map(msg => ({
-                    id: msg.messageId,
-                    content: msg.content,
-                    sender: msg.writerChatName,
-                    senderId: msg.senderId,
-                    timestamp: msg.createdAt,
-                    type: msg.type === 0 ? 'chat' :
-                        msg.type === 1 ? 'join' : 'leave',
-                    replyToMessageId: msg.replytoMessageId || null
-                }));
+                const formattedMessages = msgs.map(msg => {
+                    // type: 0=일반메시지, 1=입장, 2=퇴장
+                    let messageType = 'chat';
+                    let messageContent = msg.content;
+
+                    if (msg.type === 1) {
+                        messageType = 'system';
+                        messageContent = `${msg.writerChatName}님이 입장하셨습니다.`;
+                    } else if (msg.type === 2) {
+                        messageType = 'system';
+                        messageContent = `${msg.writerChatName}님이 퇴장하셨습니다.`;
+                    } else if (msg.isDeleted) {
+                        messageContent = '(삭제된 메시지입니다.)';
+                    }
+
+                    return {
+                        id: msg.messageId,
+                        content: messageContent,
+                        sender: msg.writerChatName,
+                        senderId: msg.senderId,
+                        timestamp: msg.createdAt,
+                        type: messageType,
+                        replyToMessageId: msg.replytoMessageId || msg.replyMessageId || null,
+                        replyMessageId: msg.replytoMessageId || msg.replyMessageId || null,
+                        isDeleted: msg.isDeleted || false
+                    };
+                });
 
                 setMessages(prev => ({
                     ...prev,
@@ -386,13 +409,24 @@ export const ChatStateProvider = ({ children }) => {
                 throw new Error('채팅방 참여에 실패했습니다.');
             }
 
+            // 로컬에서 입장 시스템 메시지 추가
+            const joinMessage = {
+                id: `system-join-${Date.now()}`,
+                content: `${finalChatName}님이 입장하셨습니다.`,
+                sender: finalChatName,
+                senderId: currentUser.userId,
+                timestamp: new Date().toISOString(),
+                type: 'system'
+            };
+            addMessage(chatRoomId, joinMessage);
+
             await fetchChatRooms();
             return true;
         } catch (error) {
             console.error('JOIN API 에러:', error);
             throw error;
         }
-    }, [currentUser.userId, currentUser.communityNickname, currentUser.username, isAuthenticated, getAuthHeaders, fetchChatRooms]);
+    }, [currentUser.userId, currentUser.communityNickname, currentUser.username, isAuthenticated, getAuthHeaders, fetchChatRooms, addMessage]);
 
     // 채팅방 나가기 (UI 상태만 정리)
     const leaveRoom = useCallback(() => {
@@ -410,6 +444,18 @@ export const ChatStateProvider = ({ children }) => {
 
         console.log('Request URL:', `/api/chat-room/${chatRoomId}/leave`);
         console.log('Headers:', getAuthHeaders());
+
+        // 퇴장 전에 시스템 메시지 추가
+        const userName = currentUser.communityNickname || currentUser.username || '사용자';
+        const leaveMessage = {
+            id: `system-leave-${Date.now()}`,
+            content: `${userName}님이 퇴장하셨습니다.`,
+            sender: userName,
+            senderId: currentUser.userId,
+            timestamp: new Date().toISOString(),
+            type: 'system'
+        };
+        addMessage(chatRoomId, leaveMessage);
 
         const response = await fetch(`/api/chat-room/${chatRoomId}/leave`, {
             method: 'DELETE',
@@ -434,7 +480,7 @@ export const ChatStateProvider = ({ children }) => {
 
         await fetchChatRooms();
         return true;
-    }, [currentUser.userId, isAuthenticated, getAuthHeaders, selectedRoom, fetchChatRooms, leaveRoom]);
+    }, [currentUser.userId, currentUser.communityNickname, currentUser.username, isAuthenticated, getAuthHeaders, selectedRoom, fetchChatRooms, leaveRoom, addMessage]);
 
     // 채팅방 정보 조회
     const getChatRoomInfo = useCallback(async (chatRoomId) => {
@@ -637,42 +683,38 @@ export const ChatStateProvider = ({ children }) => {
         }
     }, [createChatRoom, joinChatRoom]);
 
-    // 메시지 전송 (WebSocket 사용)
-    const sendMessage = useCallback((chatRoomId, content, replyToId = null) => {
+    // 메시지 전송 (WebSocket 사용) - replyMessageId 지원
+    const sendMessage = useCallback((chatRoomId, content, replyMessageId = null) => {
         if (!isAuthenticated || !currentUser.userId) {
             throw new Error('로그인이 필요합니다.');
         }
 
-        const replyToMessage = replyToId ? messages[chatRoomId]?.find(m => m.id === replyToId) : null;
+        // replyMessageId가 있으면 해당 메시지 찾기
+        const replyToMessage = replyMessageId ? messages[chatRoomId]?.find(m => m.id === replyMessageId) : null;
 
-        // WebSocket으로 메시지 전송 시도
-        const sent = wsSendMessage(chatRoomId, content, currentUser.userId, replyToId);
+        console.log('메시지 전송:', {
+            chatRoomId,
+            content,
+            replyMessageId,
+            replyToMessage: replyToMessage ? { id: replyToMessage.id, sender: replyToMessage.sender } : null
+        });
 
-        if (sent) {
-            // Optimistic UI 업데이트
-            const optimisticMessage = {
-                id: `temp-${Date.now()}`,
+        // WebSocket으로 메시지 전송 (Optimistic UI 없이)
+        const sent = wsSendMessage(chatRoomId, content, currentUser.userId, replyMessageId);
+
+        if (!sent) {
+            console.warn('WebSocket 미연결 - 테스트 메시지 추가');
+
+            // WebSocket 미연결 시에만 테스트 메시지 추가
+            const testMessage = {
+                id: `test-${Date.now()}`,
                 content: content,
                 sender: currentUser.communityNickname || currentUser.username,
                 senderId: currentUser.userId,
                 timestamp: new Date().toISOString(),
                 type: 'chat',
-                replyToMessageId: replyToId,
-                replyTo: replyToMessage,
-                isPending: true
-            };
-        } else {
-            console.warn('WebSocket 미연결');
-
-            // 테스트 메시지 (WebSocket 미연결 시)
-            const testMessage = {
-                id: `test-${Date.now()}`,
-                content: content,
-                sender: currentUser.username,
-                senderId: currentUser.userId,
-                timestamp: new Date().toISOString(),
-                type: 'chat',
-                replyToMessageId: replyToId,
+                replyToMessageId: replyMessageId,
+                replyMessageId: replyMessageId,
                 replyTo: replyToMessage
             };
 
@@ -680,31 +722,52 @@ export const ChatStateProvider = ({ children }) => {
         }
     }, [currentUser.userId, currentUser.username, currentUser.communityNickname, isAuthenticated, messages, wsSendMessage, addMessage]);
 
-    // 메시지 삭제 - REST API 사용
-    const requestDeleteMessage = useCallback(async (chatRoomId, messageId) => {
+    // 메시지 삭제 - REST API 사용 (백엔드에서 WebSocket 브로드캐스트 없음)
+    const requestDeleteMessage = useCallback(async (chatRoomId, messageId, canDeleteForEveryone) => {
         if (!isAuthenticated || !currentUser.userId) {
             throw new Error('로그인이 필요합니다.');
         }
 
         try {
+            console.log('메시지 삭제 요청 (REST API):', {
+                chatRoomId,
+                messageId,
+                canDeleteForEveryone
+            });
+
             const response = await fetch(`/api/chatroom/${chatRoomId}/delete/${messageId}`, {
                 method: 'DELETE',
                 headers: getAuthHeaders()
             });
 
             if (!response.ok) {
+                if (response.status === 404) {
+                    throw new Error('존재하지 않는 메시지입니다.');
+                }
+                if (response.status === 403) {
+                    throw new Error('메시지 삭제 권한이 없습니다.');
+                }
                 throw new Error(`메시지 삭제 실패 (${response.status})`);
             }
 
             console.log('메시지 삭제 성공:', messageId);
-            deleteMessage(chatRoomId, messageId, 'deleted');
+
+            // 로컬에서 메시지를 삭제된 상태로 업데이트
+            setMessages(prev => ({
+                ...prev,
+                [chatRoomId]: prev[chatRoomId]?.map(msg =>
+                    msg.id === messageId
+                        ? { ...msg, isDeleted: true, content: '삭제된 메시지입니다.' }
+                        : msg
+                ) || []
+            }));
+
             return true;
         } catch (error) {
             console.error('메시지 삭제 오류:', error);
             throw error;
         }
-    }, [currentUser.userId, isAuthenticated, getAuthHeaders, deleteMessage]);
-
+    }, [currentUser.userId, isAuthenticated, getAuthHeaders]);
     // 채팅방 입장 (WebSocket 연결 + 히스토리 로드)
     const joinRoom = useCallback(async (chatRoomId) => {
         if (!isAuthenticated || !currentUser.userId) {
@@ -748,7 +811,28 @@ export const ChatStateProvider = ({ children }) => {
     useEffect(() => {
         const handleMessage = (message) => {
             if (selectedRoom) {
-                addMessage(selectedRoom, message);
+                // WebSocket으로 받은 메시지 처리
+                let processedMessage = {
+                    ...message,
+                    replyToMessageId: message.replyMessageId || message.replyToMessageId || null
+                };
+
+                // 시스템 메시지 처리 (입장/퇴장)
+                if (message.type === 1) {
+                    processedMessage = {
+                        ...processedMessage,
+                        type: 'system',
+                        content: `${message.sender}님이 입장하셨습니다.`
+                    };
+                } else if (message.type === 2) {
+                    processedMessage = {
+                        ...processedMessage,
+                        type: 'system',
+                        content: `${message.sender}님이 퇴장하셨습니다.`
+                    };
+                }
+
+                addMessage(selectedRoom, processedMessage);
             }
         };
 
@@ -758,6 +842,22 @@ export const ChatStateProvider = ({ children }) => {
             unsubscribe();
         };
     }, [selectedRoom, addMessageHandler, addMessage]);
+
+    // WebSocket 삭제 이벤트 핸들러 등록
+    useEffect(() => {
+        const handleDelete = (deleteEvent) => {
+            if (selectedRoom && deleteEvent.chatRoomId == selectedRoom) {
+                console.log('삭제 이벤트 수신:', deleteEvent);
+                handleDeletedMessage(selectedRoom, deleteEvent.messageId);
+            }
+        };
+
+        const unsubscribe = addDeleteHandler(handleDelete);
+
+        return () => {
+            unsubscribe();
+        };
+    }, [selectedRoom, addDeleteHandler, handleDeletedMessage]);
 
     // 채팅 페이지 진입 시 처리
     useEffect(() => {
@@ -776,7 +876,7 @@ export const ChatStateProvider = ({ children }) => {
             setChatRooms([]);
             setMessages({});
         }
-    }, [isAuthenticated]);
+    }, [isAuthenticated, selectedRoom, leaveRoom]);
 
     const value = {
         selectedRoom,
@@ -785,7 +885,9 @@ export const ChatStateProvider = ({ children }) => {
         setChatRooms,
         currentUser,
         messages,
+        setMessages,
         connectionStatus,
+        reconnectAttempts,
         replyTo,
         setReplyTo,
         isLoadingRooms,
@@ -810,8 +912,10 @@ export const ChatStateProvider = ({ children }) => {
         joinRoom,
         leaveRoom,
         fetchCommunityNickname,
-        reconnectWebSocket  // WebSocket 재연결 함수 추가
+        reconnectWebSocket,
+        handleDeletedMessage
     };
+
     return (
         <ChatStateContext.Provider value={value}>
             {children}
