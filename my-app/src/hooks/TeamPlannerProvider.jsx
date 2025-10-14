@@ -7,6 +7,8 @@ export const TeamPlannerProvider = ({ children }) => {
     const [planners, setPlanners] = useState([]);
     const [currentPlanner, setCurrentPlanner] = useState(null);
     const [members, setMembers] = useState([]); // MemberDto 배열
+    const [schedules, setSchedules] = useState([]); // TeamScheduleBriefDto 배열
+    const [categories, setCategories] = useState([]); // CategoryDto 배열
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const { user, isAuthenticated, getAuthHeaders } = useAuth();
@@ -86,7 +88,7 @@ export const TeamPlannerProvider = ({ children }) => {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(`/api/team-planner/list?userId=${currentUser.userId}`, {
+            const response = await fetch(`/api/team-planner/list`, {
                 method: 'GET',
                 headers: {
                     ...getAuthHeaders(),
@@ -232,8 +234,6 @@ export const TeamPlannerProvider = ({ children }) => {
 
     /**
      * 멤버 목록 조회 (활성 멤버만)
-     * API 응답: MemberDto[]
-     * MemberDto: { userId, username, nickname, profileImage, email, role, status }
      * @param {number} plannerId
      * @returns {Promise<Array>} MemberDto 배열
      */
@@ -260,13 +260,11 @@ export const TeamPlannerProvider = ({ children }) => {
             const data = await response.json();
             console.log('받아온 멤버 목록 (MemberDto[]):', data);
 
-            // MemberDto 구조 확인 로그
             if (data && data.length > 0) {
                 console.log('첫 번째 멤버 DTO:', data[0]);
                 console.log('MemberDto 필드:', Object.keys(data[0]));
             }
 
-            // status가 'active'인 멤버만 필터링
             const activeMembers = data.filter(member => member.status === 'active');
             setMembers(activeMembers);
             return activeMembers;
@@ -303,7 +301,6 @@ export const TeamPlannerProvider = ({ children }) => {
                 throw new Error('멤버 삭제에 실패했습니다.');
             }
 
-            // 로컬 상태에서 제거 (status가 withdrawn이 되므로)
             setMembers(prev => prev.filter(m => m.userId !== memberId));
         } catch (error) {
             handleError(error, '멤버 삭제 중 오류가 발생했습니다.');
@@ -339,10 +336,920 @@ export const TeamPlannerProvider = ({ children }) => {
                 throw new Error('멤버 별명 업데이트에 실패했습니다.');
             }
 
-            // 멤버 목록 다시 불러오기
             await fetchMembers(plannerId);
         } catch (error) {
             handleError(error, '멤버 별명 업데이트 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    // ==================== 일정(Schedule) 관리 ====================
+
+    /**
+     * 일정 생성
+     * @param {number} plannerId
+     * @param {Object} scheduleData - { title, categoryId?, startDateTime, finishDateTime, location, memo }
+     * @returns {Promise<number>} scheduleId
+     */
+    const createSchedule = useCallback(async (plannerId, scheduleData) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/schedule/create`,
+                {
+                    method: 'POST',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        plannerId,
+                        categoryId: scheduleData.categoryId || null,
+                        title: scheduleData.title,
+                        startDateTime: scheduleData.startDateTime,
+                        finishDateTime: scheduleData.finishDateTime,
+                        location: scheduleData.location || '',
+                        memo: scheduleData.memo || ''
+                    }),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('일정 생성에 실패했습니다.');
+            }
+
+            const scheduleId = await response.json();
+            console.log('생성된 일정 ID:', scheduleId);
+            return scheduleId;
+        } catch (error) {
+            handleError(error, '일정 생성 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    /**
+     * 일정 상세 조회
+     * @param {number} plannerId
+     * @param {number} scheduleId
+     * @returns {Promise<Object>} TeamScheduleDto
+     */
+    const fetchScheduleDetail = useCallback(async (plannerId, scheduleId) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/schedule/${scheduleId}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('일정 상세 조회에 실패했습니다.');
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            handleError(error, '일정 상세 조회 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    /**
+     * 일정 수정
+     * @param {number} plannerId
+     * @param {number} scheduleId
+     * @param {Object} updateData
+     * @returns {Promise<Object>} TeamScheduleDto
+     */
+    const updateSchedule = useCallback(async (plannerId, scheduleId, updateData) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/schedule/${scheduleId}/edit`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(updateData),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('일정 수정에 실패했습니다.');
+            }
+
+            const updatedSchedule = await response.json();
+            return updatedSchedule;
+        } catch (error) {
+            handleError(error, '일정 수정 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    /**
+     * 일정 삭제
+     * @param {number} plannerId
+     * @param {number} scheduleId
+     * @returns {Promise<void>}
+     */
+    const deleteSchedule = useCallback(async (plannerId, scheduleId) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/schedule/${scheduleId}/delete`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('일정 삭제에 실패했습니다.');
+            }
+
+            setSchedules(prev => prev.filter(s => s.scheduleId !== scheduleId));
+        } catch (error) {
+            handleError(error, '일정 삭제 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    /**
+     * 드래그앤드롭으로 일정 날짜 수정
+     * @param {number} plannerId
+     * @param {number} scheduleId
+     * @param {Object} dateTime - { startDateTime, finishDateTime }
+     * @returns {Promise<void>}
+     */
+    const updateScheduleDateTime = useCallback(async (plannerId, scheduleId, dateTime) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/schedule/${scheduleId}/drag-drop`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(dateTime),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('일정 날짜 수정에 실패했습니다.');
+            }
+        } catch (error) {
+            handleError(error, '일정 날짜 수정 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    /**
+     * 일정에 참여하기
+     * @param {number} plannerId
+     * @param {number} scheduleId
+     * @param {number} userId
+     * @returns {Promise<Array>} MemberBriefDto[]
+     */
+    const joinSchedule = useCallback(async (plannerId, scheduleId, userId) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/schedule/${scheduleId}/join/${userId}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('일정 참여에 실패했습니다.');
+            }
+
+            const members = await response.json();
+            return members;
+        } catch (error) {
+            handleError(error, '일정 참여 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    /**
+     * 일정 참여 멤버 추가
+     * @param {number} plannerId
+     * @param {number} scheduleId
+     * @returns {Promise<Array>} MemberBriefDto[]
+     */
+    const addScheduleMember = useCallback(async (plannerId, scheduleId) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/schedule/${scheduleId}/add-member`,
+                {
+                    method: 'POST',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('일정 멤버 추가에 실패했습니다.');
+            }
+
+            const members = await response.json();
+            return members;
+        } catch (error) {
+            handleError(error, '일정 멤버 추가 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    /**
+     * 일정 참여 멤버 삭제
+     * @param {number} plannerId
+     * @param {number} scheduleId
+     * @returns {Promise<void>}
+     */
+    const removeScheduleMember = useCallback(async (plannerId, scheduleId) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/schedule/${scheduleId}/delete-member`,
+                {
+                    method: 'POST',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('일정 멤버 삭제에 실패했습니다.');
+            }
+        } catch (error) {
+            handleError(error, '일정 멤버 삭제 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    /**
+     * 월별 일정 조회
+     * @param {number} plannerId
+     * @param {number} year
+     * @param {number} month
+     * @returns {Promise<Array>} TeamScheduleBriefDto[]
+     */
+    const fetchMonthlySchedules = useCallback(async (plannerId, year, month) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/schedule/monthly/${year}/${month}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('월별 일정 조회에 실패했습니다.');
+            }
+
+            const data = await response.json();
+            setSchedules(data);
+            return data;
+        } catch (error) {
+            handleError(error, '월별 일정 조회 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    /**
+     * 주별 일정 조회
+     * @param {number} plannerId
+     * @param {number} year
+     * @param {number} weekNumber
+     * @returns {Promise<Array>} TeamScheduleBriefDto[]
+     */
+    const fetchWeeklySchedules = useCallback(async (plannerId, year, weekNumber) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/schedule/weekly/${year}/${weekNumber}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('주별 일정 조회에 실패했습니다.');
+            }
+
+            const data = await response.json();
+            setSchedules(data);
+            return data;
+        } catch (error) {
+            handleError(error, '주별 일정 조회 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    /**
+     * 일별 일정 조회
+     * @param {number} plannerId
+     * @param {number} year
+     * @param {number} month
+     * @param {number} day
+     * @returns {Promise<Array>} TeamScheduleBriefDto[]
+     */
+    const fetchDailySchedules = useCallback(async (plannerId, year, month, day) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/schedule/daily/${year}/${month}/${day}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('일별 일정 조회에 실패했습니다.');
+            }
+
+            const data = await response.json();
+            setSchedules(data);
+            return data;
+        } catch (error) {
+            handleError(error, '일별 일정 조회 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    // ==================== 카테고리 관리 ====================
+
+    /**
+     * 카테고리 생성
+     * @param {number} plannerId
+     * @param {Object} categoryData - { name, color }
+     * @returns {Promise<number>} categoryId
+     */
+    const createCategory = useCallback(async (plannerId, categoryData) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/category`,
+                {
+                    method: 'POST',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(categoryData),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('카테고리 생성에 실패했습니다.');
+            }
+
+            const categoryId = await response.json();
+            await fetchCategories(plannerId);
+            return categoryId;
+        } catch (error) {
+            handleError(error, '카테고리 생성 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    /**
+     * 카테고리 목록 조회
+     * @param {number} plannerId
+     * @returns {Promise<Array>} CategoryDto[]
+     */
+    const fetchCategories = useCallback(async (plannerId) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/category`,
+                {
+                    method: 'GET',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('카테고리 목록 조회에 실패했습니다.');
+            }
+
+            const data = await response.json();
+            setCategories(data);
+            return data;
+        } catch (error) {
+            handleError(error, '카테고리 목록 조회 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    /**
+     * 카테고리 수정
+     * @param {number} plannerId
+     * @param {number} categoryId
+     * @param {Object} updateData - { name, color }
+     * @returns {Promise<Object>} CategoryDto
+     */
+    const updateCategory = useCallback(async (plannerId, categoryId, updateData) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/category/${categoryId}`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(updateData),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('카테고리 수정에 실패했습니다.');
+            }
+
+            const updatedCategory = await response.json();
+            setCategories(prev =>
+                prev.map(c => c.categoryId === categoryId ? updatedCategory : c)
+            );
+            return updatedCategory;
+        } catch (error) {
+            handleError(error, '카테고리 수정 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    /**
+     * 카테고리 삭제
+     * @param {number} plannerId
+     * @param {number} categoryId
+     * @returns {Promise<void>}
+     */
+    const deleteCategory = useCallback(async (plannerId, categoryId) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/category/${categoryId}`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('카테고리 삭제에 실패했습니다.');
+            }
+
+            setCategories(prev => prev.filter(c => c.categoryId !== categoryId));
+        } catch (error) {
+            handleError(error, '카테고리 삭제 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    /**
+     * 카테고리별 일정 조회
+     * @param {number} plannerId
+     * @param {number} categoryId
+     * @returns {Promise<Array>} TeamScheduleBriefDto[]
+     */
+    const fetchSchedulesByCategory = useCallback(async (plannerId, categoryId) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/category/${categoryId}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('카테고리별 일정 조회에 실패했습니다.');
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            handleError(error, '카테고리별 일정 조회 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    // ==================== 투두리스트 관리 ====================
+
+    /**
+     * 투두 생성
+     * @param {number} plannerId
+     * @param {number} scheduleId
+     * @param {Object} todoData - { content, isCompleted, isPrivate }
+     * @returns {Promise<number>} todoId
+     */
+    const createTodo = useCallback(async (plannerId, scheduleId, todoData) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/schedule/${scheduleId}/todo`,
+                {
+                    method: 'POST',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(todoData),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('투두 생성에 실패했습니다.');
+            }
+
+            const todoId = await response.json();
+            return todoId;
+        } catch (error) {
+            handleError(error, '투두 생성 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    /**
+     * 투두 수정 및 완료 체크
+     * @param {number} plannerId
+     * @param {number} scheduleId
+     * @param {number} todoId
+     * @param {Object} updateData - { content, isCompleted, isPrivate }
+     * @returns {Promise<void>}
+     */
+    const updateTodo = useCallback(async (plannerId, scheduleId, todoId, updateData) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/schedule/${scheduleId}/todo/${todoId}`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(updateData),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('투두 수정에 실패했습니다.');
+            }
+        } catch (error) {
+            handleError(error, '투두 수정 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    /**
+     * 투두 삭제
+     * @param {number} plannerId
+     * @param {number} scheduleId
+     * @param {number} todoId
+     * @returns {Promise<void>}
+     */
+    const deleteTodo = useCallback(async (plannerId, scheduleId, todoId) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/schedule/${scheduleId}/todo/${todoId}`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('투두 삭제에 실패했습니다.');
+            }
+        } catch (error) {
+            handleError(error, '투두 삭제 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    // ==================== 시간 투표 ====================
+
+    /**
+     * 시간 투표 생성
+     * @param {number} plannerId
+     * @param {Object} voteData - { title, voteRange, finishTime, memberIds }
+     * @returns {Promise<number>} voteId
+     */
+    const createTimeVote = useCallback(async (plannerId, voteData) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/time-vote`,
+                {
+                    method: 'POST',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(voteData),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('시간 투표 생성에 실패했습니다.');
+            }
+
+            const voteId = await response.json();
+            return voteId;
+        } catch (error) {
+            handleError(error, '시간 투표 생성 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    /**
+     * 시간 투표 참여
+     * @param {number} plannerId
+     * @param {number} voteId
+     * @param {Array} availableDateTimes - AvailableDateTimeDto[]
+     * @returns {Promise<Object>} VoteResponseDto
+     */
+    const submitTimeVote = useCallback(async (plannerId, voteId, availableDateTimes) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/time-vote/${voteId}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(availableDateTimes),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('시간 투표 제출에 실패했습니다.');
+            }
+
+            const voteResponse = await response.json();
+            return voteResponse;
+        } catch (error) {
+            handleError(error, '시간 투표 제출 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    /**
+     * 시간 재투표 (업데이트)
+     * @param {number} plannerId
+     * @param {number} voteId
+     * @param {Array} availableDateTimes - AvailableDateTimeDto[]
+     * @returns {Promise<Object>} VoteResponseDto
+     */
+    const updateTimeVote = useCallback(async (plannerId, voteId, availableDateTimes) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/time-vote/${voteId}`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(availableDateTimes),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('시간 재투표에 실패했습니다.');
+            }
+
+            const voteResponse = await response.json();
+            return voteResponse;
+        } catch (error) {
+            handleError(error, '시간 재투표 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    /**
+     * 타임테이블 조회 (색상 입히기용)
+     * @param {number} plannerId
+     * @param {number} voteId
+     * @returns {Promise<Array>} 시간 슬롯별 중복도 데이터
+     */
+    const fetchTimeVoteTable = useCallback(async (plannerId, voteId) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/time-vote/${voteId}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('타임테이블 조회에 실패했습니다.');
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            handleError(error, '타임테이블 조회 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    // ==================== 검색 ====================
+
+    /**
+     * 키워드로 일정 검색
+     * @param {number} plannerId
+     * @param {string} keyword
+     * @returns {Promise<Array>} TeamScheduleBriefDto[]
+     */
+    const searchSchedulesByKeyword = useCallback(async (plannerId, keyword) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/search?keyword=${encodeURIComponent(keyword)}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('일정 검색에 실패했습니다.');
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            handleError(error, '일정 검색 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders]);
+
+    /**
+     * 사용자별 일정 검색 (생성 & 참여)
+     * @param {number} plannerId
+     * @param {number} userId
+     * @returns {Promise<Object>} { createdSchedules, joinedSchedules }
+     */
+    const searchSchedulesByUser = useCallback(async (plannerId, userId) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(
+                `/api/team-planner/${plannerId}/search?userId=${userId}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('사용자별 일정 검색에 실패했습니다.');
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            handleError(error, '사용자별 일정 검색 중 오류가 발생했습니다.');
         } finally {
             setLoading(false);
         }
@@ -353,10 +1260,12 @@ export const TeamPlannerProvider = ({ children }) => {
         // State
         planners,
         currentPlanner,
-        members, // MemberDto[] 배열
+        members,
+        schedules,
+        categories,
         loading,
         error,
-        user, // 현재 사용자 정보 제공
+        user,
 
         // Setters
         setCurrentPlanner,
@@ -372,7 +1281,42 @@ export const TeamPlannerProvider = ({ children }) => {
         addMember,
         fetchMembers,
         removeMember,
-        updateMemberNickname, // updateMemberRole에서 이름 변경
+        updateMemberNickname,
+
+        // Schedule Management
+        createSchedule,
+        fetchScheduleDetail,
+        updateSchedule,
+        deleteSchedule,
+        updateScheduleDateTime,
+        joinSchedule,
+        addScheduleMember,
+        removeScheduleMember,
+        fetchMonthlySchedules,
+        fetchWeeklySchedules,
+        fetchDailySchedules,
+
+        // Category Management
+        createCategory,
+        fetchCategories,
+        updateCategory,
+        deleteCategory,
+        fetchSchedulesByCategory,
+
+        // Todo Management
+        createTodo,
+        updateTodo,
+        deleteTodo,
+
+        // Time Vote
+        createTimeVote,
+        submitTimeVote,
+        updateTimeVote,
+        fetchTimeVoteTable,
+
+        // Search
+        searchSchedulesByKeyword,
+        searchSchedulesByUser,
     };
 
     return (
@@ -391,4 +1335,4 @@ export const useTeamPlanner = () => {
     return context;
 };
 
-export default TeamPlannerProvider;
+export default TeamPlannerProvider
