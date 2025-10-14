@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useCommunitySearch } from "../../../hooks/useCommunitySearch";
 import { Search, UserRound, X } from "lucide-react";
 import PostList from "../../community/PostList";
-
+import { useNavigate } from "react-router-dom";
 const SearchPage = () => {
   // 검색어 관리
   const [keyword, setKeyword] = useState("");
@@ -13,7 +13,7 @@ const SearchPage = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [allResults, setAllResults] = useState([]);
   const [hasMore, setHasMore] = useState(false);
-
+  const navigate = useNavigate();
   const { searchHashtag, searchPost, searchUser, searched, loading, error } =
     useCommunitySearch();
 
@@ -78,7 +78,7 @@ const SearchPage = () => {
   }, [isUser, searchType]);
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-6 bg-white">
       {/* 검색 헤더 */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">검색</h1>
@@ -173,35 +173,45 @@ const SearchPage = () => {
           </div>
 
           {/* 게시글 또는 해시태그 검색 결과 */}
-          {(searchType === "post" || searchType === "hashtag") && (
+          {!isUser && (searchType === "post" || searchType === "hashtag") && (
             <PostList posts={allResults} />
           )}
 
           {/* 유저 검색 결과 */}
-          {searchType === "user" && (
+          {isUser && (
             <div className="space-y-3">
               {allResults.map((user) => (
                 <div
                   key={user.communityId}
                   className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-4"
                 >
-                  <img
-                    src={user.profileImage}
-                    alt={user.nickname}
-                    className="w-14 h-14 rounded-full object-cover"
-                  />
+                  <div
+                    className="cursor-pointer"
+                    onClick={() =>
+                      navigate(`/community/profile/${user.communityId}`)
+                    }
+                  >
+                    {user.profileImage ? (
+                      <img
+                        src={user?.profileImage}
+                        alt={user?.userName}
+                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full border-2 bg-gray-200 flex items-center justify-center">
+                        <UserRound className="w-6 h-6 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex-1">
                     <p className="font-bold text-lg">{user.nickname}</p>
-                    <p className="text-sm text-gray-600">@{user.communityId}</p>
                     {user.description && (
                       <p className="text-sm text-gray-500 mt-1">
                         {user.description}
                       </p>
                     )}
                   </div>
-                  <button className="px-4 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600">
-                    팔로우
-                  </button>
                 </div>
               ))}
             </div>
