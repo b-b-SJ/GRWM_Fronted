@@ -10,6 +10,7 @@ import { useAuth } from './AuthContext';
  * - 페이지 이동 후 재진입 시 WebSocket 연결 문제 해결
  * - connect() 호출 시 연결 상태 강제 초기화
  * - isConnectingRef 플래그 개선
+ * - 메시지 삭제 WebSocket 기능 추가 (ing)
  */
 
 const WebSocketContext = createContext();
@@ -45,6 +46,7 @@ export const WebSocketProvider = ({ children }) => {
     const websocketRef = useRef(null);
     const reconnectTimeoutRef = useRef(null);
     const messageHandlersRef = useRef([]);
+    const deleteHandlersRef = useRef([]);
     const historyLoadCallbackRef = useRef(null);
     const roomListRefreshCallbackRef = useRef(null);
     const tokenValidityCallbackRef = useRef(null);
@@ -59,6 +61,16 @@ export const WebSocketProvider = ({ children }) => {
         // 핸들러 제거 함수 반환
         return () => {
             messageHandlersRef.current = messageHandlersRef.current.filter(h => h !== handler);
+        };
+    }, []);
+
+    // 삭제 이벤트 핸들러 등록
+    const addDeleteHandler = useCallback((handler) => {
+        deleteHandlersRef.current.push(handler);
+
+        // 핸들러 제거 함수 반환
+        return () => {
+            deleteHandlersRef.current = deleteHandlersRef.current.filter(h => h !== handler);
         };
     }, []);
 
@@ -88,6 +100,17 @@ export const WebSocketProvider = ({ children }) => {
         });
     }, []);
 
+    // 삭제 이벤트를 모든 핸들러에 전달
+    const notifyDeleteHandlers = useCallback((deleteEvent) => {
+        deleteHandlersRef.current.forEach(handler => {
+            try {
+                handler(deleteEvent);
+            } catch (error) {
+                console.error('삭제 핸들러 오류:', error);
+            }
+        });
+    }, []);
+
     // 하트비트 시작
     const startHeartbeat = useCallback((ws) => {
         // 기존 하트비트 정리
@@ -95,7 +118,7 @@ export const WebSocketProvider = ({ children }) => {
             clearInterval(heartbeatIntervalRef.current);
         }
 
-        // 20초마다 하트비트 전송
+        // 10초마다 하트비트 전송
         heartbeatIntervalRef.current = setInterval(() => {
             if (ws.readyState === WebSocket.OPEN) {
                 try {
@@ -105,7 +128,7 @@ export const WebSocketProvider = ({ children }) => {
                     console.error('Heartbeat 전송 실패:', error);
                 }
             }
-        }, 20000);
+        }, 10000);
     }, []);
 
     // 연결 정리 함수
@@ -196,7 +219,7 @@ export const WebSocketProvider = ({ children }) => {
                 const accessToken = localStorage.getItem('accessToken');
                 const connectFrame = `CONNECT
 accept-version:1.2
-heart-beat:20000,20000
+heart-beat:10000,10000
 Authorization:Bearer ${accessToken}
 
 \0`;
@@ -262,22 +285,38 @@ destination:/topic/chat.${chatRoomId}
                     const messageData = parseStompMessage(event.data);
 
                     if (messageData) {
-                        // 메시지 포맷팅
-                        const formattedMessage = {
-                            id: messageData.messageId,
-                            content: messageData.content,
-                            sender: messageData.writerChatName,
-                            senderId: messageData.senderId,
-                            timestamp: messageData.createdAt,
-                            type: messageData.type === 0 ? 'chat' :
-                                messageData.type === 1 ? 'join' : 'leave',
-                            replyToMessageId: messageData.replytoMessageId || null
-                        };
+                        // 삭제 이벤트 처리
+                        if (messageData.type === 'DELETE' || messageData.eventType === 'DELETE') {
+                            console.log('메시지 삭제 이벤트 수신:', messageData);
 
-                        console.log('채팅 메시지 수신:', formattedMessage);
+                            const deleteEvent = {
+                                type: 'DELETE',
+                                messageId: messageData.messageId,
+                                chatRoomId: messageData.chatRoomId || chatRoomId
+                            };
 
-                        // 등록된 메시지 핸들러들에게 전달
-                        notifyMessageHandlers(formattedMessage);
+                            notifyDeleteHandlers(deleteEvent);
+                        }
+                        // 일반 메시지 처리
+                        else {
+                            // 메시지 포맷팅
+                            const formattedMessage = {
+                                id: messageData.messageId,
+                                content: messageData.content,
+                                sender: messageData.writerChatName,
+                                senderId: messageData.senderId,
+                                timestamp: messageData.createdAt,
+                                type: messageData.type === 0 ? 'chat' :
+                                    messageData.type === 1 ? 'join' :
+                                        messageData.type === 2 ? 'leave' : 'chat',
+                                replyMessageId: messageData.replyMessageId || null
+                            };
+
+                            console.log('채팅 메시지 수신:', formattedMessage);
+
+                            // 등록된 메시지 핸들러들에게 전달
+                            notifyMessageHandlers(formattedMessage);
+                        }
                     }
                 }
                 // STOMP ERROR 프레임
@@ -351,7 +390,7 @@ destination:/topic/chat.${chatRoomId}
             setConnectionStatus('error');
         }
 
-    }, [isAuthenticated, currentChatRoomId, notifyMessageHandlers, cleanupConnection, startHeartbeat, reconnectAttempts]);
+    }, [isAuthenticated, currentChatRoomId, notifyMessageHandlers, notifyDeleteHandlers, cleanupConnection, startHeartbeat, reconnectAttempts]);
 
     // 수동 재연결
     const reconnect = useCallback(() => {
@@ -408,7 +447,7 @@ id:${subscriptionIdRef.current}
     }, [cleanupConnection]);
 
     // 메시지 전송
-    const sendMessage = useCallback((chatRoomId, content, userId, replyToId = null) => {
+    const sendMessage = useCallback((chatRoomId, content, userId, replyMessageId = null) => {
         const ws = websocketRef.current;
 
         // WebSocket 연결 상태 확인
@@ -422,11 +461,19 @@ id:${subscriptionIdRef.current}
             return false;
         }
 
+        if (connectionStatus === 'disconnected' || connectionStatus === 'error') {
+            // 사용자에게 연결이 끊어졌음을 알리고 수동 재연결 버튼을 클릭하도록 유도
+            alert('채팅 연결이 끊어졌습니다. 다시 연결을 시도합니다.');
+            reconnect(); // 수동 재연결 함수 호출
+            return;
+        }
+
         // 메시지 데이터 구성
         const messageData = {
             chatRoomId: parseInt(chatRoomId),
             content: content,
-            communityId: userId
+            communityId: userId,
+            replyMessageId : replyMessageId
         };
 
         // STOMP SEND 프레임 생성
@@ -446,6 +493,45 @@ ${JSON.stringify(messageData)}\0`;
         }
     }, [connectionStatus]);
 
+    // 메시지 삭제 (WebSocket 통신)
+    const deleteMessage = useCallback((chatRoomId, messageId, userId) => {
+        const ws = websocketRef.current;
+
+        // WebSocket 연결 상태 확인
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            console.warn('WebSocket이 연결되지 않음 (readyState:', ws?.readyState, ')');
+            return false;
+        }
+
+        if (connectionStatus !== 'connected') {
+            console.warn('STOMP 연결이 완료되지 않음 (status:', connectionStatus, ')');
+            return false;
+        }
+
+        // 삭제 요청 데이터 구성
+        const deleteData = {
+            chatRoomId: parseInt(chatRoomId),
+            messageId: parseInt(messageId),
+            communityId: userId
+        };
+
+        // STOMP SEND 프레임 생성 (삭제 전용 엔드포인트)
+        const sendFrame = `SEND
+destination:/app/chat.${chatRoomId}.deleteMessage
+content-type:application/json
+
+${JSON.stringify(deleteData)}\0`;
+
+        try {
+            console.log('메시지 삭제 WebSocket 전송:', deleteData);
+            ws.send(sendFrame);
+            return true;
+        } catch (error) {
+            console.error('메시지 삭제 WebSocket 전송 실패:', error);
+            return false;
+        }
+    }, [connectionStatus]);
+
     // 컴포넌트 언마운트 시 정리
     useEffect(() => {
         return () => {
@@ -461,7 +547,9 @@ ${JSON.stringify(messageData)}\0`;
         disconnect,
         reconnect,
         sendMessage,
+        deleteMessage,
         addMessageHandler,
+        addDeleteHandler,
         setHistoryLoadCallback,
         setRoomListRefreshCallback,
         setTokenValidityCallback
