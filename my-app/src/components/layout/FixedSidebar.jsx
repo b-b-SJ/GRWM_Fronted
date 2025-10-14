@@ -549,7 +549,7 @@ const FixedSidebar = ({ currentUser }) => {
                                 <div className="space-y-1">
                                     <ToggleSetting
                                         label="공유 플래너 알림"
-                                        description="공유 플래너 관련 알림을 받았을 때 알림"
+                                        description="공유 플래너 관련 알림"
                                         checked={settings.plannerNotifications}
                                         onChange={(checked) => handleSettingChange('plannerNotifications', checked)}
                                     />
@@ -592,13 +592,6 @@ const FixedSidebar = ({ currentUser }) => {
                                             <option value="private">비공개</option>
                                         </select>
                                     </div>
-
-                                    <ToggleSetting
-                                        label="온라인 상태 표시"
-                                        description="다른 사용자에게 온라인 상태 공개"
-                                        checked={settings.showOnlineStatus}
-                                        onChange={(checked) => handleSettingChange('showOnlineStatus', checked)}
-                                    />
 
                                     <div className="pt-4 border-t">
                                         <button className="text-sm text-red-600 hover:text-red-800 font-medium">
