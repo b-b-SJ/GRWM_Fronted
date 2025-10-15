@@ -284,9 +284,11 @@ destination:/topic/chat.${chatRoomId}
                 else if (event.data.startsWith('MESSAGE')) {
                     const messageData = parseStompMessage(event.data);
 
+                    console.log('파싱된 메시지 데이터:', messageData);
+
                     if (messageData) {
-                        // 삭제 이벤트 처리
-                        if (messageData.eventType === 'DELETE') {
+                        // 삭제 응답인지 확인 (deleteMessageId 필드가 있으면 삭제 응답)
+                        if (messageData.deleteMessageId !== undefined) {
                             console.log('메시지 삭제 이벤트 수신:', messageData);
 
                             const deleteEvent = {
@@ -296,30 +298,35 @@ destination:/topic/chat.${chatRoomId}
                             };
 
                             notifyDeleteHandlers(deleteEvent);
+                            return; // 일반 메시지로 처리하지 않음
                         }
 
                         // 일반 메시지 처리
-                        else {
-                            // 메시지 포맷팅
-                            const formattedMessage = {
-                                id: messageData.messageId,
-                                content: messageData.content,
-                                sender: messageData.writerChatName,
-                                senderId: messageData.senderId,
-                                timestamp: messageData.createdAt,
-                                type: messageData.type === 0 ? 'chat' :
-                                    messageData.type === 1 ? 'join' :
-                                        messageData.type === 2 ? 'leave' : 'chat',
-                                replyMessageId: messageData.replyMessageId || null
-                            };
-
-                            console.log('채팅 메시지 수신:', formattedMessage);
-
-                            // 등록된 메시지 핸들러들에게 전달
-                            notifyMessageHandlers(formattedMessage);
+                        if (!messageData.messageId) {
+                            console.warn('messageId가 없는 메시지:', messageData);
+                            return;
                         }
+
+                        // 메시지 포맷팅
+                        const formattedMessage = {
+                            id: messageData.messageId,
+                            content: messageData.content,
+                            sender: messageData.writerChatName,
+                            senderId: messageData.senderId,
+                            timestamp: messageData.createdAt,
+                            type: messageData.type === 0 ? 'chat' :
+                                messageData.type === 1 ? 'join' :
+                                    messageData.type === 2 ? 'leave' : 'chat',
+                            replyMessageId: messageData.replyMessageId || null
+                        };
+
+                        console.log('채팅 메시지 수신:', formattedMessage);
+
+                        // 등록된 메시지 핸들러들에게 전달
+                        notifyMessageHandlers(formattedMessage);
                     }
                 }
+
                 // STOMP ERROR 프레임
                 else if (event.data.startsWith('ERROR')) {
                     console.error('STOMP ERROR:', event.data);

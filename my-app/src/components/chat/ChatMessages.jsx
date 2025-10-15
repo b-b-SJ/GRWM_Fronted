@@ -215,11 +215,11 @@ const ChatMessages = ({ messages, onReply, onDelete }) => {
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((msg) => {
                 if (msg.type === 'system') {
-                    return renderSystemMessage(msg);
+                    return <div key={msg.id}>{renderSystemMessage(msg)}</div>;
                 }
-                return renderUserMessage(msg);
+                return <div key={msg.id}>{renderUserMessage(msg)}</div>;
             })}
-            <div ref={messagesEndRef} />
+            <div ref={messagesEndRef}/>
         </div>
     );
 };

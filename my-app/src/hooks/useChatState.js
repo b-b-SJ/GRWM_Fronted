@@ -37,25 +37,6 @@ const getCategoryIdByName = (categoryName) => {
 
 const ChatStateContext = createContext();
 
-// 백엔드 연결 실패 시, 테스트 용 채팅방
-const getTestRooms = (username, isTemporary = false) => {
-    return [
-        {
-            chatRoomId: 10,
-            chatRoomName: `${username}님의 테스트 채팅방`,
-            roomName: `${username}님의 테스트 채팅방`,
-            name: `${username}님의 테스트 채팅방`,
-            currentMembers: 5,
-            members: 5,
-            maxMembers: 30,
-            isPrivate: false,
-            category: CATEGORY_MAP['일반'].id,
-            description: 'API 테스트용 채팅방입니다.',
-            createdAt: new Date().toISOString(),
-        },
-    ];
-};
-
 export const ChatStateProvider = ({ children }) => {
     const { user, isAuthenticated, getAuthHeaders } = useAuth();
     const {
@@ -150,16 +131,6 @@ export const ChatStateProvider = ({ children }) => {
             return;
         }
 
-        if (currentUser.isTemporary) {
-            setChatRooms(getTestRooms(currentUser.username, true));
-            return;
-        }
-
-        if (!skipTokenCheck && !(await checkTokenValidity())) {
-            setChatRooms(getTestRooms(currentUser.username));
-            return;
-        }
-
         setIsLoadingRooms(true);
         apiCallRef.current = true;
 
@@ -199,13 +170,9 @@ export const ChatStateProvider = ({ children }) => {
                         console.error('Token refresh failed:', refreshError);
                     }
                 }
-                setChatRooms(getTestRooms(currentUser.username));
-            } else {
-                setChatRooms(getTestRooms(currentUser.username));
             }
         } catch (error) {
             console.error('채팅방 목록 조회 오류:', error);
-            setChatRooms(getTestRooms(currentUser.username));
         } finally {
             setIsLoadingRooms(false);
             apiCallRef.current = false;
@@ -222,14 +189,33 @@ export const ChatStateProvider = ({ children }) => {
 
     // WebSocket으로 받은 메시지 삭제 이벤트 처리
     const handleDeletedMessage = useCallback((chatRoomId, messageId) => {
-        setMessages(prev => ({
-            ...prev,
-            [chatRoomId]: prev[chatRoomId]?.map(msg =>
-                msg.id === messageId
-                    ? { ...msg, isDeleted: true, content: '(삭제된 메시지입니다.)' }
-                    : msg
-            ) || []
-        }));
+        const targetId = Number(messageId);
+
+        // 메시지 ID가 유효하지 않으면 (ex: NaN) 처리하지 않습니다.
+        if (isNaN(targetId) || targetId <= 0) {
+            console.warn('유효하지 않은 messageId로 삭제 이벤트를 무시합니다:', messageId);
+            return;
+        }
+        setMessages(prev => {
+            const currentMessages = prev[chatRoomId] || [];
+
+            const updatedMessages = currentMessages.map(msg => {
+                if (Number(msg.id) === targetId) {
+                    return {
+                        ...msg,
+                        isDeleted: true,
+                        content: '삭제된 메시지입니다.'
+                    };
+                }
+                return msg;
+            });
+
+            // ... (나머지 불변성 로직)
+            return {
+                ...prev,
+                [chatRoomId]: updatedMessages
+            };
+        });
     }, []);
 
     // 채팅 히스토리 로드
@@ -848,9 +834,14 @@ export const ChatStateProvider = ({ children }) => {
     // WebSocket 삭제 이벤트 핸들러 등록
     useEffect(() => {
         const handleDelete = (deleteEvent) => {
-            if (selectedRoom && deleteEvent.chatRoomId == selectedRoom) {
-                console.log('삭제 이벤트 수신:', deleteEvent);
+            const isSameRoom = selectedRoom &&
+                Number(selectedRoom) === Number(deleteEvent.chatRoomId);
+
+            if (isSameRoom) {
+                // handleDeletedMessage가 호출됩니다.
                 handleDeletedMessage(selectedRoom, deleteEvent.messageId);
+            } else {
+                console.log(`is SameRoom 조건 실패. selectedRoom: ${selectedRoom}, event.chatRoomId: ${deleteEvent.chatRoomId}`);
             }
         };
 
