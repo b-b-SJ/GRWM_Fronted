@@ -179,12 +179,24 @@ export const ChatStateProvider = ({ children }) => {
         }
     }, [currentUser.userId, currentUser.username, currentUser.isTemporary, isAuthenticated, getAuthHeaders, checkTokenValidity, user]);
 
-    // 메시지 추가 (내부 사용)
+    // 메시지 추가 (내부 사용) - 시간순 정렬 유지
     const addMessage = useCallback((chatRoomId, message) => {
-        setMessages(prev => ({
-            ...prev,
-            [chatRoomId]: [...(prev[chatRoomId] || []), message]
-        }));
+        setMessages(prev => {
+            const currentMessages = prev[chatRoomId] || [];
+            const newMessages = [...currentMessages, message];
+
+            // 시간순으로 정렬 (오래된 메시지가 위로)
+            const sortedMessages = newMessages.sort((a, b) => {
+                const timeA = new Date(a.timestamp).getTime();
+                const timeB = new Date(b.timestamp).getTime();
+                return timeA - timeB;
+            });
+
+            return {
+                ...prev,
+                [chatRoomId]: sortedMessages
+            };
+        });
     }, []);
 
     // WebSocket으로 받은 메시지 삭제 이벤트 처리
@@ -264,12 +276,19 @@ export const ChatStateProvider = ({ children }) => {
                     };
                 });
 
+                // 시간순으로 정렬 (오래된 메시지가 위로)
+                const sortedMessages = formattedMessages.sort((a, b) => {
+                    const timeA = new Date(a.timestamp).getTime();
+                    const timeB = new Date(b.timestamp).getTime();
+                    return timeA - timeB;
+                });
+
                 setMessages(prev => ({
                     ...prev,
-                    [chatRoomId]: formattedMessages
+                    [chatRoomId]: sortedMessages
                 }));
 
-                console.log('히스토리 로드 완료:', formattedMessages.length);
+                console.log('히스토리 로드 완료:', sortedMessages.length);
             } else {
                 console.error('히스토리 조회 실패:', response.status);
             }
