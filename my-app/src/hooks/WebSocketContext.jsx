@@ -286,17 +286,18 @@ destination:/topic/chat.${chatRoomId}
 
                     if (messageData) {
                         // 삭제 이벤트 처리
-                        if (messageData.type === 'DELETE' || messageData.eventType === 'DELETE') {
+                        if (messageData.eventType === 'DELETE') {
                             console.log('메시지 삭제 이벤트 수신:', messageData);
 
                             const deleteEvent = {
                                 type: 'DELETE',
-                                messageId: messageData.messageId,
+                                messageId: messageData.deleteMessageId,
                                 chatRoomId: messageData.chatRoomId || chatRoomId
                             };
 
                             notifyDeleteHandlers(deleteEvent);
                         }
+
                         // 일반 메시지 처리
                         else {
                             // 메시지 포맷팅
@@ -510,9 +511,9 @@ ${JSON.stringify(messageData)}\0`;
 
         // 삭제 요청 데이터 구성
         const deleteData = {
+            deleteMessageId: parseInt(messageId),
             chatRoomId: parseInt(chatRoomId),
-            messageId: parseInt(messageId),
-            communityId: userId
+            senderId: parseInt(userId)
         };
 
         // STOMP SEND 프레임 생성 (삭제 전용 엔드포인트)

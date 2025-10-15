@@ -179,18 +179,15 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
             console.log('메시지 삭제 시도:', { messageId, canDeleteForEveryone });
 
             if (canDeleteForEveryone) {
-                // 5분 이내 - 모두에게서 삭제
+                // 5분 이내 - WebSocket으로 모두에게서 삭제
                 if (window.confirm('모든 사용자에게서 이 메시지를 삭제하시겠습니까?')) {
                     await requestDeleteMessage(chatRoomId, messageId, true);
-                    console.log('모두에게서 삭제 완료');
+                    console.log('모두에게서 삭제 요청 전송');
                 }
             } else {
                 // 5분 경과 - 나에게서만 삭제
                 if (window.confirm('나에게서만 이 메시지를 삭제하시겠습니까?\n(다른 사용자에게는 계속 표시됩니다)')) {
-                    setMessages(prev => ({
-                        ...prev,
-                        [chatRoomId]: prev[chatRoomId]?.filter(msg => msg.id !== messageId) || []
-                    }));
+                    await requestDeleteMessage(chatRoomId, messageId, false);
                     console.log('나에게서만 삭제 완료');
                 }
             }

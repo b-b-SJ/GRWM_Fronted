@@ -722,52 +722,54 @@ export const ChatStateProvider = ({ children }) => {
         }
     }, [currentUser.userId, currentUser.username, currentUser.communityNickname, isAuthenticated, messages, wsSendMessage, addMessage]);
 
-    // 메시지 삭제 - REST API 사용 (백엔드 ws 추가 전까지)
+    // 메시지 삭제 (ws 사용)
     const requestDeleteMessage = useCallback(async (chatRoomId, messageId, canDeleteForEveryone) => {
         if (!isAuthenticated || !currentUser.userId) {
             throw new Error('로그인이 필요합니다.');
         }
 
         try {
-            console.log('메시지 삭제 요청 (REST API):', {
+            console.log('메시지 삭제 요청 (WebSocket):', {
                 chatRoomId,
                 messageId,
                 canDeleteForEveryone
             });
 
-            const response = await fetch(`/api/chatroom/${chatRoomId}/delete/${messageId}`, {
-                method: 'DELETE',
-                headers: getAuthHeaders()
-            });
+            if (canDeleteForEveryone) {
+                // 5분 이내 - WebSocket으로 모두에게서 삭제
+                const sent = wsDeleteMessage(chatRoomId, messageId, currentUser.userId);
 
-            if (!response.ok) {
-                if (response.status === 404) {
-                    throw new Error('존재하지 않는 메시지입니다.');
+                if (!sent) {
+                    throw new Error('WebSocket 연결이 끊어졌습니다.');
                 }
-                if (response.status === 403) {
-                    throw new Error('메시지 삭제 권한이 없습니다.');
-                }
-                throw new Error(`메시지 삭제 실패 (${response.status})`);
+
+                console.log('메시지 삭제 WebSocket 전송 완료');
+
+                // 로컬에서도 즉시 삭제된 상태로 표시 (Optimistic UI)
+                setMessages(prev => ({
+                    ...prev,
+                    [chatRoomId]: prev[chatRoomId]?.map(msg =>
+                        msg.id === messageId
+                            ? { ...msg, isDeleted: true, content: '삭제된 메시지입니다.' }
+                            : msg
+                    ) || []
+                }));
+            } else {
+                // 5분 경과 - 나에게서만 삭제 (로컬에서만 제거)
+                setMessages(prev => ({
+                    ...prev,
+                    [chatRoomId]: prev[chatRoomId]?.filter(msg => msg.id !== messageId) || []
+                }));
+                console.log('나에게서만 삭제 완료 (로컬)');
             }
-
-            console.log('메시지 삭제 성공:', messageId);
-
-            // 로컬에서 메시지를 삭제된 상태로 업데이트
-            setMessages(prev => ({
-                ...prev,
-                [chatRoomId]: prev[chatRoomId]?.map(msg =>
-                    msg.id === messageId
-                        ? { ...msg, isDeleted: true, content: '삭제된 메시지입니다.' }
-                        : msg
-                ) || []
-            }));
 
             return true;
         } catch (error) {
             console.error('메시지 삭제 오류:', error);
             throw error;
         }
-    }, [currentUser.userId, isAuthenticated, getAuthHeaders]);
+    }, [currentUser.userId, isAuthenticated, wsDeleteMessage]);
+
     // 채팅방 입장 (WebSocket 연결 + 히스토리 로드)
     const joinRoom = useCallback(async (chatRoomId) => {
         if (!isAuthenticated || !currentUser.userId) {
