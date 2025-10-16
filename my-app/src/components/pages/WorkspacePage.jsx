@@ -7,15 +7,17 @@ import StudyRoomCreator from '../studyroom/StudyRoomCreator';
 import StudyRoomExplorer from '../studyroom/StudyRoomExplorer';
 import ChatRoomExplorer from '../chat/ChatRoomExplorer';
 import { useChatState } from '../../hooks/useChatState';
+import { useStudyRoomState } from '../../hooks/useStudyRoomState';
 import { useAuth } from '../../hooks/AuthContext';
 import { MessageCircle, BookOpen, Eye, EyeOff, Key } from 'lucide-react';
 
 /**
  * WorkspacePage UI 및 기능
- * - useChatState 연동 개선된
+ * - useChatState 연동 개선
  * - useChatState의 새로운 인터페이스에 맞게 업데이트
  * - 채팅방 생성, 참여, 관리 기능 연동
  * - 에러 처리 및 로딩 상태 개선
+ * - useStudyRoomState 연동 (1016~)
  */
 
 // 채팅방 생성 컴포넌트 - useChatState 연동 개선
@@ -323,7 +325,7 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
     );
 };
 
-// 메인 WorkspacePage 컴포넌트 - useChatState 연동 개선
+// 메인 WorkspacePage 컴포넌트 - useStudyRoomState 연동
 const WorkspacePage = () => {
     const location = useLocation();
     const [searchParams] = useSearchParams();
@@ -344,12 +346,18 @@ const WorkspacePage = () => {
         fetchChatRooms,
         joinRoom,
         joinChatRoom,
-        verifyRoomPassword
+        verifyRoomPassword,
+        unreadCounts // 베타
     } = useChatState();
 
-    // 스터디룸 관련 상태 (TODO: useStudyRoomState 훅 생성 필요)
-    const [studyRooms, setStudyRooms] = useState([]);
-    const [isLoadingStudyRooms, setIsLoadingStudyRooms] = useState(false);
+    // useStudyRoomState 훅 사용
+    const {
+        studyRooms,
+        loading: isLoadingStudyRooms,
+        fetchStudyRooms,
+        joinStudyRoom,
+        // 추후 필요하면 함수 추가
+    } = useStudyRoomState();
 
     // 선택된 방 상태
     const [selectedRoom, setSelectedRoom] = useState(null);
@@ -379,13 +387,23 @@ const WorkspacePage = () => {
         };
     }, [toggleWorkspaceSidebar]);
 
+    // 초기 데이터 로드
+    useEffect(() => {
+        if (isStudyRoom) {
+            fetchStudyRooms(0, 10);
+        } else {
+            fetchChatRooms();
+        }
+    }, [isStudyRoom]);
+
     // 채팅방 생성 성공 시 처리 - createAndJoinRoom이 모든 것을 처리하므로 단순화
     const handleChatRoomCreated = (chatRoomId) => {
-        console.log('Chat room creation completed, entering room:', chatRoomId);
+        console.log('채팅방 생성 완료, room id:', chatRoomId);
 
         // WebSocket 연결만 수행
         try {
             joinRoom(chatRoomId);
+            setSelectedRoom(chatRoomId);
             setCurrentView('chat');
             console.log('Successfully entered created room:', chatRoomId);
         } catch (error) {
@@ -396,11 +414,16 @@ const WorkspacePage = () => {
     };
 
     // 스터디룸 생성 성공 시 처리
-    const handleStudyRoomCreated = (studyRoomId) => {
-        console.log('Study room creation completed, entering room:', studyRoomId);
+    const handleStudyRoomCreated = async (studyRoomId) => {
+        console.log('스터디룸 생성 완료, room id:', studyRoomId);
 
         try {
-            // TODO: joinStudyRoom 구현 필요
+            // 스터디룸 참여 API 호출
+            await joinStudyRoom(studyRoomId);
+
+            // 목록 새로고침
+            await fetchStudyRooms(0, 10);
+
             setSelectedRoom(studyRoomId);
             setCurrentView('study');
             console.log('Successfully entered created study room:', studyRoomId);
@@ -444,6 +467,7 @@ const WorkspacePage = () => {
             // 3. WebSocket 연결 및 화면 전환
             setTimeout(() => {
                 joinRoom(chatRoomId);
+                setSelectedRoom(chatRoomId);
                 setCurrentView('chat');
                 console.log('Successfully joined room from explorer:', chatRoomId);
             }, 500);
@@ -459,12 +483,11 @@ const WorkspacePage = () => {
         console.log('Joining study room from explorer:', studyRoomId, { isPrivate, hasPassword: !!password });
 
         try {
-            // TODO: 스터디룸 참여 API 구현
-            if (isPrivate && password) {
-                // await verifyStudyRoomPassword(studyRoomId, password);
-            }
+            // 스터디룸 참여 API 호출
+            await joinStudyRoom(studyRoomId);
 
-            // await joinStudyRoom(studyRoomId);
+            // 목록 새로고침
+            await fetchStudyRooms(0, 10);
 
             setTimeout(() => {
                 setSelectedRoom(studyRoomId);
@@ -486,8 +509,7 @@ const WorkspacePage = () => {
     // 목록 새로고침
     const handleRefreshRooms = () => {
         if (isStudyRoom) {
-            // TODO: fetchStudyRooms 구현
-            console.log('Refreshing study rooms...');
+            fetchStudyRooms(0, 10);
         } else {
             fetchChatRooms();
         }
@@ -510,7 +532,8 @@ const WorkspacePage = () => {
                 <WorkspaceSidebar
                     sidebarOpen={workspaceSidebarOpen}
                     toggleSidebar={toggleWorkspaceSidebar}
-                    chatRooms={currentRooms}
+                    chatRooms={chatRooms}
+                    studyRooms={studyRooms}
                     selectedRoom={selectedRoom}
                     setSelectedRoom={handleSelectRoom}
                     workspaceMode={workspaceMode}
@@ -519,6 +542,8 @@ const WorkspacePage = () => {
                     setCurrentView={setCurrentView}
                     isLoadingRooms={currentIsLoading}
                     onRefreshRooms={handleRefreshRooms}
+                    onRefreshStudyRooms={handleRefreshRooms}
+                    unreadCounts={unreadCounts}
                 />
 
                 {/* 오버레이 */}
@@ -548,7 +573,7 @@ const WorkspacePage = () => {
                         isStudyRoom ? (
                             <StudyRoomExplorer
                                 onJoinRoom={handleJoinStudyRoomFromExplorer}
-                                joinedRoomIds={studyRooms.map(room => room.roomId)}
+                                joinedRoomIds={studyRooms.map(room => room.studyRoomId)}
                             />
                         ) : (
                             <ChatRoomExplorer
