@@ -91,7 +91,7 @@ const PostingModal = ({
 
     if (files.length === 0) return;
 
-    console.log("📁 선택된 파일:", files.length, "개");
+    console.log("선택된 파일:", files.length, "개");
 
     if (files.length + imagesUrl.length > 4) {
       alert("이미지는 최대 4개까지만 업로드할 수 있습니다");
@@ -102,10 +102,10 @@ const PostingModal = ({
       const previews = files.map((file) => URL.createObjectURL(file));
       setPreviewImages([...previewImages, ...previews]);
 
-      console.log("📤 서버에 업로드 시작...");
+      console.log("서버에 업로드 시작...");
       const uploadedUrls = await getMultipleImageUrls(files);
 
-      console.log("✅ 업로드된 URL:", uploadedUrls);
+      console.log("업로드된 URL:", uploadedUrls);
 
       if (uploadedUrls && uploadedUrls.length > 0) {
         setImagesUrl([...imagesUrl, ...uploadedUrls]);
@@ -115,7 +115,7 @@ const PostingModal = ({
         setPreviewImages(previewImages);
       }
     } catch (error) {
-      console.error("❌ 이미지 업로드 에러:", error);
+      console.error("이미지 업로드 에러:", error);
       alert("이미지 업로드 중 오류가 발생했습니다");
       setPreviewImages(previewImages);
     }
@@ -191,7 +191,7 @@ const PostingModal = ({
         className="bg-white p-6 rounded-lg max-w-xl w-full mx-4 mb-16 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="space-y-4">
+        <div className="space-y-3.5">
           {/* 헤더 */}
           <div className="flex justify-between items-center">
             <button
@@ -225,7 +225,7 @@ const PostingModal = ({
             value={textContent}
             onChange={(e) => setTextContent(e.target.value)}
             placeholder="무슨 일이 일어나고 있나요?"
-            className="w-full p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-rose-400 overflow-hidden transition-all duration-300"
+            className="overflow-y-auto w-full p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-rose-400 overflow-hidden transition-all duration-300"
             rows={previewImages.length > 0 ? 3 : 6}
           />
 
