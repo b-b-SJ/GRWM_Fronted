@@ -114,12 +114,6 @@ const PostingStyle = ({
 
         {/* 게시물 내용 */}
         <div className="px-5 pb-3">
-          {post.content.text && (
-            <p className="mb-3 whitespace-pre-wrap break-words text-gray-800">
-              {post.content.text}
-            </p>
-          )}
-
           {post.content.images && post.content.images.length > 0 && (
             <div
               className={`grid gap-2 ${
@@ -147,6 +141,11 @@ const PostingStyle = ({
                 </div>
               ))}
             </div>
+          )}
+          {post.content.text && (
+            <p className="mb-3 whitespace-pre-wrap break-words text-gray-800">
+              {post.content.text}
+            </p>
           )}
         </div>
 

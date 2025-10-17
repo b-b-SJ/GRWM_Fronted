@@ -3,8 +3,7 @@ import { useAuth } from "../../hooks/AuthContext";
 import { usePost } from "../../hooks/usePost";
 import { useImgConverter } from "../../hooks/useImgConverter";
 import ImagePreviewer from "./ImagePreviewer";
-
-import { Image, X, ChevronDown, Globe, Users, Lock } from "lucide-react"; // ✅ 화살표 아이콘 추가
+import { Image, X, ChevronDown, Globe, Users, Lock } from "lucide-react";
 
 const PostingModal = ({
   setOpenPostModal,
@@ -13,7 +12,6 @@ const PostingModal = ({
   existingPost = null,
   onPostChanged,
 }) => {
-  const [themeColor, setThemeColor] = useState("");
   const [textContent, setTextContent] = useState("");
   const [hashtags, setHashtags] = useState([]);
   const [currentTag, setCurrentTag] = useState("");
@@ -25,32 +23,54 @@ const PostingModal = ({
 
   const { createPost, updatePost } = usePost();
   const { getMultipleImageUrls, isUploading } = useImgConverter();
+  const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
 
   const visibilityOptions = [
     {
       value: "public",
       label: "전체공개",
-      icon: <Globe size={18} />,
-      description: "모든 사람이 볼 수 있습니다",
+      icon: <Globe size={16} />,
     },
     {
       value: "friends",
       label: "팔로우 공개",
-      icon: <Users size={18} />,
-      description: "팔로워만 볼 수 있습니다",
+      icon: <Users size={16} />,
     },
     {
       value: "private",
       label: "나만 보기",
-      icon: <Lock size={18} />,
-      description: "나만 볼 수 있습니다",
+      icon: <Lock size={16} />,
     },
   ];
 
   const selectedOption = visibilityOptions.find(
     (option) => option.value === visibility
   );
+
+  const adjustTextareaHeight = () => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto";
+
+      const minHeight = previewImages.length > 0 ? 80 : 160;
+      const maxHeight = previewImages.length > 0 ? 200 : 400;
+
+      const newHeight = Math.min(
+        Math.max(textarea.scrollHeight, minHeight),
+        maxHeight
+      );
+      textarea.style.height = `${newHeight}px`;
+    }
+  };
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [textContent]);
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [previewImages.length]);
 
   useEffect(() => {
     if (mode === "edit" && existingPost) {
@@ -200,15 +220,15 @@ const PostingModal = ({
             imagesUrl={imagesUrl}
             setImagesUrl={setImagesUrl}
           />
-          {/* 텍스트 입력 */}
           <textarea
+            ref={textareaRef}
             value={textContent}
             onChange={(e) => setTextContent(e.target.value)}
             placeholder="무슨 일이 일어나고 있나요?"
-            className="w-full h-40 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-rose-400"
+            className="w-full p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-rose-400 overflow-hidden transition-all duration-300"
+            rows={previewImages.length > 0 ? 3 : 6}
           />
 
-          {/* 추가된 해시태그들 */}
           <div className="flex flex-wrap gap-2 mb-2">
             {hashtags.map((tag, index) => (
               <span
@@ -226,7 +246,6 @@ const PostingModal = ({
             ))}
           </div>
 
-          {/* 해시태그 입력 영역 */}
           <div className="border-b px-3 pb-3 pt-1 focus-within:border-b-2 focus-within:border-rose-400 flex group">
             <span className="text-gray-400 p-2 text-lg group-focus-within:text-gray-700">
               #
@@ -258,26 +277,25 @@ const PostingModal = ({
             className="hidden"
           />
 
-          {/* 공개 범위 선택 */}
+          {/* ✅ 공개 범위 선택 - 컴팩트하고 예쁘게 */}
           <div className="relative">
             <button
               onClick={() => setShowVisibilityMenu(!showVisibilityMenu)}
-              className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50 w-full justify-between"
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
             >
-              <div className="flex items-center gap-2">
-                {selectedOption.icon}
-                <span>{selectedOption.label}</span>
-              </div>
+              <span className="text-rose-500">{selectedOption.icon}</span>
+              <span className="text-gray-700">{selectedOption.label}</span>
               <ChevronDown
-                size={18}
-                className={`transition-transform ${
+                size={14}
+                className={`text-gray-500 transition-transform ${
                   showVisibilityMenu ? "rotate-180" : ""
                 }`}
               />
             </button>
 
+            {/* ✅ 드롭다운 메뉴 - 작고 깔끔하게 */}
             {showVisibilityMenu && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white border rounded-lg shadow-lg z-10">
+              <div className="absolute bottom-full left-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden min-w-[160px]">
                 {visibilityOptions.map((option) => (
                   <button
                     key={option.value}
@@ -285,17 +303,22 @@ const PostingModal = ({
                       setVisibility(option.value);
                       setShowVisibilityMenu(false);
                     }}
-                    className={`w-full flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                      visibility === option.value ? "bg-rose-50" : ""
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-gray-50 transition-colors ${
+                      visibility === option.value
+                        ? "bg-rose-50 text-rose-600"
+                        : "text-gray-700"
                     }`}
                   >
-                    <div className="mt-0.5">{option.icon}</div>
-                    <div className="text-left">
-                      <div className="font-medium">{option.label}</div>
-                      <div className="text-sm text-gray-500">
-                        {option.description}
-                      </div>
-                    </div>
+                    <span
+                      className={
+                        visibility === option.value
+                          ? "text-rose-500"
+                          : "text-gray-500"
+                      }
+                    >
+                      {option.icon}
+                    </span>
+                    <span className="font-medium">{option.label}</span>
                   </button>
                 ))}
               </div>
