@@ -7,6 +7,8 @@ import {
   MessageSquare,
   UserRound,
   EllipsisVertical,
+  Users,
+  Lock,
 } from "lucide-react";
 
 const PostingStyle = ({
@@ -34,7 +36,14 @@ const PostingStyle = ({
       </div>
     );
   }
-
+  const renderVisibilityIcon = () => {
+    if (post.visibility === "private") {
+      return <Lock size={16} className="text-gray-500" />;
+    } else if (post.visibility === "friends") {
+      return <Users size={16} className="text-gray-500" />;
+    }
+    return null; // public은 아이콘 없음
+  };
   const handleMenuClick = (e) => {
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
@@ -86,6 +95,10 @@ const PostingStyle = ({
                 {post.edited && (
                   <span className="text-xs text-gray-400">• 수정됨</span>
                 )}
+                {
+                  //공개범위 아이콘
+                  renderVisibilityIcon()
+                }
               </div>
               <span className="text-gray-500 text-sm">몇분전인지 표시</span>
             </div>
@@ -163,7 +176,7 @@ const PostingStyle = ({
             className="flex items-center gap-2 hover:text-red-500 transition-colors"
             onClick={(e) => {
               e.stopPropagation();
-              // ✅ 현재 상태를 기준으로 판단
+              //현재 상태를 기준으로 판단
               if (isLiked) {
                 cancelLike(post.postId);
               } else {

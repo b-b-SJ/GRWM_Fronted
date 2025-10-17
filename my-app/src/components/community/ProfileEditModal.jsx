@@ -122,11 +122,11 @@ const ProfileEditModal = ({ isOpen, onClose, currentProfile, onSave }) => {
               value={formData.nickname}
               onChange={handleChange}
               placeholder="닉네임을 입력하세요"
-              maxLength={20}
+              maxLength={15}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <p className="text-xs text-gray-500 mt-1">
-              {formData.nickname.length}/20
+              {formData.nickname.length}/15
             </p>
           </div>
 
