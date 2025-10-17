@@ -13,29 +13,34 @@ export function useImgConverter() {
       formData.append("file", imageFile);
 
       try {
-        const response = await fetch(
-          `http://localhost:8080/api/profile/upload-image`,
-          {
-            method: "POST",
-            mode: "cors", // CORS 모드 명시
-            credentials: "include", // 쿠키/인증 포함
-            headers: {
-              ...getAuthHeaders(),
-            },
-            body: formData,
-          }
-        );
+        //FormData용 헤더
+        const authHeaders = getAuthHeaders();
+        const headersForFormData = {
+          Authorization: authHeaders["Authorization"],
+          // Content-Type 제외
+        };
+
+        const response = await fetch(`/api/profile/upload-image`, {
+          method: "POST",
+          mode: "cors",
+          credentials: "include",
+          headers: headersForFormData, //수정된 헤더 사용
+          body: formData,
+        });
 
         if (response.ok) {
           const imageUrl = await response.text();
           console.log("받은 URL:", imageUrl);
           return imageUrl;
         } else {
-          console.error("업로드 실패:", response.status);
+          const errorText = await response.text();
+          console.error("업로드 실패:", response.status, errorText);
+          setError(`업로드 실패: ${response.status}`);
           return null;
         }
       } catch (error) {
         console.error("업로드 에러:", error);
+        setError(error.message);
         return null;
       }
     },
@@ -45,7 +50,7 @@ export function useImgConverter() {
   // 여러개 용
   const getMultipleImageUrls = useCallback(
     async (imageFiles) => {
-      console.log("📤 여러 개 업로드:", imageFiles.length, "개");
+      console.log("여러 개 업로드:", imageFiles.length, "개");
       setUploading(true);
       setError(null);
 
@@ -53,15 +58,18 @@ export function useImgConverter() {
 
       // 하나씩 순서대로 업로드
       for (let i = 0; i < imageFiles.length; i++) {
-        console.log(`--- ${i + 1}/${imageFiles.length} ---`);
+        console.log(`--- ${i + 1}/${imageFiles.length} 업로드 중 ---`);
         const url = await getImageUrl(imageFiles[i]);
 
         if (url) {
           urls.push(url);
+          console.log(`${i + 1}번째 이미지 업로드 성공`);
+        } else {
+          console.error(`${i + 1}번째 이미지 업로드 실패`);
         }
       }
 
-      console.log("최종 결과:", urls);
+      console.log("이미지 전부:", urls);
       setUploading(false);
       return urls;
     },
@@ -70,7 +78,7 @@ export function useImgConverter() {
 
   return {
     getImageUrl, // 1개용
-    getMultipleImageUrls, // 여러 개용 ✅
+    getMultipleImageUrls, // 여러 개용
     isUploading,
     error,
   };
