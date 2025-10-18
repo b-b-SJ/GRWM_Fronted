@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Clock, Users, Lock, Unlock, X, Key } from 'lucide-react';
+import { useStudyRoomState } from '../../hooks/useStudyRoomState';
 
 /**
  * 스터디룸 탐색 컴포넌트
  * - 공개 스터디룸 목록 조회
  * - 카테고리별 필터링
  * - 비공개 스터디룸 비밀번호 입력
+ * - useStudyRoomState API 연동
  */
 const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
+    const { fetchStudyRooms, loading } = useStudyRoomState();
+
     const [studyRooms, setStudyRooms] = useState([]);
     const [filteredRooms, setFilteredRooms] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('전체');
 
@@ -27,7 +30,7 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
 
     // 스터디룸 목록 불러오기
     useEffect(() => {
-        fetchStudyRooms();
+        loadStudyRooms();
     }, []);
 
     // 검색 및 필터링
@@ -36,77 +39,52 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
 
         // 카테고리 필터
         if (selectedCategory !== '전체') {
-            filtered = filtered.filter(room => room.category === selectedCategory);
+            filtered = filtered.filter(room => room.subject === selectedCategory);
         }
 
         // 검색 필터
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
             filtered = filtered.filter(room =>
-                room.roomName.toLowerCase().includes(query) ||
-                room.description.toLowerCase().includes(query)
+                (room.studyRoomName || '').toLowerCase().includes(query) ||
+                (room.description || '').toLowerCase().includes(query)
             );
         }
 
         setFilteredRooms(filtered);
     }, [studyRooms, searchQuery, selectedCategory]);
 
-    const fetchStudyRooms = async () => {
-        setIsLoading(true);
+    const loadStudyRooms = async () => {
         try {
-            // TODO: 실제 API 호출
-            // const response = await fetch('/api/study-rooms');
-            // const data = await response.json();
+            const data = await fetchStudyRooms(0, 50); // 탐색용이므로 더 많이 가져오기
 
-            // 임시 데이터
-            await new Promise(resolve => setTimeout(resolve, 500));
-            const mockRooms = [
-                {
-                    roomId: 'study-1',
-                    roomName: '정보처리기사 준비',
-                    category: '자격증',
-                    description: '정보처리기사 실기 함께 준비해요',
-                    duration: 120,
-                    extensionTime: 30,
-                    isPrivate: false,
-                    currentMembers: 5,
-                    maxMembers: 10,
-                    endTime: new Date(Date.now() + 100 * 60 * 1000),
-                    createdAt: new Date()
-                },
-                {
-                    roomId: 'study-2',
-                    roomName: 'TOEIC 스터디',
-                    category: '스터디',
-                    description: 'TOEIC 함께 공부해요',
-                    duration: 90,
-                    extensionTime: 30,
-                    isPrivate: true,
-                    currentMembers: 3,
-                    maxMembers: 8,
-                    endTime: new Date(Date.now() + 80 * 60 * 1000),
-                    createdAt: new Date()
-                },
-            ];
-
-            setStudyRooms(mockRooms);
+            if (data && data.studyRooms) {
+                // ACTIVE 상태인 스터디룸만 필터링
+                const activeRooms = data.studyRooms.filter(
+                    room => room.status === 'ACTIVE' || room.status === 'active'
+                );
+                setStudyRooms(activeRooms);
+            }
         } catch (error) {
             console.error('Failed to fetch study rooms:', error);
             alert('스터디룸 목록을 불러오는데 실패했습니다.');
-        } finally {
-            setIsLoading(false);
         }
     };
 
     const handleJoinRoom = (room) => {
+        const roomId = room.studyRoomId || room.id;
+
         // 이미 참여중인 방인지 확인
-        if (joinedRoomIds.includes(room.roomId)) {
+        if (joinedRoomIds.includes(roomId)) {
             alert('이미 참여중인 스터디룸입니다.');
             return;
         }
 
         // 인원 초과 확인
-        if (room.currentMembers >= room.maxMembers) {
+        const currentMembers = room.currentMembers || room.userCount || 0;
+        const maxMembers = room.maxMembers || 10;
+
+        if (currentMembers >= maxMembers) {
             alert('스터디룸 인원이 가득 찼습니다.');
             return;
         }
@@ -115,8 +93,8 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
         if (room.isPrivate) {
             setPasswordModal({
                 isOpen: true,
-                roomId: room.roomId,
-                roomName: room.roomName,
+                roomId: roomId,
+                roomName: room.studyRoomName || room.name || '스터디룸',
                 password: '',
                 error: ''
             });
@@ -125,7 +103,7 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
 
         // 공개 방은 바로 참여
         if (onJoinRoom) {
-            onJoinRoom(room.roomId, false, null);
+            onJoinRoom(roomId, false, null);
         }
     };
 
@@ -137,6 +115,11 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
 
         if (passwordModal.password.length !== 5) {
             setPasswordModal(prev => ({ ...prev, error: '비밀번호는 5자리여야 합니다.' }));
+            return;
+        }
+
+        if (!/^\d{5}$/.test(passwordModal.password)) {
+            setPasswordModal(prev => ({ ...prev, error: '비밀번호는 5자리 숫자여야 합니다.' }));
             return;
         }
 
@@ -165,6 +148,8 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
     };
 
     const formatTime = (minutes) => {
+        if (!minutes || minutes < 0) return '종료됨';
+
         const hours = Math.floor(minutes / 60);
         const mins = minutes % 60;
         if (hours > 0) {
@@ -174,8 +159,11 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
     };
 
     const getRemainingTime = (endTime) => {
+        if (!endTime) return 0;
+
         const now = new Date();
-        const diff = endTime - now;
+        const end = new Date(endTime);
+        const diff = end - now;
         const minutes = Math.floor(diff / 1000 / 60);
         return minutes > 0 ? minutes : 0;
     };
@@ -225,7 +213,7 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
 
             {/* 스터디룸 목록 */}
             <div className="flex-1 overflow-y-auto">
-                {isLoading ? (
+                {loading ? (
                     <div className="flex items-center justify-center py-12">
                         <div className="flex items-center space-x-2 text-green-600">
                             <div className="w-5 h-5 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
@@ -239,14 +227,17 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
-                        {filteredRooms.map(room => {
-                            const isJoined = joinedRoomIds.includes(room.roomId);
-                            const isFull = room.currentMembers >= room.maxMembers;
+                        {filteredRooms.map((room, index) => {
+                            const roomId = room.studyRoomId || room.id;
+                            const isJoined = joinedRoomIds.includes(roomId);
+                            const currentMembers = room.currentMembers || room.userCount || 0;
+                            const maxMembers = room.maxMembers || 10;
+                            const isFull = currentMembers >= maxMembers;
                             const remainingMinutes = getRemainingTime(room.endTime);
 
                             return (
                                 <div
-                                    key={room.roomId}
+                                    key={roomId || `room-${index}`}
                                     className="bg-white rounded-lg border p-5 hover:shadow-md transition-shadow"
                                 >
                                     {/* 헤더 */}
@@ -254,7 +245,7 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
                                         <div className="flex-1">
                                             <div className="flex items-center space-x-2 mb-1">
                                                 <h3 className="font-semibold text-gray-800 truncate">
-                                                    {room.roomName}
+                                                    {room.studyRoomName || room.name || '이름 없는 스터디룸'}
                                                 </h3>
                                                 {room.isPrivate ? (
                                                     <Lock size={14} className="text-gray-400 flex-shrink-0" />
@@ -262,16 +253,20 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
                                                     <Unlock size={14} className="text-gray-400 flex-shrink-0" />
                                                 )}
                                             </div>
-                                            <span className="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
-                                                {room.category}
-                                            </span>
+                                            {room.subject && (
+                                                <span className="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
+                                                    {room.subject}
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
 
                                     {/* 설명 */}
-                                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                                        {room.description}
-                                    </p>
+                                    {room.description && (
+                                        <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                                            {room.description}
+                                        </p>
+                                    )}
 
                                     {/* 정보 */}
                                     <div className="space-y-2 mb-4">
@@ -292,7 +287,7 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
                                                 <span>참여 인원</span>
                                             </div>
                                             <span className="font-medium text-gray-800">
-                                                {room.currentMembers}/{room.maxMembers}
+                                                {currentMembers}/{maxMembers}
                                             </span>
                                         </div>
                                     </div>
