@@ -2,7 +2,10 @@ import React, { useState, useCallback } from "react";
 import { useAuth } from "./AuthContext";
 export function usePost() {
   const { getAuthHeaders } = useAuth();
-  const [posts, setPosts] = useState([
+  const [posts, setPosts] = useState(null);
+  {
+    /* 더미 백업
+  [
     {
       postId: "12",
 
@@ -24,8 +27,10 @@ export function usePost() {
       createdAt: new Date(),
       updatedAt: null, // 없어도 되는 값은 null로 시작할 수 있습니다.
     },
-  ]);
-
+  ]
+  
+  */
+  }
   const [likedUsers, setLikedUsers] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);

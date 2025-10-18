@@ -16,7 +16,7 @@ const MainTimeLine = () => {
     loadTimeLine();
   }, []);
 
-  // ✅ 게시물 변경 핸들러
+  // 변경 사항 있으면 재렌더
   const handlePostsChange = async (mode, data) => {
     console.log(`타임라인 게시물 ${mode}됨:`, data);
 
@@ -46,7 +46,7 @@ const MainTimeLine = () => {
   return (
     <div>
       <PostList
-        posts={posts.postList || []}
+        posts={posts?.postList || []}
         onPostsChange={handlePostsChange} // ✅ 콜백 전달
       />
     </div>
