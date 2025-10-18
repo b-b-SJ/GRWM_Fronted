@@ -4,56 +4,94 @@ import { Search, UserRound, X } from "lucide-react";
 import PostList from "../../community/PostList";
 import { useNavigate } from "react-router-dom";
 const SearchPage = () => {
-  // 검색어 관리
   const [keyword, setKeyword] = useState("");
+  const [searchType, setSearchType] = useState("post");
+  const [isUser, setIsUser] = useState(false);
 
-  //검색 타입: post, user, hashtag
-  const [searchType, setSearchType] = useState("post"); // 게시글 타입 (post/hashtag)
-  const [isUser, setIsUser] = useState(false); //유저모드
-  const [currentPage, setCurrentPage] = useState(0);
-  const [allResults, setAllResults] = useState([]);
-  const [hasMore, setHasMore] = useState(false);
+  // 타입별로 결과 분리 저장
+  const [postResults, setPostResults] = useState([]);
+  const [hashtagResults, setHashtagResults] = useState([]);
+  const [userResults, setUserResults] = useState([]);
+
+  // 각 타입별 페이지 정보
+  const [postPage, setPostPage] = useState(0);
+  const [hashtagPage, setHashtagPage] = useState(0);
+  const [userPage, setUserPage] = useState(0);
+
+  // 각 타입별 hasMore
+  const [postHasMore, setPostHasMore] = useState(false);
+  const [hashtagHasMore, setHashtagHasMore] = useState(false);
+  const [userHasMore, setUserHasMore] = useState(false);
+
   const navigate = useNavigate();
   const { searchHashtag, searchPost, searchUser, searched, loading, error } =
     useCommunitySearch();
 
-  // ✅ 검색 실행 함수
+  // 현재 보여줄 결과 계산
+  const currentResults = isUser
+    ? userResults
+    : searchType === "post"
+    ? postResults
+    : hashtagResults;
+
+  const currentHasMore = isUser
+    ? userHasMore
+    : searchType === "post"
+    ? postHasMore
+    : hashtagHasMore;
+
+  // ✅ 검색 실행 함수 수정
   const handleSearch = async (hasMore = false) => {
-    // 검색어가 없으면 리턴
     if (!keyword.trim()) {
       alert("검색어를 입력해주세요!");
       return;
     }
 
-    const pageToLoad = hasMore ? currentPage : 0;
-
     let result;
+    let pageToLoad;
 
-    // 검색 타입에 따라 다른 함수 호출
     if (isUser) {
+      pageToLoad = hasMore ? userPage : 0;
       result = await searchUser(keyword, pageToLoad, 30);
-    } else if (searchType === "post") {
-      result = await searchPost(keyword, pageToLoad, 30);
-    } else if (searchType === "hashtag") {
-      result = await searchHashtag(keyword, pageToLoad, 30);
-    }
-    console.log("머가 오노", result);
-    // ✅ 결과 처리
-    if (result) {
-      if (hasMore) {
-        // 더보기: 기존 결과에 추가
-        setAllResults((prev) => [
-          ...prev,
-          ...(result.postList || result.users || []),
-        ]);
-      } else {
-        // 새 검색: 기존 결과 초기화
-        setAllResults(result.postList || result.users || []);
-        setCurrentPage(0);
-      }
 
-      setHasMore(result.hasMore);
-      setCurrentPage(pageToLoad + 1);
+      if (result) {
+        if (hasMore) {
+          setUserResults((prev) => [...prev, ...(result.users || [])]);
+        } else {
+          setUserResults(result.users || []);
+          setUserPage(0);
+        }
+        setUserHasMore(result.hasMore);
+        setUserPage(pageToLoad + 1);
+      }
+    } else if (searchType === "post") {
+      pageToLoad = hasMore ? postPage : 0;
+      result = await searchPost(keyword, pageToLoad, 30);
+
+      if (result) {
+        if (hasMore) {
+          setPostResults((prev) => [...prev, ...(result.postList || [])]);
+        } else {
+          setPostResults(result.postList || []);
+          setPostPage(0);
+        }
+        setPostHasMore(result.hasMore);
+        setPostPage(pageToLoad + 1);
+      }
+    } else if (searchType === "hashtag") {
+      pageToLoad = hasMore ? hashtagPage : 0;
+      result = await searchHashtag(keyword, pageToLoad, 30);
+
+      if (result) {
+        if (hasMore) {
+          setHashtagResults((prev) => [...prev, ...(result.postList || [])]);
+        } else {
+          setHashtagResults(result.postList || []);
+          setHashtagPage(0);
+        }
+        setHashtagHasMore(result.hasMore);
+        setHashtagPage(pageToLoad + 1);
+      }
     }
   };
 
@@ -61,21 +99,21 @@ const SearchPage = () => {
     handleSearch(true);
   };
 
-  //검색 초기화
+  // 전체 초기화 (X 버튼용)
   const handleClear = () => {
     setKeyword("");
-    setAllResults([]);
-    setCurrentPage(0);
-    setHasMore(false);
+    setPostResults([]);
+    setHashtagResults([]);
+    setUserResults([]);
+    setPostPage(0);
+    setHashtagPage(0);
+    setUserPage(0);
+    setPostHasMore(false);
+    setHashtagHasMore(false);
+    setUserHasMore(false);
   };
 
-  //검색 타입 변경 시 자동결과 초기화
-
-  useEffect(() => {
-    setAllResults([]);
-    setCurrentPage(0);
-    setHasMore(false);
-  }, [isUser, searchType]);
+  // 결과는 일단 유지하면서 UI만 전환
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white">
@@ -92,15 +130,15 @@ const SearchPage = () => {
             onClick={() => setIsUser(!isUser)}
             className={`flex gap-2 px-3 py-2 rounded-lg items-center transition-colors ${
               isUser
-                ? "bg-rose-100 border-2 border-rose-400" // 켜졌을 때 분홍색
-                : "bg-gray-100 border-2 border-gray-300" // 꺼졌을 때 회색
+                ? "bg-rose-100 border-2 border-rose-400"
+                : "bg-gray-100 border-2 border-gray-300"
             }`}
           >
             <input
               type="checkbox"
               checked={isUser}
               onChange={(e) => setIsUser(e.target.checked)}
-              onClick={(e) => e.stopPropagation()} // 중복 방지
+              onClick={(e) => e.stopPropagation()}
             />
             <UserRound
               size={24}
@@ -120,7 +158,6 @@ const SearchPage = () => {
               }
               className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-3xl focus:ring-rose-400"
             />
-            {console.log(allResults)}
             {keyword && (
               <button
                 onClick={handleClear}
@@ -143,11 +180,28 @@ const SearchPage = () => {
       </div>
 
       {/* 검색 타입 선택 탭 */}
-      {/* 유저 모드가 아닐 때만 게시글/해시태그 탭 표시 */}
       {!isUser && (
         <div className="flex gap-2 mb-6 border-b">
-          <button onClick={() => setSearchType("post")}>게시글</button>
-          <button onClick={() => setSearchType("hashtag")}>해시태그</button>
+          <button
+            onClick={() => setSearchType("post")}
+            className={`px-4 py-2 ${
+              searchType === "post"
+                ? "border-b-2 border-rose-500 font-semibold"
+                : ""
+            }`}
+          >
+            게시글
+          </button>
+          <button
+            onClick={() => setSearchType("hashtag")}
+            className={`px-4 py-2 ${
+              searchType === "hashtag"
+                ? "border-b-2 border-rose-500 font-semibold"
+                : ""
+            }`}
+          >
+            해시태그
+          </button>
         </div>
       )}
 
@@ -159,7 +213,7 @@ const SearchPage = () => {
       )}
 
       {/* 검색 결과 */}
-      {allResults.length > 0 && (
+      {currentResults.length > 0 && (
         <div>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-bold">
@@ -174,13 +228,13 @@ const SearchPage = () => {
 
           {/* 게시글 또는 해시태그 검색 결과 */}
           {!isUser && (searchType === "post" || searchType === "hashtag") && (
-            <PostList posts={allResults} />
+            <PostList posts={currentResults} />
           )}
 
           {/* 유저 검색 결과 */}
           {isUser && (
             <div className="space-y-3">
-              {allResults.map((user) => (
+              {currentResults.map((user) => (
                 <div
                   key={user.communityId}
                   className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-4"
@@ -218,7 +272,7 @@ const SearchPage = () => {
           )}
 
           {/* 더보기 버튼 */}
-          {hasMore && (
+          {currentHasMore && (
             <button
               onClick={handleLoadMore}
               disabled={loading}
@@ -231,7 +285,7 @@ const SearchPage = () => {
       )}
 
       {/* 결과 없음 */}
-      {allResults.length === 0 && !loading && keyword && searched && (
+      {currentResults.length === 0 && !loading && keyword && searched && (
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Search size={32} className="text-gray-400" />
@@ -244,7 +298,7 @@ const SearchPage = () => {
       )}
 
       {/* 초기 상태 */}
-      {allResults.length === 0 && !keyword && !loading && (
+      {currentResults.length === 0 && !keyword && !loading && (
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Search size={32} className="text-rose-500" />

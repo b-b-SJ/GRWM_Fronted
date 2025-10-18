@@ -109,7 +109,7 @@ const PostingModal = ({
 
       if (uploadedUrls && uploadedUrls.length > 0) {
         setImagesUrl([...imagesUrl, ...uploadedUrls]);
-        alert(`${uploadedUrls.length}개의 이미지가 업로드되었습니다!`);
+        // alert(`${uploadedUrls.length}개의 이미지가 업로드되었습니다!`);
       } else {
         alert("이미지 업로드에 실패했습니다");
         setPreviewImages(previewImages);
@@ -126,7 +126,7 @@ const PostingModal = ({
   const handleTagInput = (e) => {
     const value = e.target.value;
 
-    if (e.key === " " && currentTag.trim()) {
+    if ((e.key === " " || e.key === "Enter") && currentTag.trim()) {
       e.preventDefault();
 
       if (!hashtags.includes(currentTag.trim())) {

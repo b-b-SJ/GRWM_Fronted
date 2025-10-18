@@ -160,7 +160,7 @@ const PostingStyle = ({
                   console.log("해시태그 클릭:", tag);
                 }}
               >
-                {tag}
+                #{tag}
               </span>
             ))}
           </div>
