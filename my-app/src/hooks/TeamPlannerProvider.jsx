@@ -349,7 +349,7 @@ export const TeamPlannerProvider = ({ children }) => {
     /**
      * 일정 생성
      * @param {number} plannerId
-     * @param {Object} scheduleData - { title, categoryId?, startDateTime, finishDateTime, location, memo }
+     * @param {Object} scheduleData - { title, categoryId?, startDateTime, finishDateTime, location, memo + editorRange }
      * @returns {Promise<number>} scheduleId
      */
     const createSchedule = useCallback(async (plannerId, scheduleData) => {
@@ -372,7 +372,8 @@ export const TeamPlannerProvider = ({ children }) => {
                         startDateTime: scheduleData.startDateTime,
                         finishDateTime: scheduleData.finishDateTime,
                         location: scheduleData.location || '',
-                        memo: scheduleData.memo || ''
+                        memo: scheduleData.memo || '',
+                        editorRange: scheduleData.editorRange || ''
                     }),
                 }
             );
