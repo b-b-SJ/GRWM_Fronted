@@ -22,6 +22,12 @@ const ChatMessages = ({ messages, onReply, onDelete }) => {
         scrollToBottom();
     }, [messages]);
 
+    console.log('전체 메시지 목록:', messages); // 디버깅 용으로 추가
+
+    // 시스템 메시지만 필터링해서 확인
+    const systemMessages = messages.filter(m => m.type === 'system');
+    console.log('시스템 메시지만:', systemMessages); // 디버깅 용으로 추가
+
     // 메시지 내용 복사
     const handleCopyMessage = async (content) => {
         try {

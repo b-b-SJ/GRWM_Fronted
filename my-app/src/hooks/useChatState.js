@@ -260,7 +260,7 @@ export const ChatStateProvider = ({ children }) => {
                         messageType = 'system';
                         messageContent = `${msg.writerChatName}님이 퇴장하셨습니다.`;
                     } else if (msg.isDeleted) {
-                        messageContent = '(삭제된 메시지입니다.)';
+                        messageContent = '삭제된 메시지입니다.';
                     }
 
                     return {
@@ -414,16 +414,7 @@ export const ChatStateProvider = ({ children }) => {
                 throw new Error('채팅방 참여에 실패했습니다.');
             }
 
-            // 로컬에서 입장 시스템 메시지 추가
-            const joinMessage = {
-                id: `system-join-${Date.now()}`,
-                content: `${finalChatName}님이 입장하셨습니다.`,
-                sender: finalChatName,
-                senderId: currentUser.userId,
-                timestamp: new Date().toISOString(),
-                type: 'system'
-            };
-            addMessage(chatRoomId, joinMessage);
+            // 로컬에서 입장 시스템 메시지 전송 코드 삭제
 
             await fetchChatRooms();
             return true;
@@ -441,7 +432,7 @@ export const ChatStateProvider = ({ children }) => {
         setReplyTo(null);
     }, [disconnect]);
 
-    // 채팅방 탈퇴 (서버에서 나가기)
+    // 채팅방 나가기 (서버에서 나가기)
     const leaveChatRoom = useCallback(async (chatRoomId) => {
         if (!isAuthenticated || !currentUser.userId) {
             throw new Error('로그인이 필요합니다.');
@@ -450,17 +441,7 @@ export const ChatStateProvider = ({ children }) => {
         console.log('Request URL:', `/api/chat-room/${chatRoomId}/leave`);
         console.log('Headers:', getAuthHeaders());
 
-        // 퇴장 전에 시스템 메시지 추가
-        const userName = currentUser.communityNickname || currentUser.username || '사용자';
-        const leaveMessage = {
-            id: `system-leave-${Date.now()}`,
-            content: `${userName}님이 퇴장하셨습니다.`,
-            sender: userName,
-            senderId: currentUser.userId,
-            timestamp: new Date().toISOString(),
-            type: 'system'
-        };
-        addMessage(chatRoomId, leaveMessage);
+        // 퇴장 메시지 백엔드에서 전송되므로 로컬 추가 코드 삭제
 
         const response = await fetch(`/api/chat-room/${chatRoomId}/leave`, {
             method: 'DELETE',

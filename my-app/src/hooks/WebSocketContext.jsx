@@ -10,7 +10,8 @@ import { useAuth } from './AuthContext';
  * - 페이지 이동 후 재진입 시 WebSocket 연결 문제 해결
  * - connect() 호출 시 연결 상태 강제 초기화
  * - isConnectingRef 플래그 개선
- * - 메시지 삭제 WebSocket 기능 추가 (ing)
+ * - 메시지 삭제 WebSocket 기능 연결
+ * - 채팅방 입/퇴장 메시지 출력 (ing)
  */
 
 const WebSocketContext = createContext();
@@ -308,17 +309,24 @@ destination:/topic/chat.${chatRoomId}
                         }
 
                         // 메시지 포맷팅
-                        const formattedMessage = {
+                        let formattedMessage = {
                             id: messageData.messageId,
                             content: messageData.content,
                             sender: messageData.writerChatName,
                             senderId: messageData.senderId,
                             timestamp: messageData.createdAt,
                             type: messageData.type === 0 ? 'chat' :
-                                messageData.type === 1 ? 'join' :
-                                    messageData.type === 2 ? 'leave' : 'chat',
+                                messageData.type === 1 ? 'system' :  // join → system
+                                    messageData.type === 2 ? 'system' : 'chat',  // leave → system
                             replyMessageId: messageData.replyMessageId || null
                         };
+
+                        // 입장/퇴장 메시지 내용 처리 (추가)
+                        if (messageData.type === 1) {
+                            formattedMessage.content = `${messageData.writerChatName}님이 입장하셨습니다.`;
+                        } else if (messageData.type === 2) {
+                            formattedMessage.content = `${messageData.writerChatName}님이 퇴장하셨습니다.`;
+                        }
 
                         console.log('채팅 메시지 수신:', formattedMessage);
 
