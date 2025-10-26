@@ -95,9 +95,12 @@ const TrackerSidebar = ({
     };
 
     const handleDateClick = (day) => {
-        // 선택된 날짜를 URL 파라미터로 추가할 수도 있습니다
+        // 로컬 시간대 기준으로 날짜 문자열 생성
         const selectedDate = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), day);
-        const dateString = selectedDate.toISOString().split('T')[0];
+        const year = selectedDate.getFullYear();
+        const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+        const dayStr = String(day).padStart(2, '0');
+        const dateString = `${year}-${month}-${dayStr}`;
 
         const newParams = new URLSearchParams(searchParams);
         newParams.set('date', dateString);
@@ -105,7 +108,6 @@ const TrackerSidebar = ({
         const newUrl = `/tracker?${newParams.toString()}`;
         navigate(newUrl);
 
-        // 캘린더 뷰로 이동
         setCurrentView(trackerMode === 'todo' ? 'todo-calendar' : 'diary-calendar');
     };
 
@@ -126,7 +128,15 @@ const TrackerSidebar = ({
         for (let day = 1; day <= daysInMonth; day++) {
             const currentDate = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), day);
             const isToday = currentDate.toDateString() === today.toDateString();
-            const isSelected = selectedDate && currentDate.toISOString().split('T')[0] === selectedDate;
+
+            // 로컬 시간대 기준으로 YYYY-MM-DD 문자열 생성
+            const year = currentDate.getFullYear();
+            const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+            const dayStr = String(day).padStart(2, '0');
+            const currentDateString = `${year}-${month}-${dayStr}`;
+
+            // URL에서 가져온 날짜와 로컬 날짜 문자열 비교
+            const isSelected = selectedDate && currentDateString === selectedDate;
 
             days.push(
                 <button
@@ -183,7 +193,7 @@ const TrackerSidebar = ({
     return (
         <div className={`
       ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
-      lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-40
+      lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-10
       w-80 bg-white border-r shadow-lg lg:shadow-none
       transition-transform duration-300 ease-in-out
       flex flex-col
@@ -268,33 +278,6 @@ const TrackerSidebar = ({
                                 </button>
                             );
                         })}
-                    </div>
-
-                    {/* 추가 정보 섹션 */}
-                    <div className="border-t pt-4">
-                        <div className="px-3 py-2">
-                            {trackerMode === 'todo' ? (
-                                <div className="space-y-2">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-gray-600">완료한 할일</span>
-                                        <span className="font-medium text-blue-600">12/18</span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-2">
-                                        <div
-                                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                            style={{ width: '67%' }}
-                                        ></div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div>
-                                    <div className="flex justify-between text-sm mb-2">
-                                        <span className="text-gray-600">이번 달 일기</span>
-                                        <span className="font-medium text-green-600">15개</span>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
                     </div>
                 </div>
             </div>
