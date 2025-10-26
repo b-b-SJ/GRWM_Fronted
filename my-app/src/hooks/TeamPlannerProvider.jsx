@@ -36,11 +36,7 @@ export const TeamPlannerProvider = ({ children }) => {
 
     // ==================== 플래너 CRUD ====================
 
-    /**
-     * 플래너 생성
-     * @param {Object} plannerData - { title, description, profileImage }
-     * @returns {Promise<number>} plannerId
-     */
+    // 플래너 생성
     const createPlanner = useCallback(async (plannerData) => {
         checkAuth();
         setLoading(true);
@@ -79,10 +75,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [user, isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 플래너 목록 조회
-     * @returns {Promise<Array>} planners
-     */
+    // 플래너 목록 조회
     const fetchPlanners = useCallback(async () => {
         checkAuth();
         setLoading(true);
@@ -115,12 +108,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [user, isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 플래너 업데이트
-     * @param {number} plannerId
-     * @param {Object} updateData - { title, description, profileImage }
-     * @returns {Promise<Object>} TeamPlannerDto
-     */
+    // 플래너 업데이트
     const updatePlanner = useCallback(async (plannerId, updateData) => {
         checkAuth();
         setLoading(true);
@@ -158,11 +146,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [currentPlanner, isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 플래너 삭제
-     * @param {number} plannerId
-     * @returns {Promise<void>}
-     */
+    // 플래너 삭제
     const deletePlanner = useCallback(async (plannerId) => {
         checkAuth();
         setLoading(true);
@@ -196,13 +180,7 @@ export const TeamPlannerProvider = ({ children }) => {
 
     // ==================== 멤버 관리 ====================
 
-    /**
-     * 멤버 추가
-     * @param {number} plannerId
-     * @param {number} memberId
-     * @param {string} role - "manager" or "member"
-     * @returns {Promise<void>}
-     */
+    // 멤버 추가
     const addMember = useCallback(async (plannerId, memberId, role) => {
         checkAuth();
         setLoading(true);
@@ -232,11 +210,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 멤버 목록 조회 (활성 멤버만)
-     * @param {number} plannerId
-     * @returns {Promise<Array>} MemberDto 배열
-     */
+    // 멤버 목록 조회
     const fetchMembers = useCallback(async (plannerId) => {
         checkAuth();
         setLoading(true);
@@ -275,12 +249,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 멤버 삭제 (status를 'withdrawn'으로 변경)
-     * @param {number} plannerId
-     * @param {number} memberId
-     * @returns {Promise<void>}
-     */
+    // 멤버 삭제 (status를 'withdrawn'으로 변경)
     const removeMember = useCallback(async (plannerId, memberId) => {
         checkAuth();
         setLoading(true);
@@ -309,13 +278,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 멤버 별명(nickname) 업데이트
-     * @param {number} plannerId
-     * @param {number} memberId
-     * @param {string} nickname - 새로운 별명
-     * @returns {Promise<void>}
-     */
+    // 멤버 별명(nickname) 업데이트
     const updateMemberNickname = useCallback(async (plannerId, memberId, nickname) => {
         checkAuth();
         setLoading(true);
@@ -346,12 +309,8 @@ export const TeamPlannerProvider = ({ children }) => {
 
     // ==================== 일정(Schedule) 관리 ====================
 
-    /**
-     * 일정 생성
-     * @param {number} plannerId
-     * @param {Object} scheduleData - { title, categoryId?, startDateTime, finishDateTime, location, memo + editorRange }
-     * @returns {Promise<number>} scheduleId
-     */
+    // 일정 생성
+    // scheduleData에 editorRange 추가
     const createSchedule = useCallback(async (plannerId, scheduleData) => {
         checkAuth();
         setLoading(true);
@@ -392,12 +351,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 일정 상세 조회
-     * @param {number} plannerId
-     * @param {number} scheduleId
-     * @returns {Promise<Object>} TeamScheduleDto
-     */
+    // 일정 상세 조회
     const fetchScheduleDetail = useCallback(async (plannerId, scheduleId) => {
         checkAuth();
         setLoading(true);
@@ -427,13 +381,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 일정 수정
-     * @param {number} plannerId
-     * @param {number} scheduleId
-     * @param {Object} updateData
-     * @returns {Promise<Object>} TeamScheduleDto
-     */
+    // 일정 수정
     const updateSchedule = useCallback(async (plannerId, scheduleId, updateData) => {
         checkAuth();
         setLoading(true);
@@ -464,12 +412,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 일정 삭제
-     * @param {number} plannerId
-     * @param {number} scheduleId
-     * @returns {Promise<void>}
-     */
+    // 일정 삭제
     const deleteSchedule = useCallback(async (plannerId, scheduleId) => {
         checkAuth();
         setLoading(true);
@@ -498,13 +441,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 드래그앤드롭으로 일정 날짜 수정
-     * @param {number} plannerId
-     * @param {number} scheduleId
-     * @param {Object} dateTime - { startDateTime, finishDateTime }
-     * @returns {Promise<void>}
-     */
+    // 드래그앤드롭으로 일정 날짜 수정
     const updateScheduleDateTime = useCallback(async (plannerId, scheduleId, dateTime) => {
         checkAuth();
         setLoading(true);
@@ -532,13 +469,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 일정에 참여하기
-     * @param {number} plannerId
-     * @param {number} scheduleId
-     * @param {number} userId
-     * @returns {Promise<Array>} MemberBriefDto[]
-     */
+    // 일정에 참여하기
     const joinSchedule = useCallback(async (plannerId, scheduleId, userId) => {
         checkAuth();
         setLoading(true);
@@ -568,12 +499,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 일정 참여 멤버 추가
-     * @param {number} plannerId
-     * @param {number} scheduleId
-     * @returns {Promise<Array>} MemberBriefDto[]
-     */
+    // 일정 참여 멤버 추가
     const addScheduleMember = useCallback(async (plannerId, scheduleId) => {
         checkAuth();
         setLoading(true);
@@ -603,12 +529,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 일정 참여 멤버 삭제
-     * @param {number} plannerId
-     * @param {number} scheduleId
-     * @returns {Promise<void>}
-     */
+    // 일정 참여 멤버 삭제
     const removeScheduleMember = useCallback(async (plannerId, scheduleId) => {
         checkAuth();
         setLoading(true);
@@ -635,13 +556,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 월별 일정 조회
-     * @param {number} plannerId
-     * @param {number} year
-     * @param {number} month
-     * @returns {Promise<Array>} TeamScheduleBriefDto[]
-     */
+    // 월별 일정 조회 (먼슬리)
     const fetchMonthlySchedules = useCallback(async (plannerId, year, month) => {
         checkAuth();
         setLoading(true);
@@ -672,13 +587,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 주별 일정 조회
-     * @param {number} plannerId
-     * @param {number} year
-     * @param {number} weekNumber
-     * @returns {Promise<Array>} TeamScheduleBriefDto[]
-     */
+    // 주별 일정 조회 (위클리)
     const fetchWeeklySchedules = useCallback(async (plannerId, year, weekNumber) => {
         checkAuth();
         setLoading(true);
@@ -709,14 +618,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 일별 일정 조회
-     * @param {number} plannerId
-     * @param {number} year
-     * @param {number} month
-     * @param {number} day
-     * @returns {Promise<Array>} TeamScheduleBriefDto[]
-     */
+    // 일별 일정 조회 (데일리)
     const fetchDailySchedules = useCallback(async (plannerId, year, month, day) => {
         checkAuth();
         setLoading(true);
@@ -749,12 +651,7 @@ export const TeamPlannerProvider = ({ children }) => {
 
     // ==================== 카테고리 관리 ====================
 
-    /**
-     * 카테고리 생성
-     * @param {number} plannerId
-     * @param {Object} categoryData - { name, color }
-     * @returns {Promise<number>} categoryId
-     */
+    // 카테고리 생성
     const createCategory = useCallback(async (plannerId, categoryData) => {
         checkAuth();
         setLoading(true);
@@ -786,11 +683,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 카테고리 목록 조회
-     * @param {number} plannerId
-     * @returns {Promise<Array>} CategoryDto[]
-     */
+    // 카테고리 목록 조회
     const fetchCategories = useCallback(async (plannerId) => {
         checkAuth();
         setLoading(true);
@@ -821,13 +714,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 카테고리 수정
-     * @param {number} plannerId
-     * @param {number} categoryId
-     * @param {Object} updateData - { name, color }
-     * @returns {Promise<Object>} CategoryDto
-     */
+    // 카테고리 수정
     const updateCategory = useCallback(async (plannerId, categoryId, updateData) => {
         checkAuth();
         setLoading(true);
@@ -861,12 +748,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 카테고리 삭제
-     * @param {number} plannerId
-     * @param {number} categoryId
-     * @returns {Promise<void>}
-     */
+    // 카테고리 삭제
     const deleteCategory = useCallback(async (plannerId, categoryId) => {
         checkAuth();
         setLoading(true);
@@ -895,12 +777,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 카테고리별 일정 조회
-     * @param {number} plannerId
-     * @param {number} categoryId
-     * @returns {Promise<Array>} TeamScheduleBriefDto[]
-     */
+    // 카테고리 별 일정 조회
     const fetchSchedulesByCategory = useCallback(async (plannerId, categoryId) => {
         checkAuth();
         setLoading(true);
@@ -932,13 +809,7 @@ export const TeamPlannerProvider = ({ children }) => {
 
     // ==================== 투두리스트 관리 ====================
 
-    /**
-     * 투두 생성
-     * @param {number} plannerId
-     * @param {number} scheduleId
-     * @param {Object} todoData - { content, isCompleted, isPrivate }
-     * @returns {Promise<number>} todoId
-     */
+    // 투두 생성
     const createTodo = useCallback(async (plannerId, scheduleId, todoData) => {
         checkAuth();
         setLoading(true);
@@ -969,14 +840,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 투두 수정 및 완료 체크
-     * @param {number} plannerId
-     * @param {number} scheduleId
-     * @param {number} todoId
-     * @param {Object} updateData - { content, isCompleted, isPrivate }
-     * @returns {Promise<void>}
-     */
+    // 투두 수정 및 완료 체크
     const updateTodo = useCallback(async (plannerId, scheduleId, todoId, updateData) => {
         checkAuth();
         setLoading(true);
@@ -1004,13 +868,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 투두 삭제
-     * @param {number} plannerId
-     * @param {number} scheduleId
-     * @param {number} todoId
-     * @returns {Promise<void>}
-     */
+    // 투두 삭제
     const deleteTodo = useCallback(async (plannerId, scheduleId, todoId) => {
         checkAuth();
         setLoading(true);
@@ -1039,12 +897,7 @@ export const TeamPlannerProvider = ({ children }) => {
 
     // ==================== 시간 투표 ====================
 
-    /**
-     * 시간 투표 생성
-     * @param {number} plannerId
-     * @param {Object} voteData - { title, voteRange, finishTime, memberIds }
-     * @returns {Promise<number>} voteId
-     */
+    // 시간 투표 생성
     const createTimeVote = useCallback(async (plannerId, voteData) => {
         checkAuth();
         setLoading(true);
@@ -1075,13 +928,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 시간 투표 참여
-     * @param {number} plannerId
-     * @param {number} voteId
-     * @param {Array} availableDateTimes - AvailableDateTimeDto[]
-     * @returns {Promise<Object>} VoteResponseDto
-     */
+    // 시간 투표 참여
     const submitTimeVote = useCallback(async (plannerId, voteId, availableDateTimes) => {
         checkAuth();
         setLoading(true);
@@ -1112,13 +959,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 시간 재투표 (업데이트)
-     * @param {number} plannerId
-     * @param {number} voteId
-     * @param {Array} availableDateTimes - AvailableDateTimeDto[]
-     * @returns {Promise<Object>} VoteResponseDto
-     */
+    // 시간 재투표 (업데이트)
     const updateTimeVote = useCallback(async (plannerId, voteId, availableDateTimes) => {
         checkAuth();
         setLoading(true);
@@ -1149,12 +990,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 타임테이블 조회 (색상 입히기용)
-     * @param {number} plannerId
-     * @param {number} voteId
-     * @returns {Promise<Array>} 시간 슬롯별 중복도 데이터
-     */
+    // 타임테이블 조회 (색상 입히기용)
     const fetchTimeVoteTable = useCallback(async (plannerId, voteId) => {
         checkAuth();
         setLoading(true);
@@ -1186,12 +1022,7 @@ export const TeamPlannerProvider = ({ children }) => {
 
     // ==================== 검색 ====================
 
-    /**
-     * 키워드로 일정 검색
-     * @param {number} plannerId
-     * @param {string} keyword
-     * @returns {Promise<Array>} TeamScheduleBriefDto[]
-     */
+    // 키워드로 일정 검색
     const searchSchedulesByKeyword = useCallback(async (plannerId, keyword) => {
         checkAuth();
         setLoading(true);
@@ -1221,12 +1052,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    /**
-     * 사용자별 일정 검색 (생성 & 참여)
-     * @param {number} plannerId
-     * @param {number} userId
-     * @returns {Promise<Object>} { createdSchedules, joinedSchedules }
-     */
+    // 사용자별 일정 검색 (생성 & 참여)
     const searchSchedulesByUser = useCallback(async (plannerId, userId) => {
         checkAuth();
         setLoading(true);
