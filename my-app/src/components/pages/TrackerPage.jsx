@@ -9,6 +9,7 @@ import {
 import TrackerSidebar from '../layout/TrackerSidebar';
 import DiaryView from '../../components/tracker/DiaryView';
 import TomorrowMessage from '../../components/tracker/TomorrowMessage';
+import TodoView from '../../components/tracker/TodoView';
 
 /**
  * 트래커 페이지 - 회고일기 관리
@@ -58,17 +59,11 @@ const TrackerPage = () => {
         };
     }, []);
 
-    // To-do 빈 화면
-    const TodoEmptyView = () => (
-        <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-                <BarChart3 size={64} className="text-blue-400 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-gray-600 mb-2">
-                    To-do 기능 준비 중
-                </h2>
-                <p className="text-gray-500">
-                    곧 할일 관리 기능을 만나보실 수 있습니다.
-                </p>
+    // To-do 임시
+    const TodoCalendarView = () => (
+        <div className="flex-1 flex flex-col p-6">
+            <div className="flex-1 overflow-auto">
+                <TodoView showHeader={false} selectedDateProp={searchParams.get('date')} />
             </div>
         </div>
     );
@@ -151,7 +146,7 @@ const TrackerPage = () => {
     const renderCurrentView = () => {
         // trackerMode가 'todo'인 경우 빈 화면 표시
         if (trackerMode === 'todo') {
-            return <TodoEmptyView />;
+            return <TodoCalendarView />;
         }
 
         // diary 모드에서의 뷰 렌더링
