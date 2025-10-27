@@ -317,14 +317,14 @@ destination:/topic/chat.${chatRoomId}
                             timestamp: messageData.createdAt,
                             type: messageData.type === 0 ? 'chat' :
                                 messageData.type === 1 ? 'system' :  // join → system
-                                    messageData.type === 2 ? 'system' : 'chat',  // leave → system
+                                    messageData.type === 3 ? 'system' : 'chat',  // leave → system
                             replyMessageId: messageData.replyMessageId || null
                         };
 
                         // 입장/퇴장 메시지 내용 처리 (추가)
                         if (messageData.type === 1) {
                             formattedMessage.content = `${messageData.writerChatName}님이 입장하셨습니다.`;
-                        } else if (messageData.type === 2) {
+                        } else if (messageData.type === 3) {
                             formattedMessage.content = `${messageData.writerChatName}님이 퇴장하셨습니다.`;
                         }
 

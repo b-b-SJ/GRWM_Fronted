@@ -812,7 +812,7 @@ export const ChatStateProvider = ({ children }) => {
                         type: 'system',
                         content: `${message.sender}님이 입장하셨습니다.`
                     };
-                } else if (message.type === 2) {
+                } else if (message.type === 3) {
                     processedMessage = {
                         ...processedMessage,
                         type: 'system',
