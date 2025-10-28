@@ -40,7 +40,7 @@ const App = () => {
                   />
                   <Route path="tracker" element={<TrackerPage />} />
                   <Route path="workspace/*" element={<WorkspacePage />} />
-                  <Route path="community" element={<CommunityPage />} />
+                  <Route path="community/*" element={<CommunityPage />} />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/auth" replace />} />
