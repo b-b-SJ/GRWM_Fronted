@@ -148,17 +148,10 @@ export function usePost() {
     [getAuthHeaders]
   );
 
-  // ✅ 개선된 게시물 수정 - 상세 디버깅 로그 추가
   const updatePost = useCallback(
     async (postId, postData) => {
       setLoading(true);
       setError(null);
-
-      console.log("🔄 게시물 수정 요청 시작:", {
-        postId,
-        요청데이터: postData,
-        해시태그: postData.hashtags,
-      });
 
       try {
         const response = await fetch(
@@ -173,30 +166,18 @@ export function usePost() {
           }
         );
 
-        console.log("📥 서버 응답 상태:", response.status);
-
         if (response.ok) {
           const updatedPost = await response.json();
-
-          console.log("✅ 서버에서 받은 수정된 게시물:", updatedPost);
-          console.log("🏷️ 서버가 반환한 해시태그:", updatedPost.hashtags);
-          console.log("🆚 비교:", {
-            보낸해시태그: postData.hashtags,
-            받은해시태그: updatedPost.hashtags,
-            일치여부:
-              JSON.stringify(postData.hashtags) ===
-              JSON.stringify(updatedPost.hashtags),
-          });
 
           return updatedPost;
         } else {
           const errorText = await response.text();
-          console.error("❌ 게시글 수정 실패:", response.status, errorText);
+          console.error("게시글 수정 실패:", response.status, errorText);
           setError("게시글 수정에 실패했습니다");
           return null;
         }
       } catch (error) {
-        console.error("❌ 게시글 수정 에러:", error);
+        console.error("게시글 수정 에러:", error);
         setError("네트워크 에러가 발생했습니다");
         return null;
       } finally {
