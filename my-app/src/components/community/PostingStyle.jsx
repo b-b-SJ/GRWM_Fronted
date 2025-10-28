@@ -121,7 +121,6 @@ const PostingStyle = ({
               }`}
             >
               {post.content.images.slice(0, 4).map((img, idx) => {
-                console.log(`🖼️ 이미지 ${idx} URL:`, img);
                 return (
                   <div
                     key={idx}

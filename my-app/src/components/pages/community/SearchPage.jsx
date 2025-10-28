@@ -1,26 +1,39 @@
 import React, { useState, useEffect } from "react";
 import { useCommunitySearch } from "../../../hooks/useCommunitySearch";
-import { Search, UserRound, X } from "lucide-react";
+import { Search, UserRound, X, Plus, Check } from "lucide-react";
 import PostList from "../../community/PostList";
 import { useNavigate, useParams } from "react-router-dom";
+import { useHashtag } from "../../../hooks/useHashtag";
+import { useAuth } from "../../../hooks/AuthContext";
 
 const SearchPage = () => {
-  const { keyword: urlKeyword } = useParams(); // ✅ URL에서 검색어 가져오기
+  const { keyword: urlKeyword } = useParams();
   const [keyword, setKeyword] = useState("");
   const [searchType, setSearchType] = useState("post");
   const [isUser, setIsUser] = useState(false);
 
-  // 타입별로 결과 분리 저장
+  const { user } = useAuth();
+
+  // 해시태그 관련
+  const {
+    getHashtagIdByKeyword,
+    subscribeHashtag,
+    unsubscribeHashtag,
+    getSubscribedHashtags,
+    hashtagList,
+    loading: hashtagLoading,
+  } = useHashtag();
+
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [currentHashtagId, setCurrentHashtagId] = useState(null);
+
+  // 검색 결과 관련
   const [postResults, setPostResults] = useState([]);
   const [hashtagResults, setHashtagResults] = useState([]);
   const [userResults, setUserResults] = useState([]);
-
-  // 각 타입별 페이지 정보
   const [postPage, setPostPage] = useState(0);
   const [hashtagPage, setHashtagPage] = useState(0);
   const [userPage, setUserPage] = useState(0);
-
-  // 각 타입별 hasMore
   const [postHasMore, setPostHasMore] = useState(false);
   const [hashtagHasMore, setHashtagHasMore] = useState(false);
   const [userHasMore, setUserHasMore] = useState(false);
@@ -29,7 +42,6 @@ const SearchPage = () => {
   const { searchHashtag, searchPost, searchUser, searched, loading, error } =
     useCommunitySearch();
 
-  // 현재 보여줄 결과 계산
   const currentResults = isUser
     ? userResults
     : searchType === "post"
@@ -42,20 +54,52 @@ const SearchPage = () => {
     ? postHasMore
     : hashtagHasMore;
 
-  // ✅ URL 파라미터가 있으면 자동 검색
+  //구독 목록 가져오기
+  useEffect(() => {
+    if (user && user.userId) {
+      getSubscribedHashtags();
+    }
+  }, [user]);
+
+  // URL 파라미터 감지
   useEffect(() => {
     if (urlKeyword) {
-      console.log("🔍 URL에서 검색어 감지:", urlKeyword);
-      setKeyword(urlKeyword); // 검색창에 표시
-      setSearchType("hashtag"); // 해시태그 탭으로 전환
-      setIsUser(false); // 유저 검색 체크 해제
-
-      // 자동 검색 실행
+      setKeyword(urlKeyword);
+      setSearchType("hashtag");
+      setIsUser(false);
       executeSearch(urlKeyword, "hashtag");
+    } else {
+      setSearchType("post");
     }
-  }, [urlKeyword]); // urlKeyword가 변경될 때마다 실행
+  }, [urlKeyword]);
 
-  //검색 실행 로직 분리
+  //해시태그 검색 결과가 나오면 tagId 조회 + 구독 상태 확인
+  useEffect(() => {
+    const fetchHashtagInfo = async () => {
+      if (searchType === "hashtag" && keyword && hashtagResults.length > 0) {
+        console.log("해시태그 ID 조회:", keyword);
+
+        // tagId 조회 (백엔드가 Long만 반환)
+        const tagId = await getHashtagIdByKeyword(keyword);
+
+        if (tagId) {
+          console.log("받은 해시태그 ID:", tagId);
+          setCurrentHashtagId(tagId);
+
+          //구독 목록에서 현재 해시태그가 있는지 확인
+          const isCurrentlySubscribed = hashtagList.some(
+            (hashtag) => hashtag.tagId === tagId
+          );
+
+          console.log("구독 상태:", isCurrentlySubscribed);
+          setIsSubscribed(isCurrentlySubscribed);
+        }
+      }
+    };
+
+    fetchHashtagInfo();
+  }, [searchType, keyword, hashtagResults, hashtagList]);
+
   const executeSearch = async (
     searchKeyword,
     type = searchType,
@@ -114,9 +158,63 @@ const SearchPage = () => {
     }
   };
 
-  // ✅ 기존 handleSearch는 executeSearch 호출
   const handleSearch = async (hasMore = false) => {
     executeSearch(keyword, searchType, hasMore);
+  };
+
+  // ✅ 구독/구독취소 처리
+  const handleSubscribe = async () => {
+    if (!user || !user.userId) {
+      alert("로그인이 필요합니다");
+      return;
+    }
+
+    if (!keyword.trim()) {
+      alert("검색어를 입력해주세요");
+      return;
+    }
+
+    try {
+      // tagId가 없으면 먼저 조회
+      let tagId = currentHashtagId;
+
+      if (!tagId) {
+        console.log("해시태그 ID 조회 중...");
+        tagId = await getHashtagIdByKeyword(keyword);
+
+        if (!tagId) {
+          alert("해시태그 정보를 찾을 수 없습니다");
+          return;
+        }
+
+        setCurrentHashtagId(tagId);
+      }
+
+      // 구독/구독취소 실행
+      if (isSubscribed) {
+        // 구독 취소
+        const success = await unsubscribeHashtag(tagId);
+        if (success) {
+          setIsSubscribed(false);
+          // 구독 목록 다시 불러오기
+          await getSubscribedHashtags();
+          alert("구독이 취소되었습니다");
+        }
+      } else {
+        // 구독
+        console.log("구독 요청:", { userId: user.userId, tagId });
+        const success = await subscribeHashtag(user.userId, tagId);
+
+        if (success) {
+          setIsSubscribed(true);
+          await getSubscribedHashtags();
+          alert(`#${keyword} 해시태그를 구독했습니다!`);
+        }
+      }
+    } catch (error) {
+      console.error("구독 처리 실패:", error);
+      alert("구독 처리에 실패했습니다");
+    }
   };
 
   const handleLoadMore = () => {
@@ -134,12 +232,10 @@ const SearchPage = () => {
     setPostHasMore(false);
     setHashtagHasMore(false);
     setUserHasMore(false);
-
-    // ✅ URL도 초기화 (선택사항)
+    setIsSubscribed(false);
+    setCurrentHashtagId(null);
     navigate("/community/search", { replace: true });
   };
-
-  // 결과는 일단 유지하면서 UI만 전환
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white">
@@ -171,7 +267,8 @@ const SearchPage = () => {
               className={isUser ? "text-rose-500" : "text-gray-600"}
             />
           </button>
-          <div className="relative flex-1">
+
+          <div className="relative flex-1 group">
             <input
               type="text"
               value={keyword}
@@ -182,26 +279,51 @@ const SearchPage = () => {
                   ? "#없이 입력하세요 (예: 일상)"
                   : "검색어를 입력하세요"
               }
-              className="w-full px-5 py-3 pr-10 border border-gray-300 rounded-3xl focus:ring-rose-400"
+              className="w-full px-5 py-3 pr-10 border border-gray-300 rounded-3xl focus:outline-none focus:ring-2 focus:ring-rose-400"
             />
             {keyword && (
               <button
                 onClick={handleClear}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-12 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <X size={20} />
               </button>
             )}
+            <button
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-rose-500 transition-colors"
+              onClick={() => handleSearch(false)}
+              disabled={loading}
+            >
+              <Search size={20} />
+            </button>
           </div>
 
-          <button
-            onClick={() => handleSearch(false)}
-            disabled={loading}
-            className="px-6 py-3 bg-rose-500 text-white rounded-lg hover:bg-rose-600 disabled:bg-gray-400 flex items-center gap-2"
-          >
-            <Search size={20} />
-            {loading ? "검색중..." : "검색"}
-          </button>
+          {/* 해시태그 검색일 때만 구독 버튼 */}
+          {searchType === "hashtag" && !isUser ? (
+            <button
+              onClick={handleSubscribe}
+              disabled={loading || hashtagLoading}
+              className={`px-6 py-3 rounded-lg flex items-center gap-2 transition-colors font-medium ${
+                isSubscribed
+                  ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  : "bg-rose-500 text-white hover:bg-rose-600"
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {isSubscribed ? (
+                <>
+                  <Check size={20} />
+                  구독중
+                </>
+              ) : (
+                <>
+                  <Plus size={20} />
+                  구독
+                </>
+              )}
+            </button>
+          ) : (
+            <div className="w-24"></div>
+          )}
         </div>
       </div>
 
@@ -210,20 +332,20 @@ const SearchPage = () => {
         <div className="flex gap-2 mb-6 border-b">
           <button
             onClick={() => setSearchType("post")}
-            className={`px-4 py-2 ${
+            className={`px-4 py-2 transition-colors ${
               searchType === "post"
-                ? "border-b-2 border-rose-500 font-semibold"
-                : ""
+                ? "border-b-2 border-rose-500 font-semibold text-rose-600"
+                : "text-gray-600 hover:text-gray-800"
             }`}
           >
             게시글
           </button>
           <button
             onClick={() => setSearchType("hashtag")}
-            className={`px-4 py-2 ${
+            className={`px-4 py-2 transition-colors ${
               searchType === "hashtag"
-                ? "border-b-2 border-rose-500 font-semibold"
-                : ""
+                ? "border-b-2 border-rose-500 font-semibold text-rose-600"
+                : "text-gray-600 hover:text-gray-800"
             }`}
           >
             해시태그
@@ -252,37 +374,31 @@ const SearchPage = () => {
             </h2>
           </div>
 
-          {/* 게시글 또는 해시태그 검색 결과 */}
           {!isUser && (searchType === "post" || searchType === "hashtag") && (
             <PostList posts={currentResults} />
           )}
 
-          {/* 유저 검색 결과 */}
           {isUser && (
             <div className="space-y-3">
               {currentResults.map((user) => (
                 <div
                   key={user.communityId}
                   className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-4"
+                  onClick={() =>
+                    navigate(`/community/profile/${user.communityId}`)
+                  }
                 >
-                  <div
-                    className="cursor-pointer"
-                    onClick={() =>
-                      navigate(`/community/profile/${user.communityId}`)
-                    }
-                  >
-                    {user.profileImage ? (
-                      <img
-                        src={user?.profileImage}
-                        alt={user?.userName}
-                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full border-2 bg-gray-200 flex items-center justify-center">
-                        <UserRound className="w-6 h-6 text-gray-400" />
-                      </div>
-                    )}
-                  </div>
+                  {user.profileImage ? (
+                    <img
+                      src={user.profileImage}
+                      alt={user.nickname}
+                      className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full border-2 bg-gray-200 flex items-center justify-center">
+                      <UserRound className="w-6 h-6 text-gray-400" />
+                    </div>
+                  )}
 
                   <div className="flex-1">
                     <p className="font-bold text-lg">{user.nickname}</p>
@@ -297,12 +413,11 @@ const SearchPage = () => {
             </div>
           )}
 
-          {/* 더보기 버튼 */}
           {currentHasMore && (
             <button
               onClick={handleLoadMore}
               disabled={loading}
-              className="w-full mt-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:bg-gray-50 font-medium"
+              className="w-full mt-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:bg-gray-50 font-medium transition-colors"
             >
               {loading ? "로딩 중..." : "더보기"}
             </button>
@@ -310,7 +425,6 @@ const SearchPage = () => {
         </div>
       )}
 
-      {/* 결과 없음 */}
       {currentResults.length === 0 && !loading && keyword && searched && (
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -323,7 +437,6 @@ const SearchPage = () => {
         </div>
       )}
 
-      {/* 초기 상태 */}
       {currentResults.length === 0 && !keyword && !loading && (
         <div className="text-center py-12">
           <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">

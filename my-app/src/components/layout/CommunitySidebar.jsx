@@ -1,52 +1,62 @@
 //사이드바
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, X } from "lucide-react";
+import { Search, X, Hash } from "lucide-react";
+import { useHashtag } from "../../hooks/useHashtag";
+import { useAuth } from "../../hooks/AuthContext";
 
 const CommunitySidebar = () => {
   const [keyword, setKeyword] = useState("");
   const navigate = useNavigate();
 
-  //검색 실행 함수
+  const { user } = useAuth();
+  const { getSubscribedHashtags, hashtagList, loading } = useHashtag();
+
+  useEffect(() => {
+    if (user && user.userId) {
+      getSubscribedHashtags();
+    }
+  }, [user]);
+
   const handleSearch = () => {
     if (!keyword.trim()) {
       alert("검색어를 입력해주세요!");
       return;
     }
-    // 검색어와 함께 검색 페이지로 이동
     navigate(`/community/search/${keyword.trim()}`);
   };
 
-  //검색창 비우기
   const handleClear = () => {
     setKeyword("");
   };
 
-  //Enter 키 처리
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       handleSearch();
     }
   };
 
+  const handleHashtagClick = (hashtag) => {
+    // #을 제거하고 검색
+    const cleanTag = hashtag.startsWith("#") ? hashtag.slice(1) : hashtag;
+    navigate(`/community/search/${cleanTag}`);
+  };
+
   return (
     <div className="xl:block hidden">
-      <div className="min-w-80 border-r flex flex-col h-full bg-white items-center p-4">
+      <div className="min-w-80 border-r flex flex-col h-full bg-white p-4">
         {/*검색창 컨테이너 */}
-        <div className="w-64 my-4">
-          {/*검색 input + 아이콘들 */}
+        <div className="w-full my-4">
           <div className="relative">
-            {/* 검색 input */}
             <input
               type="text"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="검색어를 입력하세요"
-              className=" w-full pl-5 pr-14 py-3 border border-gray-300 rounded-3xl focus:outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent"
+              className="w-full pl-5 pr-14 py-3 border border-gray-300 rounded-3xl focus:outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent"
             />
 
-            {/* 오른쪽 X 버튼 (검색어가 있을 때만) */}
             {keyword && (
               <button
                 onClick={handleClear}
@@ -55,9 +65,9 @@ const CommunitySidebar = () => {
                 <X size={20} />
               </button>
             )}
-            {/* 왼쪽 돋보기 아이콘 */}
+
             <button
-              className="absolute right-4 top-1/2 -translate-y-1/2"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-rose-500 transition-colors"
               onClick={handleSearch}
             >
               <Search size={20} />
@@ -65,19 +75,70 @@ const CommunitySidebar = () => {
           </div>
         </div>
 
-        {/* 기존 링크 (일단 지금은 유지)*/}
         <Link
           to="/community/search"
-          className="text-gray-600 hover:text-rose-500 transition-colors"
+          className="text-gray-600 hover:text-rose-500 transition-colors mb-4"
         >
-          <button className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg">
+          <button className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg w-full">
             <Search size={20} />
             <span>고급 검색</span>
           </button>
         </Link>
 
-        <div className="mt-40 w-full border-t-2 text-gray-700">
-          <h>구독 중인 해시태그</h>
+        {/* 구독 중인 해시태그 섹션 */}
+        <div className="mt-6 w-full border-t-2 pt-4">
+          <h3 className="text-gray-700 font-semibold mb-3 flex items-center gap-2">
+            <Hash size={20} className="text-rose-500" />
+            구독 중인 해시태그
+          </h3>
+
+          {/* 로딩 상태 */}
+          {loading && (
+            <div className="text-center py-4 text-gray-500 text-sm">
+              로딩 중...
+            </div>
+          )}
+
+          {/* 로그인 안 했을 때 */}
+          {!user && (
+            <div className="text-center py-4 text-gray-500 text-sm">
+              로그인 후 이용 가능합니다
+            </div>
+          )}
+
+          {/* 구독한 해시태그가 없을 때 */}
+          {!loading && user && hashtagList && hashtagList.length === 0 && (
+            <div className="text-center py-4 text-gray-500 text-sm">
+              구독한 해시태그가 없습니다
+            </div>
+          )}
+
+          {/* ✅ 해시태그 리스트 - 문자열 배열 처리 */}
+          {!loading && hashtagList && hashtagList.length > 0 && (
+            <div className="space-y-1 max-h-96 overflow-y-auto">
+              {hashtagList.map((hashtag, index) => {
+                // #을 제거한 버전 (키워드만)
+                const cleanTag = hashtag.startsWith("#")
+                  ? hashtag.slice(1)
+                  : hashtag;
+
+                return (
+                  <button
+                    key={index} // ✅ index를 key로 사용 (tagId가 없으므로)
+                    onClick={() => handleHashtagClick(hashtag)}
+                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-rose-50 transition-colors group flex items-center gap-2"
+                  >
+                    <span className="text-rose-500 group-hover:text-rose-600 font-medium">
+                      #
+                    </span>
+                    <span className="text-gray-700 group-hover:text-rose-600 text-sm">
+                      {cleanTag}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>

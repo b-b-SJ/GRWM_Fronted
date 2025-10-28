@@ -1,23 +1,78 @@
 //구독중인 해시태그 탐라
-
 import React, { useState, useEffect } from "react";
-import PostingStyle from "./PostingStyle";
-import { usePost } from "../../hooks/usePost";
-// MainTimeLine.jsx
-const HashTimeLine = () => {
-  const { posts, loading, error, getUserPostList } = usePost();
+import PostList from "./PostList";
+import { useHashtag } from "../../hooks/useHashtag";
 
-  {
-    /**
-      useEffect(() => {
-    getUserPostList(); // 팔로잉한 사람들의 게시물만 가져오기
+const HashtagTimeLine = () => {
+  const { getSubscribedHashtagPosts, hashtagPosts, loading, error } =
+    useHashtag();
+
+  // 구독 해시태그 게시물 불러오기
+  useEffect(() => {
+    const loadHashtagPosts = async () => {
+      try {
+        await getSubscribedHashtagPosts();
+      } catch (error) {
+        console.error("구독 해시태그 게시물 로드 실패:", error);
+      }
+    };
+
+    loadHashtagPosts();
   }, []);
 
-  if (loading) return <div>로딩 중...</div>;
-  if (error) return <div>에러: {error}</div>;
-    */
+  // ✅ 게시물 변경 핸들러
+  const handlePostsChange = async (mode, data) => {
+    console.log(`해시태그 타임라인 게시물 ${mode}됨:`, data);
+
+    // create나 delete는 목록 새로고침
+    if (mode === "create" || mode === "delete") {
+      await getSubscribedHashtagPosts();
+    }
+    // edit는 PostList가 이미 처리
+  };
+
+  // 로딩 상태
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-lg text-gray-500">로딩 중...</div>
+      </div>
+    );
   }
 
-  return <div>준비중</div>;
+  // 에러 상태
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-lg text-red-500">에러: {error}</div>
+      </div>
+    );
+  }
+
+  // 구독한 해시태그가 없거나 게시물이 없을 때
+  if (!hashtagPosts) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-4xl">🏷️</span>
+          </div>
+          <p className="text-lg text-gray-600 mb-2">
+            구독 중인 해시태그의 게시물이 없습니다
+          </p>
+          <p className="text-sm text-gray-500">
+            관심있는 해시태그를 구독해보세요!
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <PostList posts={hashtagPosts || []} onPostsChange={handlePostsChange} />
+    </div>
+  );
 };
-export default HashTimeLine;
+
+export default HashtagTimeLine;
