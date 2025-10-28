@@ -232,13 +232,19 @@ const PostingModal = ({
           <div className="flex flex-wrap gap-2 mb-2">
             {hashtags.map((tag, index) => (
               <span
-                key={index}
+                key={`${tag}-${index}`}
                 className="inline-flex items-center gap-1 px-3 py-1 bg-rose-100 text-rose-600 rounded-full"
               >
                 #{tag}
                 <button
-                  onClick={() => removeTag(index)}
-                  className="hover:text-rose-700 p-1 -m-1"
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    removeTag(index);
+                  }}
+                  className="hover:text-rose-700 hover:bg-rose-200 rounded-full p-1 -m-1 transition-colors"
+                  title="해시태그 삭제"
                 >
                   <X size={15} />
                 </button>
@@ -277,7 +283,7 @@ const PostingModal = ({
             className="hidden"
           />
 
-          {/* ✅ 공개 범위 선택 - 컴팩트하고 예쁘게 */}
+          {/*공개 범위 선택*/}
           <div className="relative">
             <button
               onClick={() => setShowVisibilityMenu(!showVisibilityMenu)}
@@ -293,7 +299,7 @@ const PostingModal = ({
               />
             </button>
 
-            {/* ✅ 드롭다운 메뉴 - 작고 깔끔하게 */}
+            {/* 드롭다운 메뉴 */}
             {showVisibilityMenu && (
               <div className="absolute bottom-full left-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden min-w-[160px]">
                 {visibilityOptions.map((option) => (

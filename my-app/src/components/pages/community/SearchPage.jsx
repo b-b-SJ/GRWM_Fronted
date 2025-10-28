@@ -40,7 +40,7 @@ const SearchPage = () => {
     ? postHasMore
     : hashtagHasMore;
 
-  // ✅ 검색 실행 함수 수정
+  //  검색 실행 함수
   const handleSearch = async (hasMore = false) => {
     if (!keyword.trim()) {
       alert("검색어를 입력해주세요!");
@@ -51,6 +51,7 @@ const SearchPage = () => {
     let pageToLoad;
 
     if (isUser) {
+      //유저 검색
       pageToLoad = hasMore ? userPage : 0;
       result = await searchUser(keyword, pageToLoad, 30);
 

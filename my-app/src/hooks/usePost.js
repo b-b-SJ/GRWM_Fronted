@@ -1,349 +1,363 @@
 import React, { useState, useCallback } from "react";
 import { useAuth } from "./AuthContext";
+
 export function usePost() {
   const { getAuthHeaders } = useAuth();
   const [posts, setPosts] = useState(null);
-  {
-    /* 더미 백업
-  [
-    {
-      postId: "12",
-
-      user: {
-        communityId: 4,
-        nickname: "유유상종",
-        profileImage:
-          "https://i.ibb.co/FbWvz1bB/2025030118134100-02-CB906-EA538-A35643-C1-E1484-C4-B947-D.jpg",
-      },
-      content: {
-        text: "새로 인테리어 공사 받은 우리집 화장실",
-        images: [],
-      },
-      hashtags: ["#글라햄일상"],
-      visibility: "public",
-      likeCount: 0,
-      commentCount: 0,
-      isEdited: false,
-      createdAt: new Date(),
-      updatedAt: null, // 없어도 되는 값은 null로 시작할 수 있습니다.
-    },
-  ]
-  
-  */
-  }
   const [likedUsers, setLikedUsers] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   //기본 타임라인에 뜰 게시글 부르는 거
-  const getPostList = useCallback(async (page = 0, size = 30) => {
-    setLoading(true);
-    setError(null);
+  const getPostList = useCallback(
+    async (page = 0, size = 30) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const response = await fetch(
-        `http://localhost:8080/api/community-posts?page=${page}&size=${size}`,
-        {
+      try {
+        const response = await fetch(
+          `http://localhost:8080/api/community-posts?page=${page}&size=${size}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              ...getAuthHeaders(),
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setPosts(data);
+
+          console.log("게시물 목록 조회 성공", data);
+        } else {
+          console.error(" 게시물 목록 조회 실패:", response.status);
+          setError("게시물을 불러오는데 실패했습니다");
+        }
+      } catch (error) {
+        console.error(" 게시물 목록 조회 에러:", error);
+        setError("네트워크 에러가 발생했습니다");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [getAuthHeaders]
+  );
+
+  const createPost = useCallback(
+    async (postData) => {
+      try {
+        const response = await fetch(
+          `http://localhost:8080/api/community-posts`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...getAuthHeaders(),
+            },
+            body: JSON.stringify(postData),
+          }
+        );
+        if (response.ok) {
+          const newPost = await response.json();
+
+          console.log("게시글 업로드 성공:", newPost);
+          return newPost;
+        } else {
+          console.error("게시글 업로드에 실패했습니다");
+        }
+      } catch (error) {
+        console.error("포스팅 업로드 에러", error);
+      } finally {
+      }
+    },
+    [getAuthHeaders]
+  );
+
+  const showPostDetail = useCallback(
+    async (postId) => {
+      if (!postId) {
+        console.error("postId 필요합니다");
+        return;
+      }
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch(`/api/community-posts/${postId}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
             ...getAuthHeaders(),
           },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("디테일", data);
+          return data;
+        } else {
+          console.error("게시글 조회에 실패했습니다");
+          return null;
         }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setPosts(data);
-
-        console.log("게시물 목록 조회 성공", data);
-      } else {
-        console.error(" 게시물 목록 조회 실패:", response.status);
-        setError("게시물을 불러오는데 실패했습니다");
+      } catch (error) {
+        console.error("포스팅 조회 에러", error);
+        return null;
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error(" 게시물 목록 조회 에러:", error);
-      setError("네트워크 에러가 발생했습니다");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [getAuthHeaders]
+  );
 
-  const createPost = useCallback(async (postData) => {
-    try {
-      const response = await fetch(
-        `http://localhost:8080/api/community-posts`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...getAuthHeaders(),
-          },
-          body: JSON.stringify(postData),
+  const getUserPosts = useCallback(
+    async (communityId, page = 0, size = 30) => {
+      if (!communityId) {
+        console.error("communityId 필요합니다");
+        return;
+      }
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch(
+          `http://localhost:8080/api/community-posts/user/${communityId}?page=${page}&size=${size}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              ...getAuthHeaders(),
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("무슨 글을 썻는교", data);
+          setPosts(data.postList);
+        } else {
+          console.error("게시글 조회에 실패했습니다");
         }
-      );
-      if (response.ok) {
-        const newPost = await response.json();
-
-        console.log("게시글 업로드 성공:", newPost);
-        return newPost;
-      } else {
-        console.error("게시글 업로드에 실패했습니다");
+      } catch (error) {
+        console.error("타임라인 조회 에러", error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("포스팅 업로드 에러", error);
-    } finally {
-    }
-  }, []);
+    },
+    [getAuthHeaders]
+  );
 
-  const showPostDetail = useCallback(async (postId) => {
-    //확인 필요
-    if (!postId) {
-      console.error("postId 필요합니다");
-      return;
-    }
-    setLoading(true);
-    setError(null);
+  // ✅ 개선된 게시물 수정 - 상세 디버깅 로그 추가
+  const updatePost = useCallback(
+    async (postId, postData) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      //특정 유저가 작성한 게시물 리스트
-      const response = await fetch(`/api/community-posts/${postId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeaders(),
-        },
+      console.log("🔄 게시물 수정 요청 시작:", {
+        postId,
+        요청데이터: postData,
+        해시태그: postData.hashtags,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log("디테일", data);
-        return data;
-      } else {
-        console.error("게시글 조회에 실패했습니다");
+      try {
+        const response = await fetch(
+          `http://localhost:8080/api/community-posts/${postId}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              ...getAuthHeaders(),
+            },
+            body: JSON.stringify(postData),
+          }
+        );
+
+        console.log("📥 서버 응답 상태:", response.status);
+
+        if (response.ok) {
+          const updatedPost = await response.json();
+
+          console.log("✅ 서버에서 받은 수정된 게시물:", updatedPost);
+          console.log("🏷️ 서버가 반환한 해시태그:", updatedPost.hashtags);
+          console.log("🆚 비교:", {
+            보낸해시태그: postData.hashtags,
+            받은해시태그: updatedPost.hashtags,
+            일치여부:
+              JSON.stringify(postData.hashtags) ===
+              JSON.stringify(updatedPost.hashtags),
+          });
+
+          return updatedPost;
+        } else {
+          const errorText = await response.text();
+          console.error("❌ 게시글 수정 실패:", response.status, errorText);
+          setError("게시글 수정에 실패했습니다");
+          return null;
+        }
+      } catch (error) {
+        console.error("❌ 게시글 수정 에러:", error);
+        setError("네트워크 에러가 발생했습니다");
         return null;
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("포스팅 조회 에러", error);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  //얘는 불러오는 단위 설정 필요함 - 새로 업데이트 된 거에도 포함
-  const getUserPosts = useCallback(async (communityId, page = 0, size = 30) => {
-    //확인 필요
-    if (!communityId) {
-      console.error("communityId 필요합니다");
-      return;
-    }
-    setLoading(true);
-    setError(null);
-
-    try {
-      //특정 유저가 작성한 게시물 리스트
-      const response = await fetch(
-        `http://localhost:8080/api/community-posts/user/${communityId}?page=${page}&size=${size}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...getAuthHeaders(),
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("무슨 글을 썻는교", data);
-        setPosts(data.postList);
-      } else {
-        console.error("게시글 조회에 실패했습니다");
-      }
-    } catch (error) {
-      console.error("타임라인 조회 에러", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // 게시물 수정
-  const updatePost = useCallback(async (postId, postData) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch(
-        `http://localhost:8080/api/community-posts/${postId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            ...getAuthHeaders(),
-          },
-          body: JSON.stringify(postData),
-        }
-      );
-
-      if (response.ok) {
-        const updatedPost = await response.json();
-
-        console.log(" 게시글 수정 성공");
-        return updatedPost;
-      } else {
-        console.error(" 게시글 수정 실패:", response.status);
-        setError("게시글 수정에 실패했습니다");
-      }
-    } catch (error) {
-      console.error(" 게시글 수정 에러:", error);
-      setError("네트워크 에러가 발생했습니다");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [getAuthHeaders]
+  );
 
   // 게시물 삭제
-  const deletePost = useCallback(async (postId) => {
-    setLoading(true);
-    setError(null);
+  const deletePost = useCallback(
+    async (postId) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const response = await fetch(
-        `http://localhost:8080/api/community-posts/${postId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            ...getAuthHeaders(),
-          },
+      try {
+        const response = await fetch(
+          `http://localhost:8080/api/community-posts/${postId}`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              ...getAuthHeaders(),
+            },
+          }
+        );
+
+        if (response.ok) {
+          console.log("게시글 삭제 성공");
+          return true;
+        } else {
+          console.error(" 게시글 삭제 실패:", response.status);
+          setError("게시글 삭제에 실패했습니다");
+          return false;
         }
-      );
-
-      if (response.ok) {
-        console.log("게시글 삭제 성공");
-        return true;
-      } else {
-        console.error(" 게시글 삭제 실패:", response.status);
-        setError("게시글 삭제에 실패했습니다");
+      } catch (error) {
+        console.error(" 게시글 삭제 에러:", error);
+        setError("네트워크 에러가 발생했습니다");
         return false;
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error(" 게시글 삭제 에러:", error);
-      setError("네트워크 에러가 발생했습니다");
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [getAuthHeaders]
+  );
 
-  const likePost = useCallback(async (postId) => {
-    setLoading(true);
-    setError(null);
+  const likePost = useCallback(
+    async (postId) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const response = await fetch(
-        `http://localhost:8080/api/community-posts/${postId}/like`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...getAuthHeaders(),
-          },
+      try {
+        const response = await fetch(
+          `http://localhost:8080/api/community-posts/${postId}/like`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...getAuthHeaders(),
+            },
+          }
+        );
+
+        if (response.ok) {
+          const likeCount = await response.json();
+          console.log("좋아요 성공", likeCount);
+          return likeCount;
+        } else {
+          console.error(" 좋아요 실패:", response.status);
+          setError("좋아요를 실패했어요");
         }
-      );
-
-      if (response.ok) {
-        const likeCount = await response.json();
-        console.log("좋아요 성공", likeCount);
-        return likeCount;
-      } else {
-        console.error(" 좋아요 실패:", response.status);
-        setError("좋아요를 실패했어요");
+      } catch (error) {
+        console.error(" 에러:", error);
+        setError("네트워크 에러가 발생했습니다");
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error(" 에러:", error);
-      setError("네트워크 에러가 발생했습니다");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [getAuthHeaders]
+  );
 
-  const cancelLike = useCallback(async (postId) => {
-    setLoading(true);
-    setError(null);
+  const cancelLike = useCallback(
+    async (postId) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const response = await fetch(
-        `http://localhost:8080/api/community-posts/${postId}/like`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            ...getAuthHeaders(),
-          },
+      try {
+        const response = await fetch(
+          `http://localhost:8080/api/community-posts/${postId}/like`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              ...getAuthHeaders(),
+            },
+          }
+        );
+
+        if (response.ok) {
+          const likeCount = await response.json();
+          console.log("좋아요 취소 성공");
+          return likeCount;
+        } else {
+          console.error(" 좋아요 취소 실패:", response.status);
+          setError("좋아요 취소를 실패했어요");
         }
-      );
-
-      if (response.ok) {
-        const likeCount = await response.json();
-        console.log("좋아요 취소 성공");
-        return likeCount;
-      } else {
-        console.error(" 좋아요 취소 실패:", response.status);
-        setError("좋아요 취소를 실패했어요");
+      } catch (error) {
+        console.error(" 에러:", error);
+        setError("네트워크 에러가 발생했습니다");
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error(" 에러:", error);
-      setError("네트워크 에러가 발생했습니다");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [getAuthHeaders]
+  );
 
-  const getPostLlikedUserList = useCallback(async (postId) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(
-        `http://localhost:8080/api/community-posts/${postId}/likes`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...getAuthHeaders(),
-          },
+  const getPostLikedUserList = useCallback(
+    async (postId) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(
+          `http://localhost:8080/api/community-posts/${postId}/likes`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              ...getAuthHeaders(),
+            },
+          }
+        );
+        if (response.ok) {
+          const likes = response.json();
+          console.log("좋아요한 유저 반환 성공");
+          setLikedUsers(likes);
+        } else {
+          console.error(" 좋아요 유저 반환 실패:", response.status);
+          setError("좋아요한 유저 반환을 실패했어요");
         }
-      );
-      if (response.ok) {
-        const likes = response.json();
-        console.log("좋아요한 유저 반환 성공");
-        setLikedUsers(likes);
-      } else {
-        console.error(" 좋아요 유저 반환 실패:", response.status);
-        setError("좋아요한 유저 반환을 실패했어요");
+      } catch (error) {
+        console.error(" 에러:", error);
+        setError("네트워크 에러가 발생했습니다");
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error(" 에러:", error);
-      setError("네트워크 에러가 발생했습니다");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [getAuthHeaders]
+  );
 
   return {
-    posts, // 게시물 배열
-    loading, // 로딩 상태
-    error, // 에러 메시지
-    getPostList, // 전체 게시물 가져오기
-    getUserPosts, // 특정 사용자 게시물 가져오기
-    createPost, // 게시물 생성
-    updatePost, // 게시물 수정
-    deletePost, // 게시물 삭제
+    posts,
+    loading,
+    error,
+    getPostList,
+    getUserPosts,
+    createPost,
+    updatePost,
+    deletePost,
     likePost,
     cancelLike,
-    getPostLlikedUserList,
-
+    getPostLikedUserList,
     showPostDetail,
   };
 }

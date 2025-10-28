@@ -26,7 +26,7 @@ Response: {List<Post> posts, int totalCount, boolean hasMore}
       setError(null);
       try {
         const response = await fetch(
-          `/api/search/hashtags?keyword=${encodeURIComponent(
+          `http://localhost:8080/api/search/hashtags?keyword=${encodeURIComponent(
             keyword
           )}&page=${page}&size=${size}`,
           {
