@@ -42,8 +42,10 @@ const PlannerPage = () => {
           />
         </button>
         {plannerSidebarOpen === true && (
+          //<PlannerSidebar className="" viewMode={viewMode} >
+
           <PlannerSidebar
-            sidebarClassName="xl:block hidden"
+            sidebarClassName="md:block hidden"
             viewMode={viewMode}
             // year={calendar.year}
             //month={calendar.month}
@@ -73,6 +75,7 @@ const PlannerPage = () => {
             currentMonthName={calendar.currentMonthName}
             currentWeekNum={calendar.currentWeekNum}
             year={calendar.year}
+            findWeek={calendar.findWeek}
             weekFound={calendar.weekFound}
             //weekNames={calendar.weekNames}
             month={calendar.month}
@@ -85,7 +88,7 @@ const PlannerPage = () => {
           />
         </div>
 
-        {/**여기에 그룹 플래너 사이드바 들어가면 될 것 같다..고 생각하는데 아닐 수도....*/}
+        {/**여기에 그 뭐냐 그룹 플래너 사이드바 들어가면 될 것 같다는...아닌가..대가리가 아픈 것 같다는 */}
         {openScModal && (
           <ScheduleModal
             openScModal={openScModal}

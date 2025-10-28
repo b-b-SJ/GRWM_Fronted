@@ -20,7 +20,7 @@ const Navigation = ({ toggleSidebar, currentUser, currentPage }) => {
             label: '플래너',
             path: '/planner',
             subMenus: [
-                { label: '개인 플래너', path: '/planner/personal' },
+                { label: '개인 플래너', path: '/planner' },
                 { label: '공유 플래너', path: '/planner/shared' }
             ]
         },
@@ -88,7 +88,7 @@ const Navigation = ({ toggleSidebar, currentUser, currentPage }) => {
     // 서브메뉴 클릭 시 이동
     const handleSubMenuClick = (path) => {
         // workspace와 tracker 관련 서브메뉴는 구현되어 있으므로 이동 허용
-        if (path.startsWith('/workspace') || path.startsWith('/tracker')) {
+        if (path.startsWith('/workspace') || path.startsWith('/tracker')|| path.startsWith('/planner')) {
             navigate(path);
         } else {
             // 다른 서브메뉴는 아직 구현되지 않음을 알림
@@ -143,7 +143,7 @@ const Navigation = ({ toggleSidebar, currentUser, currentPage }) => {
                 {/* 메인 로고 : 클릭 시 메인 페이지로 이동 */}
                 <Link to="/main" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
                     <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">G</span>
+                        <span className="text-white font-bold text-sm">🚀</span>
                     </div>
                     <h1 className="text-xl font-semibold text-gray-800">GRWM</h1>
                 </Link>

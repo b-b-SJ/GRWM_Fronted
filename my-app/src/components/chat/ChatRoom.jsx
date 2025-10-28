@@ -1,28 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MoreVertical, Users, ArrowLeft, Edit, Trash2, MessageSquare, LogOut } from 'lucide-react';
+import { MoreVertical, Users, ArrowLeft, Edit, Trash2, MessageSquare, LogOut, RefreshCw, AlertCircle } from 'lucide-react';
 import { useChatState } from '../../hooks/useChatState';
 import ChatMessages from './ChatMessages';
 import MessageInput from './MessageInput';
 
-/**
- * ChatRoom 컴포넌트 - useChatState 연동, 말풍선 스타일 채팅 UI
- * - useChatState의 메시지 상태와 함수들을 활용
- * - WebSocket을 통한 실시간 메시지 처리
- */
 const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
     const {
         messages,
         connectionStatus,
+        reconnectAttempts,
         currentUser,
         sendMessage,
         requestDeleteMessage,
         replyTo,
         setReplyTo,
+        setMessages,
         leaveChatRoom,
         editChatRoomName,
         deleteChatRoom,
         createAnnouncement,
-        getMainAnnouncement
+        getMainAnnouncement,
+        getChatRoomMembers,
+        reconnectWebSocket
     } = useChatState();
 
     const [loading, setLoading] = useState(true);
@@ -30,10 +29,13 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
     const [showMenu, setShowMenu] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+    const [showMembersModal, setShowMembersModal] = useState(false);
     const [editRoomName, setEditRoomName] = useState('');
     const [editDescription, setEditDescription] = useState('');
     const [announcementContent, setAnnouncementContent] = useState('');
     const [mainAnnouncement, setMainAnnouncement] = useState(null);
+    const [members, setMembers] = useState([]);
+    const [loadingMembers, setLoadingMembers] = useState(false);
 
     const menuRef = useRef(null);
 
@@ -41,10 +43,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
         room.roomId == chatRoomId || room.chatRoomId == chatRoomId
     );
 
-    // 사용자가 방장인지 확인 - 백엔드에서 isManager로 전달
-    const isOwner = currentRoom?.isManager || currentRoom?.isOwner || currentRoom?.ownerId === currentUser.userId;
-
-    // chatRoomId에 해당하는 메시지들 (useChatState에서 관리)
+    const isManager = currentRoom?.isManager === true;
     const roomMessages = messages[chatRoomId] || [];
 
     useEffect(() => {
@@ -122,6 +121,31 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
         }
     };
 
+    const loadMembers = async () => {
+        setLoadingMembers(true);
+        try {
+            const memberList = await getChatRoomMembers(chatRoomId);
+            setMembers(memberList);
+        } catch (error) {
+            console.error('참여자 목록 조회 실패:', error);
+            alert(`참여자 목록 조회 실패: ${error.message}`);
+        } finally {
+            setLoadingMembers(false);
+        }
+    };
+
+    const handleShowMembers = () => {
+        setShowMembersModal(true);
+        setShowMenu(false);
+        loadMembers();
+    };
+
+    const handleReconnect = () => {
+        if (reconnectWebSocket) {
+            reconnectWebSocket();
+        }
+    };
+
     useEffect(() => {
         if (chatRoomId) {
             setLoading(true);
@@ -140,7 +164,8 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
 
     const handleSendMessage = (content) => {
         try {
-            sendMessage(chatRoomId, content, replyTo?.id);
+            const replyMessageId = replyTo?.id || null;
+            sendMessage(chatRoomId, content, replyMessageId);
             setReplyTo(null);
         } catch (error) {
             console.error('메시지 전송 실패:', error);
@@ -148,14 +173,27 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
         }
     };
 
-    const handleDeleteMessage = (messageId, deleteForEveryone = false) => {
+    // 메시지 삭제 핸들러 - 5분 기준 처리
+    const handleDeleteMessage = async (messageId, canDeleteForEveryone) => {
         try {
-            if (deleteForEveryone) {
-                requestDeleteMessage(chatRoomId, messageId);
+            console.log('메시지 삭제 시도:', { messageId, canDeleteForEveryone });
+
+            if (canDeleteForEveryone) {
+                // 5분 이내 - WebSocket으로 모두에게서 삭제
+                if (window.confirm('모든 사용자에게서 이 메시지를 삭제하시겠습니까?')) {
+                    await requestDeleteMessage(chatRoomId, messageId, true);
+                    console.log('모두에게서 삭제 요청 전송');
+                }
+            } else {
+                // 5분 경과 - 나에게서만 삭제
+                if (window.confirm('나에게서만 이 메시지를 삭제하시겠습니까?\n(다른 사용자에게는 계속 표시됩니다)')) {
+                    await requestDeleteMessage(chatRoomId, messageId, false);
+                    console.log('나에게서만 삭제 완료');
+                }
             }
         } catch (error) {
             console.error('메시지 삭제 실패:', error);
-            setError('메시지 삭제에 실패했습니다.');
+            alert(error.message || '메시지 삭제에 실패했습니다.');
         }
     };
 
@@ -215,6 +253,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
 
     return (
         <div className="flex-1 flex flex-col bg-white h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)] overflow-hidden">
+            {/* 헤더 */}
             <div className="bg-white border-b px-6 py-4 flex items-center justify-between flex-shrink-0">
                 <div className="flex items-center space-x-4">
                     <button onClick={onBack} className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors">
@@ -231,6 +270,9 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                             </div>
                             {currentRoom.isPrivate && <span>• 비공개</span>}
                             <span>• {connectionStatus === 'connected' ? '온라인' : connectionStatus === 'error' ? '오프라인' : '연결 중'}</span>
+                            {reconnectAttempts > 0 && connectionStatus === 'disconnected' && (
+                                <span className="text-amber-600">• 재연결 중 ({reconnectAttempts}/5)</span>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -241,11 +283,15 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                     {showMenu && (
                         <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
                             <div className="py-1">
+                                <button onClick={handleShowMembers} className="flex items-center space-x-2 w-full px-4 py-2 text-left text-sm hover:bg-gray-100">
+                                    <Users size={16} />
+                                    <span>참여자 목록</span>
+                                </button>
                                 <button onClick={() => { setShowAnnouncementModal(true); setShowMenu(false); }} className="flex items-center space-x-2 w-full px-4 py-2 text-left text-sm hover:bg-gray-100">
                                     <MessageSquare size={16} />
                                     <span>공지 올리기</span>
                                 </button>
-                                {isOwner && (
+                                {isManager && (
                                     <>
                                         <button onClick={handleEditRoom} className="flex items-center space-x-2 w-full px-4 py-2 text-left text-sm hover:bg-gray-100">
                                             <Edit size={16} />
@@ -268,35 +314,72 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                 </div>
             </div>
 
+            {/* 공지사항 영역 */}
             {mainAnnouncement && (
                 <div className="bg-amber-50 px-6 py-3 border-b border-amber-200 flex-shrink-0">
-                    <div className="flex items-start justify-between space-x-4">
-                        <div className="flex items-start space-x-2 flex-1">
-                            <MessageSquare size={16} className="text-amber-600 mt-0.5 flex-shrink-0" />
-                            <div className="flex-1">
-                                <p className="text-sm font-medium text-amber-800 mb-1">공지사항</p>
-                                <p className="text-sm text-amber-700 whitespace-pre-wrap">{mainAnnouncement.content}</p>
+                    <div className="flex items-start space-x-2">
+                        <MessageSquare size={16} className="text-amber-600 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                                <p className="text-sm font-medium text-amber-800">공지사항</p>
+                                <p className="text-xs text-amber-600 flex-shrink-0 ml-4">
+                                    {new Date(mainAnnouncement.createdAt).toLocaleString('ko-KR')}
+                                </p>
+                            </div>
+                            <div className="flex items-start justify-between gap-4">
+                                <p className="text-sm text-amber-700 whitespace-pre-wrap flex-1">
+                                    {mainAnnouncement.content}
+                                </p>
+                                <span className="text-xs text-amber-600 flex-shrink-0 self-start">
+                                    {mainAnnouncement.writerChatName || '관리자'}
+                                </span>
                             </div>
                         </div>
-                        <p className="text-xs text-amber-600 flex-shrink-0">
-                            {new Date(mainAnnouncement.createdAt).toLocaleString('ko-KR')}
-                        </p>
                     </div>
                 </div>
             )}
 
+            {/* 연결 상태 알림 */}
             {connectionStatus === 'error' && (
-                <div className="bg-red-50 px-6 py-2 border-b flex-shrink-0">
-                    <p className="text-sm text-red-700">실시간 채팅 서버에 연결할 수 없습니다. 테스트 모드로 동작합니다.</p>
+                <div className="bg-red-50 px-6 py-3 border-b flex-shrink-0">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                            <AlertCircle size={16} className="text-red-600" />
+                            <p className="text-sm text-red-700">
+                                실시간 채팅 서버에 연결할 수 없습니다.
+                                {reconnectAttempts >= 5 && ' 최대 재연결 횟수를 초과했습니다.'}
+                            </p>
+                        </div>
+                        <button
+                            onClick={handleReconnect}
+                            className="flex items-center space-x-2 px-3 py-1.5 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
+                        >
+                            <RefreshCw size={14} />
+                            <span>재연결</span>
+                        </button>
+                    </div>
                 </div>
             )}
 
             {connectionStatus === 'connecting' && (
                 <div className="bg-yellow-50 px-6 py-2 border-b flex-shrink-0">
-                    <p className="text-sm text-yellow-700">채팅 서버에 연결하는 중...</p>
+                    <div className="flex items-center space-x-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
+                        <p className="text-sm text-yellow-700">채팅 서버에 연결하는 중...</p>
+                    </div>
                 </div>
             )}
 
+            {connectionStatus === 'disconnected' && reconnectAttempts > 0 && reconnectAttempts < 5 && (
+                <div className="bg-amber-50 px-6 py-2 border-b flex-shrink-0">
+                    <div className="flex items-center space-x-2">
+                        <RefreshCw size={16} className="text-amber-600 animate-spin" />
+                        <p className="text-sm text-amber-700">자동 재연결 중... ({reconnectAttempts}/5)</p>
+                    </div>
+                </div>
+            )}
+
+            {/* 메시지 영역 */}
             {roomMessages.length === 0 ? (
                 <div className="flex-1 flex items-center justify-center p-8 bg-gray-50">
                     <div className="text-center">
@@ -309,21 +392,24 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                 <ChatMessages
                     messages={roomMessages.map(msg => {
                         const isOwnMessage = (
-                            // senderId가 존재하고, 두 ID가 일치하는지 확인
                             msg.senderId !== undefined && msg.senderId === currentUser.userId
                         );
 
-                        console.log('--- 메시지 디버깅 시작 ---');
-                        console.log(`메시지 ID: ${msg.id}`);
-                        console.log(`발신자 ID: ${msg.senderId} (타입: ${typeof msg.senderId})`);
-                        console.log(`현재 유저 ID: ${currentUser.userId} (타입: ${typeof currentUser.userId})`);
-                        console.log(`두 ID가 일치하는가?: ${msg.senderId === currentUser.userId}`);
-                        console.log(`최종 isOwnMessage 값: ${isOwnMessage}`);
-                        console.log('--- 메시지 디버깅 끝 ---');
+                        if (msg.type === 'system') {
+                            return msg;
+                        }
+
+                        let replyToMessage = null;
+                        if (msg.replyMessageId || msg.replyToMessageId) {
+                            const replyId = msg.replyMessageId || msg.replyToMessageId;
+                            replyToMessage = roomMessages.find(m => m.id === replyId);
+                        }
 
                         return {
                             ...msg,
-                            isOwn: isOwnMessage
+                            isOwn: isOwnMessage,
+                            replyMessageId: msg.replyToMessageId || msg.replyMessageId || null,
+                            replyTo: replyToMessage || msg.replyTo || null
                         };
                     })}
                     onReply={handleReplyToMessage}
@@ -331,6 +417,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                 />
             )}
 
+            {/* 메시지 입력 영역 */}
             <MessageInput
                 onSendMessage={handleSendMessage}
                 disabled={connectionStatus === 'connecting'}
@@ -338,6 +425,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                 onCancelReply={handleCancelReply}
             />
 
+            {/* 채팅방 수정 모달 */}
             {showEditModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                     <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
@@ -345,33 +433,143 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">채팅방 이름</label>
-                                <input type="text" value={editRoomName} onChange={(e) => setEditRoomName(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" maxLength={50} />
+                                <input
+                                    type="text"
+                                    value={editRoomName}
+                                    onChange={(e) => setEditRoomName(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    maxLength={50}
+                                />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">채팅방 설명</label>
-                                <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 resize-none" maxLength={200} />
+                                <textarea
+                                    value={editDescription}
+                                    onChange={(e) => setEditDescription(e.target.value)}
+                                    rows={3}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                    maxLength={200}
+                                />
                             </div>
                         </div>
                         <div className="flex space-x-3 mt-6">
-                            <button onClick={() => setShowEditModal(false)} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">취소</button>
-                            <button onClick={handleSaveEdit} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700" disabled={!editRoomName.trim()}>저장</button>
+                            <button
+                                onClick={() => setShowEditModal(false)}
+                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleSaveEdit}
+                                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                disabled={!editRoomName.trim()}
+                            >
+                                저장
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
 
+            {/* 공지 작성 모달 */}
             {showAnnouncementModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                     <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
                         <h3 className="text-lg font-semibold mb-4">공지 작성</h3>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">공지 내용</label>
-                            <textarea value={announcementContent} onChange={(e) => setAnnouncementContent(e.target.value)} rows={4} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 resize-none" placeholder="공지 내용을 입력하세요..." maxLength={500} />
+                            <textarea
+                                value={announcementContent}
+                                onChange={(e) => setAnnouncementContent(e.target.value)}
+                                rows={4}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                placeholder="공지 내용을 입력하세요..."
+                                maxLength={500}
+                            />
                             <p className="text-xs text-gray-500 mt-1">{announcementContent.length}/500자</p>
                         </div>
                         <div className="flex space-x-3 mt-6">
-                            <button onClick={() => { setShowAnnouncementModal(false); setAnnouncementContent(''); }} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">취소</button>
-                            <button onClick={handleCreateAnnouncement} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700" disabled={!announcementContent.trim()}>공지 등록</button>
+                            <button
+                                onClick={() => { setShowAnnouncementModal(false); setAnnouncementContent(''); }}
+                                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleCreateAnnouncement}
+                                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                                disabled={!announcementContent.trim()}
+                            >
+                                공지 등록
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 참여자 목록 모달 */}
+            {showMembersModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-[80vh] flex flex-col">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold">참여자 목록</h3>
+                            <span className="text-sm text-gray-500">
+                                {members.length}명
+                            </span>
+                        </div>
+
+                        {loadingMembers ? (
+                            <div className="flex-1 flex items-center justify-center py-8">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                            </div>
+                        ) : (
+                            <div className="flex-1 overflow-y-auto">
+                                {members.length === 0 ? (
+                                    <div className="text-center py-8 text-gray-500">
+                                        참여자가 없습니다.
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {members.map((member, index) => (
+                                            <div
+                                                key={member.communityId || index}
+                                                className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                                            >
+                                                {member.profileImage ? (
+                                                    <img
+                                                        src={member.profileImage}
+                                                        alt={member.nickname}
+                                                        className="w-10 h-10 rounded-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                                        <span className="text-blue-600 font-medium text-sm">
+                                                            {member.nickname?.charAt(0) || '?'}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium text-gray-900 truncate">
+                                                        {member.nickname}
+                                                    </p>
+                                                    {member.communityId === currentUser.userId && (
+                                                        <p className="text-xs text-gray-500">나</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        <div className="mt-4 pt-4 border-t">
+                            <button
+                                onClick={() => setShowMembersModal(false)}
+                                className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                            >
+                                닫기
+                            </button>
                         </div>
                     </div>
                 </div>

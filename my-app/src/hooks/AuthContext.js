@@ -38,42 +38,6 @@ export const AuthProvider = ({ children }) => {
         setIsLoading(true);
         setError('');
 
-        // 하드코딩 유저 (개발용) - JWT 형식으로 수정 + userId 추가
-        if (loginId === 'test' && password === '1234') {
-            const mockResponse = {
-                tokenType: 'Bearer',
-                accessToken: 'dummy-jwt-token',
-                username: 'Test User',
-                userId: 1 // userId 추가
-            };
-
-            // 토큰과 사용자 정보 저장 (userId 포함)
-            localStorage.setItem('accessToken', mockResponse.accessToken);
-            localStorage.setItem('userData', JSON.stringify({
-                userId: mockResponse.userId,
-                username: mockResponse.username,
-                loginId: loginId
-            }));
-
-            setIsAuthenticated(true);
-            setUser({
-                userId: mockResponse.userId,
-                username: mockResponse.username,
-                loginId: loginId
-            });
-
-            setIsLoading(false);
-            return {
-                success: true,
-                data: {
-                    tokenType: mockResponse.tokenType,
-                    accessToken: mockResponse.accessToken,
-                    username: mockResponse.username,
-                    userId: mockResponse.userId
-                }
-            };
-        }
-
         try {
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
@@ -85,7 +49,7 @@ export const AuthProvider = ({ children }) => {
                 const data = await response.json();
 
                 // API 응답에서 tokenType, accessToken, username, userId 추출
-                const { tokenType, accessToken, username, userId } = data;
+                const { tokenType, accessToken, username, userId, communityNickname } = data;
 
                 if (!accessToken) {
                     setError('서버 응답에 토큰이 없습니다.');
@@ -102,7 +66,8 @@ export const AuthProvider = ({ children }) => {
                 localStorage.setItem('userData', JSON.stringify({
                     userId: userId,
                     username: username,
-                    loginId: loginId
+                    loginId: loginId,
+                    communityNickname : communityNickname
                 }));
 
                 // 상태 업데이트
@@ -110,7 +75,8 @@ export const AuthProvider = ({ children }) => {
                 setUser({
                     userId: userId,
                     username: username,
-                    loginId: loginId
+                    loginId: loginId,
+                    communityNickname : communityNickname
                 });
 
                 return {
@@ -119,7 +85,8 @@ export const AuthProvider = ({ children }) => {
                         tokenType,
                         accessToken,
                         username,
-                        userId
+                        userId,
+                        communityNickname
                     }
                 };
             } else {

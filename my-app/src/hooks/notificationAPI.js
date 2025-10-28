@@ -28,7 +28,7 @@ export const notificationAPI = {
     },
 
     // 카테고리별 알림 조회 (최근 10개)
-    // category: 'chat', 'tracker', 'community'
+    // category: 'planner', 'tracker', 'community'
     getNotificationsByCategory: async (category) => {
         try {
             const response = await fetch(`${API_BASE_URL}/notifications?category=${category}&limit=10`, {
@@ -168,11 +168,9 @@ export const mockNotificationAPI = {
         await new Promise(resolve => setTimeout(resolve, 500));
 
         return [
-            { id: 1, type: '채팅방', message: '새로운 메시지가 도착했습니다.', time: '2분 전', isRead: false },
+            { id: 1, type: '공유 플래너', message: '새로운 일정 투표가 시작 되었습니다.', time: '2분 전', isRead: false },
             { id: 2, type: '트래커', message: '어제의 나에게로부터 메시지가 도착했습니다!', time: '5분 전', isRead: false },
             { id: 3, type: '커뮤니티', message: '새로운 댓글이 달렸습니다.', time: '10분 전', isRead: true },
-            { id: 4, type: '채팅방', message: '스터디 그룹 초대가 도착했습니다.', time: '1시간 전', isRead: false },
-            { id: 5, type: '트래커', message: '오늘의 목표를 달성했습니다!', time: '2시간 전', isRead: true },
         ];
     },
 
@@ -180,13 +178,11 @@ export const mockNotificationAPI = {
         await new Promise(resolve => setTimeout(resolve, 300));
 
         const mockData = {
-            'chat': [
-                { id: 1, type: '채팅방', message: '새로운 메시지가 도착했습니다.', time: '2분 전', isRead: false },
-                { id: 4, type: '채팅방', message: '스터디 그룹 초대가 도착했습니다.', time: '1시간 전', isRead: false },
+            'planner': [
+                { id: 1, type: '공유 플래너', message: '새로운 일정 투표가 시작 되었습니다.', time: '2분 전', isRead: false },
             ],
             'tracker': [
                 { id: 2, type: '트래커', message: '어제의 나에게로부터 메시지가 도착했습니다!', time: '5분 전', isRead: false },
-                { id: 5, type: '트래커', message: '오늘의 목표를 달성했습니다!', time: '2시간 전', isRead: true },
             ],
             'community': [
                 { id: 3, type: '커뮤니티', message: '새로운 댓글이 달렸습니다.', time: '10분 전', isRead: true },

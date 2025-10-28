@@ -7,16 +7,13 @@ import { Crown, Reply, Copy, Trash2, MoreHorizontal } from 'lucide-react';
  * - 메시지 복사, 답장, 삭제 기능 제공
  * - 메시지 마우스 호버 시 메뉴 표시
  * - 시스템 메시지(입장/퇴장) 처리
+ * - 5분 기준 삭제 판별
  */
 const ChatMessages = ({ messages, onReply, onDelete }) => {
-    // 마우스를 올린 메시지 ID 추적
     const [hoveredMessageId, setHoveredMessageId] = useState(null);
-    // 드롭다운 메뉴가 열려 있는 메시지 ID 추적
     const [showMenuForId, setShowMenuForId] = useState(null);
-    // 채팅창 하단으로 자동 스크롤을 위한 ref
     const messagesEndRef = useRef(null);
 
-    // 메시지 목록이 업데이트될 때마다 맨 아래로 스크롤
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
@@ -24,6 +21,12 @@ const ChatMessages = ({ messages, onReply, onDelete }) => {
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
+
+    console.log('전체 메시지 목록:', messages); // 디버깅 용으로 추가
+
+    // 시스템 메시지만 필터링해서 확인
+    const systemMessages = messages.filter(m => m.type === 'system');
+    console.log('시스템 메시지만:', systemMessages); // 디버깅 용으로 추가
 
     // 메시지 내용 복사
     const handleCopyMessage = async (content) => {
@@ -42,30 +45,23 @@ const ChatMessages = ({ messages, onReply, onDelete }) => {
         setShowMenuForId(null);
     };
 
-    // 삭제 기능 처리 (조건: 전체 삭제 가능 여부)
-    const handleDeleteMessage = (message, canDeleteForEveryone) => {
-        if (canDeleteForEveryone) {
-            const confirmDelete = window.confirm('모든 사용자에게서 이 메시지를 삭제하시겠습니까?');
-            if (confirmDelete) {
-                onDelete(message, true);
-            }
-        } else {
-            const confirmDelete = window.confirm('나에게서만 이 메시지를 삭제하시겠습니까?');
-            if (confirmDelete) {
-                onDelete(message, false);
-            }
-        }
+    // 삭제 기능 처리 - 5분 기준 계산
+    const handleDeleteMessage = (messageId, timestamp) => {
+        const now = new Date();
+        const messageTime = new Date(timestamp);
+        const diffMinutes = (now - messageTime) / 1000 / 60;
+
+        const canDeleteForEveryone = diffMinutes <= 5;
+
+        console.log('삭제 시도:', {
+            messageId,
+            timestamp,
+            diffMinutes: diffMinutes.toFixed(2),
+            canDeleteForEveryone
+        });
+
+        onDelete(messageId, canDeleteForEveryone);
         setShowMenuForId(null);
-    };
-
-    // 본인 메시지이고 5분 이내면 전체 삭제 가능
-    const canDeleteForEveryone = (message) => {
-        if (!message.isOwn) return false;
-
-        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-        const messageDate = new Date(message.timestamp);
-
-        return messageDate > fiveMinutesAgo;
     };
 
     // 답장 미리보기 내용 자르기
@@ -73,7 +69,7 @@ const ChatMessages = ({ messages, onReply, onDelete }) => {
         return content.length > 50 ? content.substring(0, 50) + '...' : content;
     };
 
-    // 메시지 시간을 포맷하는 헬퍼 함수
+    // 메시지 시간 포맷
     const formatTime = (timestamp) => {
         if (!timestamp) return '';
         try {
@@ -103,8 +99,8 @@ const ChatMessages = ({ messages, onReply, onDelete }) => {
 
     // 일반 사용자 메시지 렌더링
     const renderUserMessage = (msg) => {
-        // ChatRoom에서 전달받은 isOwn 값을 직접 사용합니다.
         const isMine = msg.isOwn;
+        const isDeleted = msg.isDeleted;
 
         return (
             <div
@@ -118,14 +114,20 @@ const ChatMessages = ({ messages, onReply, onDelete }) => {
             >
                 <div className={`max-w-xs lg:max-w-md ${isMine ? 'order-2' : 'order-1'} relative`}>
                     {/* 답장 메시지 표시 */}
-                    {msg.replyTo && (
+                    {!isDeleted && msg.replyTo && (
                         <div
                             className={`mb-2 px-3 py-2 rounded-lg bg-gray-100 border-l-4 border-gray-400 ${
                                 isMine ? 'ml-8' : 'mr-8'
                             }`}
                         >
-                            <div className="text-xs text-gray-600 font-medium">{msg.replyTo.sender}</div>
-                            <div className="text-sm text-gray-700">{formatReplyPreview(msg.replyTo.content)}</div>
+                            <div className="text-xs text-gray-600 font-medium">
+                                {msg.replyTo.sender || '알 수 없음'}
+                            </div>
+                            <div className="text-sm text-gray-700">
+                                {msg.replyTo.isDeleted
+                                    ? '삭제된 메시지입니다.'
+                                    : formatReplyPreview(msg.replyTo.content || '')}
+                            </div>
                         </div>
                     )}
 
@@ -140,7 +142,7 @@ const ChatMessages = ({ messages, onReply, onDelete }) => {
                     {/* 메시지 내용 */}
                     <div
                         className={`px-4 py-2 rounded-2xl ${
-                            msg.isDeleted
+                            isDeleted
                                 ? 'bg-gray-200 text-gray-500 italic'
                                 : isMine
                                     ? 'bg-blue-600 text-white'
@@ -160,7 +162,7 @@ const ChatMessages = ({ messages, onReply, onDelete }) => {
                     </div>
 
                     {/* 메뉴 버튼 */}
-                    {hoveredMessageId === msg.id && !msg.isDeleted && (
+                    {hoveredMessageId === msg.id && !isDeleted && (
                         <button
                             onClick={() =>
                                 setShowMenuForId((prev) => (prev === msg.id ? null : msg.id))
@@ -173,57 +175,40 @@ const ChatMessages = ({ messages, onReply, onDelete }) => {
                         </button>
                     )}
 
-                    {/* 드롭다운 메뉴 (복사, 답장, 삭제) */}
-                    {showMenuForId === msg.id && !msg.isDeleted && (
+                    {/* 드롭다운 메뉴 */}
+                    {showMenuForId === msg.id && !isDeleted && (
                         <div
                             className={`absolute top-1/2 -translate-y-1/2 ${
-                                isMine ? '-left-[200px]' : '-right-[180px]'
+                                isMine ? '-left-[160px]' : '-right-[140px]'
                             } bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-[120px]`}
                         >
-                            {/* 타인 메시지 메뉴 */}
-                            {!isMine && (
-                                <>
-                                    <button
-                                        onClick={() => handleReplyMessage(msg)}
-                                        className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                    >
-                                        <Reply size={14} />
-                                        <span>답장</span>
-                                    </button>
-                                    <button
-                                        onClick={() => handleCopyMessage(msg.content)}
-                                        className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                    >
-                                        <Copy size={14} />
-                                        <span>복사</span>
-                                    </button>
-                                </>
-                            )}
+                            {/* 답장 버튼 */}
+                            <button
+                                onClick={() => handleReplyMessage(msg)}
+                                className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                            >
+                                <Reply size={14} />
+                                <span>답장</span>
+                            </button>
 
-                            {/* 본인 메시지 메뉴 */}
+                            {/* 복사 버튼 */}
+                            <button
+                                onClick={() => handleCopyMessage(msg.content)}
+                                className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                            >
+                                <Copy size={14} />
+                                <span>복사</span>
+                            </button>
+
+                            {/* 삭제 버튼 (본인 메시지에만) */}
                             {isMine && (
-                                <>
-                                    <button
-                                        onClick={() =>
-                                            handleDeleteMessage(msg.id, canDeleteForEveryone(msg))
-                                        }
-                                        className="flex items-center space-x-2 px-3 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left"
-                                    >
-                                        <Trash2 size={14} />
-                                        <span>
-                                            {canDeleteForEveryone(msg)
-                                                ? '모두에게서 삭제'
-                                                : '나에게서만 삭제'}
-                                        </span>
-                                    </button>
-                                    <button
-                                        onClick={() => handleCopyMessage(msg.content)}
-                                        className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                    >
-                                        <Copy size={14} />
-                                        <span>복사</span>
-                                    </button>
-                                </>
+                                <button
+                                    onClick={() => handleDeleteMessage(msg.id, msg.timestamp)}
+                                    className="flex items-center space-x-2 px-3 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left"
+                                >
+                                    <Trash2 size={14} />
+                                    <span>삭제</span>
+                                </button>
                             )}
                         </div>
                     )}
@@ -234,13 +219,13 @@ const ChatMessages = ({ messages, onReply, onDelete }) => {
 
     return (
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((msg, index) => {
+            {messages.map((msg) => {
                 if (msg.type === 'system') {
-                    return renderSystemMessage(msg);
+                    return <div key={msg.id}>{renderSystemMessage(msg)}</div>;
                 }
-                return renderUserMessage(msg);
+                return <div key={msg.id}>{renderUserMessage(msg)}</div>;
             })}
-            <div ref={messagesEndRef} />
+            <div ref={messagesEndRef}/>
         </div>
     );
 };
