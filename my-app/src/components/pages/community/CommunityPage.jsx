@@ -67,6 +67,7 @@ const CommunityPage = () => {
                 }
               />
               <Route path="search" element={<SearchPage />} />
+              <Route path="search/:keyword" element={<SearchPage />} />
               <Route path="post/:postId" element={<DetailedPostPage />} />
               <Route
                 path="*"

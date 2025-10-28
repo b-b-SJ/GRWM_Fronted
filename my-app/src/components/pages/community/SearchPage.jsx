@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useCommunitySearch } from "../../../hooks/useCommunitySearch";
 import { Search, UserRound, X } from "lucide-react";
 import PostList from "../../community/PostList";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+
 const SearchPage = () => {
+  const { keyword: urlKeyword } = useParams(); // ✅ URL에서 검색어 가져오기
   const [keyword, setKeyword] = useState("");
   const [searchType, setSearchType] = useState("post");
   const [isUser, setIsUser] = useState(false);
@@ -40,9 +42,26 @@ const SearchPage = () => {
     ? postHasMore
     : hashtagHasMore;
 
-  //  검색 실행 함수
-  const handleSearch = async (hasMore = false) => {
-    if (!keyword.trim()) {
+  // ✅ URL 파라미터가 있으면 자동 검색
+  useEffect(() => {
+    if (urlKeyword) {
+      console.log("🔍 URL에서 검색어 감지:", urlKeyword);
+      setKeyword(urlKeyword); // 검색창에 표시
+      setSearchType("hashtag"); // 해시태그 탭으로 전환
+      setIsUser(false); // 유저 검색 체크 해제
+
+      // 자동 검색 실행
+      executeSearch(urlKeyword, "hashtag");
+    }
+  }, [urlKeyword]); // urlKeyword가 변경될 때마다 실행
+
+  //검색 실행 로직 분리
+  const executeSearch = async (
+    searchKeyword,
+    type = searchType,
+    hasMore = false
+  ) => {
+    if (!searchKeyword.trim()) {
       alert("검색어를 입력해주세요!");
       return;
     }
@@ -51,9 +70,8 @@ const SearchPage = () => {
     let pageToLoad;
 
     if (isUser) {
-      //유저 검색
       pageToLoad = hasMore ? userPage : 0;
-      result = await searchUser(keyword, pageToLoad, 30);
+      result = await searchUser(searchKeyword, pageToLoad, 30);
 
       if (result) {
         if (hasMore) {
@@ -65,9 +83,9 @@ const SearchPage = () => {
         setUserHasMore(result.hasMore);
         setUserPage(pageToLoad + 1);
       }
-    } else if (searchType === "post") {
+    } else if (type === "post") {
       pageToLoad = hasMore ? postPage : 0;
-      result = await searchPost(keyword, pageToLoad, 30);
+      result = await searchPost(searchKeyword, pageToLoad, 30);
 
       if (result) {
         if (hasMore) {
@@ -79,9 +97,9 @@ const SearchPage = () => {
         setPostHasMore(result.hasMore);
         setPostPage(pageToLoad + 1);
       }
-    } else if (searchType === "hashtag") {
+    } else if (type === "hashtag") {
       pageToLoad = hasMore ? hashtagPage : 0;
-      result = await searchHashtag(keyword, pageToLoad, 30);
+      result = await searchHashtag(searchKeyword, pageToLoad, 30);
 
       if (result) {
         if (hasMore) {
@@ -96,11 +114,15 @@ const SearchPage = () => {
     }
   };
 
+  // ✅ 기존 handleSearch는 executeSearch 호출
+  const handleSearch = async (hasMore = false) => {
+    executeSearch(keyword, searchType, hasMore);
+  };
+
   const handleLoadMore = () => {
     handleSearch(true);
   };
 
-  // 전체 초기화 (X 버튼용)
   const handleClear = () => {
     setKeyword("");
     setPostResults([]);
@@ -112,6 +134,9 @@ const SearchPage = () => {
     setPostHasMore(false);
     setHashtagHasMore(false);
     setUserHasMore(false);
+
+    // ✅ URL도 초기화 (선택사항)
+    navigate("/community/search", { replace: true });
   };
 
   // 결과는 일단 유지하면서 UI만 전환
@@ -157,7 +182,7 @@ const SearchPage = () => {
                   ? "#없이 입력하세요 (예: 일상)"
                   : "검색어를 입력하세요"
               }
-              className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-3xl focus:ring-rose-400"
+              className="w-full px-5 py-3 pr-10 border border-gray-300 rounded-3xl focus:ring-rose-400"
             />
             {keyword && (
               <button

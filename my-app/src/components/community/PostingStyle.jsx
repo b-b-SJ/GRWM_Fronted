@@ -120,26 +120,29 @@ const PostingStyle = ({
                 post.content.images.length === 1 ? "grid-cols-1" : "grid-cols-2"
               }`}
             >
-              {post.content.images.slice(0, 4).map((img, idx) => (
-                <div
-                  key={idx}
-                  className={`relative overflow-hidden rounded-lg ${
-                    post.content.images.length === 3 && idx === 0
-                      ? "col-span-2"
-                      : ""
-                  } ${
-                    post.content.images.length === 1
-                      ? "aspect-[4/3]"
-                      : "aspect-square"
-                  }`}
-                >
-                  <img
-                    src={img}
-                    alt={`게시물 이미지 ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ))}
+              {post.content.images.slice(0, 4).map((img, idx) => {
+                console.log(`🖼️ 이미지 ${idx} URL:`, img);
+                return (
+                  <div
+                    key={idx}
+                    className={`relative overflow-hidden rounded-lg ${
+                      post.content.images.length === 3 && idx === 0
+                        ? "col-span-2"
+                        : ""
+                    } ${
+                      post.content.images.length === 1
+                        ? "aspect-[4/3]"
+                        : "aspect-square"
+                    }`}
+                  >
+                    <img
+                      src={img}
+                      alt={`게시물 이미지 ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                );
+              })}
             </div>
           )}
           {post.content.text && (
@@ -158,6 +161,7 @@ const PostingStyle = ({
                 onClick={(e) => {
                   e.stopPropagation();
                   console.log("해시태그 클릭:", tag);
+                  navigate(`/community/search/${tag}`);
                 }}
               >
                 #{tag}
