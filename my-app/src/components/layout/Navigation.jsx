@@ -7,7 +7,7 @@ import { Menu, Calendar, BarChart3, Users, MessageSquare, ChevronDown } from 'lu
  * - 모든 페이지에서 공통으로 사용되는 고정된 내비게이션 바 레이아웃
  * - 플래너, 트래커, 협업공간, 커뮤니티로 이동
  */
-const Navigation = ({ toggleSidebar, currentUser, currentPage }) => {
+const Navigation = ({ toggleSidebar }) => {
     const location = useLocation();  // 현재 URL 경로 정보
     const navigate = useNavigate();  // 프로그래밍 방식 페이지 이동
     const [openDropdown, setOpenDropdown] = useState(null); // 열린 드롭다운 메뉴 인덱스
@@ -145,7 +145,7 @@ const Navigation = ({ toggleSidebar, currentUser, currentPage }) => {
                     <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                         <span className="text-white font-bold text-sm">🚀</span>
                     </div>
-                    <h1 className="text-xl font-semibold text-gray-800">GRWM</h1>
+                    <h1 className="text-xl font-semibold text-gray-800">모두ING</h1>
                 </Link>
             </div>
 
