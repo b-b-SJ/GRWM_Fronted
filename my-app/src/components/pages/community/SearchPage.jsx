@@ -198,6 +198,9 @@ const SearchPage = () => {
           setIsSubscribed(false);
           // 구독 목록 다시 불러오기
           await getSubscribedHashtags();
+          // ✅ 커스텀 이벤트 발생
+          window.dispatchEvent(new Event("hashtagSubscriptionChanged"));
+
           alert("구독이 취소되었습니다");
         }
       } else {
@@ -208,6 +211,8 @@ const SearchPage = () => {
         if (success) {
           setIsSubscribed(true);
           await getSubscribedHashtags();
+          // ✅ 커스텀 이벤트 발생
+          window.dispatchEvent(new Event("hashtagSubscriptionChanged"));
           alert(`#${keyword} 해시태그를 구독했습니다!`);
         }
       }

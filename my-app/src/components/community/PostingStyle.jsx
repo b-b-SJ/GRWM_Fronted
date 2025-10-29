@@ -23,6 +23,7 @@ const PostingStyle = ({
   const [manageModal, setManageModal] = useState(false);
   const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
   const [isLiked, setIsLiked] = useState(false);
+
   const navigate = useNavigate();
 
   if (!post) {

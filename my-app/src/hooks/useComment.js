@@ -1,10 +1,11 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "./AuthContext";
 export function useComment() {
-  const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { getAuthHeaders } = useAuth();
+  const [commentsCount, setCommentsCount] = useState(null);
+  const [comments, setComments] = useState([]);
   //댓글 생성
   const createComment = useCallback(
     async (postId, commentData) => {
@@ -118,7 +119,7 @@ export function useComment() {
   }, []);
 
   //댓글 리스트 반환
-  // useComment.js의 getCommentList
+
   const getCommentList = useCallback(
     async (postId) => {
       setLoading(true);
@@ -165,13 +166,51 @@ export function useComment() {
     [getAuthHeaders]
   );
 
+  const getCommentCount = useCallback(
+    async (postId) => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const url = `/api/community-posts/${postId}/comments/comment-count`;
+
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          return data;
+        } else {
+          // 에러 응답 내용 확인
+          const errorText = await response.text();
+          console.error("에러 내용:", errorText);
+          setError("댓글 개수 반환을 실패했어요");
+          return null; // 빈 배열 반환
+        }
+      } catch (error) {
+        console.error("에러 발생:", error);
+        console.error("에러 메시지:", error.message);
+        setError("네트워크 에러가 발생했습니다");
+        return null; // 빈 배열 반환
+      } finally {
+        setLoading(false);
+      }
+    },
+    [getAuthHeaders]
+  );
+
   return {
-    comments,
     loading,
     error,
     createComment,
     getCommentList,
     deleteComment,
     updateComment,
+    getCommentCount,
   };
 }

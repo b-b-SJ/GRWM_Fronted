@@ -12,11 +12,36 @@ const CommunitySidebar = () => {
   const { user } = useAuth();
   const { getSubscribedHashtags, hashtagList, loading } = useHashtag();
 
+  // 초기 로드
   useEffect(() => {
     if (user && user.userId) {
       getSubscribedHashtags();
     }
   }, [user]);
+
+  // ✅ 커스텀 이벤트 리스너 추가
+  useEffect(() => {
+    const handleSubscriptionChange = () => {
+      console.log("🔔 구독 변경 감지! 사이드바 업데이트 중...");
+      if (user && user.userId) {
+        getSubscribedHashtags();
+      }
+    };
+
+    // 이벤트 리스너 등록
+    window.addEventListener(
+      "hashtagSubscriptionChanged",
+      handleSubscriptionChange
+    );
+
+    // 클린업: 컴포넌트 언마운트 시 리스너 제거
+    return () => {
+      window.removeEventListener(
+        "hashtagSubscriptionChanged",
+        handleSubscriptionChange
+      );
+    };
+  }, [user, getSubscribedHashtags]);
 
   const handleSearch = () => {
     if (!keyword.trim()) {
@@ -37,7 +62,6 @@ const CommunitySidebar = () => {
   };
 
   const handleHashtagClick = (hashtag) => {
-    // #을 제거하고 검색
     const cleanTag = hashtag.startsWith("#") ? hashtag.slice(1) : hashtag;
     navigate(`/community/search/${cleanTag}`);
   };
@@ -100,45 +124,47 @@ const CommunitySidebar = () => {
           )}
 
           {/* 로그인 안 했을 때 */}
-          {!user && (
+          {!loading && !user && (
             <div className="text-center py-4 text-gray-500 text-sm">
               로그인 후 이용 가능합니다
             </div>
           )}
 
           {/* 구독한 해시태그가 없을 때 */}
-          {!loading && user && hashtagList && hashtagList.length === 0 && (
+          {!loading && user && (!hashtagList || hashtagList.length === 0) && (
             <div className="text-center py-4 text-gray-500 text-sm">
               구독한 해시태그가 없습니다
             </div>
           )}
 
-          {/* ✅ 해시태그 리스트 - 문자열 배열 처리 */}
-          {!loading && hashtagList && hashtagList.length > 0 && (
-            <div className="space-y-1 max-h-96 overflow-y-auto">
-              {hashtagList.map((hashtag, index) => {
-                // #을 제거한 버전 (키워드만)
-                const cleanTag = hashtag.startsWith("#")
-                  ? hashtag.slice(1)
-                  : hashtag;
+          {/* 해시태그 리스트 */}
+          {!loading &&
+            hashtagList &&
+            Array.isArray(hashtagList) &&
+            hashtagList.length > 0 && (
+              <div className="space-y-1 max-h-96 overflow-y-auto">
+                {hashtagList.map((hashtag, index) => {
+                  const cleanTag = hashtag.startsWith("#")
+                    ? hashtag.slice(1)
+                    : hashtag;
 
-                return (
-                  <button
-                    key={index} // ✅ index를 key로 사용 (tagId가 없으므로)
-                    onClick={() => handleHashtagClick(hashtag)}
-                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-rose-50 transition-colors group flex items-center gap-2"
-                  >
-                    <span className="text-rose-500 group-hover:text-rose-600 font-medium">
-                      #
-                    </span>
-                    <span className="text-gray-700 group-hover:text-rose-600 text-sm">
-                      {cleanTag}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => handleHashtagClick(hashtag)}
+                      className="w-full text-left px-3 py-2 rounded-lg hover:bg-rose-50 transition-colors group flex items-center gap-2"
+                    >
+                      <span className="text-rose-500 group-hover:text-rose-600 font-medium">
+                        #
+                      </span>
+                      <span className="text-gray-700 group-hover:text-rose-600 text-sm">
+                        {cleanTag}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
         </div>
       </div>
     </div>
