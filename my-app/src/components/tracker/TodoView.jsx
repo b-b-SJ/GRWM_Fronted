@@ -121,8 +121,8 @@ const TodoView = ({ showHeader = true, selectedDateProp = null }) => {
     const [todos, setTodos] = useState([
         {
             id: '1',
-            title: '프로젝트 기획서 작성',
-            description: '기능 정의 및 일정 수립',
+            title: '프로젝트 계획 생각',
+            description: '생각생각생각생각 신한카드~',
             completed: true,
             postponed: false,
             date: new Date().toISOString().split('T')[0],
@@ -130,8 +130,8 @@ const TodoView = ({ showHeader = true, selectedDateProp = null }) => {
         },
         {
             id: '2',
-            title: '디자인 시스템 구축',
-            description: '컴포넌트 라이브러리 설계',
+            title: '고양이 보기',
+            description: '야옹이가 세상을 구한다',
             completed: true,
             postponed: false,
             date: new Date().toISOString().split('T')[0],
@@ -139,8 +139,8 @@ const TodoView = ({ showHeader = true, selectedDateProp = null }) => {
         },
         {
             id: '3',
-            title: '데이터베이스 설계',
-            description: 'ERD 작성 및 스키마 정의',
+            title: '중간고사 공부',
+            description: '블록체인이란 무엇일까...',
             completed: false,
             postponed: false,
             date: new Date().toISOString().split('T')[0],
@@ -148,8 +148,8 @@ const TodoView = ({ showHeader = true, selectedDateProp = null }) => {
         },
         {
             id: '4',
-            title: 'API 문서 작성',
-            description: 'RESTful API 명세서 작성',
+            title: '잠을 20시간 자기',
+            description: '그러고 싶다',
             completed: false,
             postponed: false,
             date: new Date().toISOString().split('T')[0],
@@ -158,19 +158,10 @@ const TodoView = ({ showHeader = true, selectedDateProp = null }) => {
         {
             id: '5',
             title: '팀 미팅',
-            description: '주간 계획',
+            description: '팀원분들과의 만남!',
             completed: false,
             postponed: false,
             date: getDateString(1),
-            createdAt: new Date().toISOString()
-        },
-        {
-            id: '6',
-            title: '코드 리뷰',
-            description: '팀원 코드 검토',
-            completed: true,
-            postponed: false,
-            date: getDateString(-1),
             createdAt: new Date().toISOString()
         },
     ]);
@@ -260,7 +251,7 @@ const TodoView = ({ showHeader = true, selectedDateProp = null }) => {
 
     // 클릭 외부 감지를 위한 useEffect 추가
     useEffect(() => {
-        const handleClickOutside = (event) => {
+        const handleClickOutside = () => {
             if (postponingTodo) {
                 setPostponingTodo(null);
             }
