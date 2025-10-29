@@ -362,7 +362,100 @@ const SearchPage = () => {
         </div>
       )}
 
-      {/* ... 나머지 JSX 동일 ... */}
+      {/* 에러 표시 */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+          {error}
+        </div>
+      )}
+
+      {/* 검색 결과 */}
+      {currentResults.length > 0 && (
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-bold">
+              검색 결과
+              {searched?.totalCount && (
+                <span className="text-gray-500 font-normal ml-2">
+                  ({searched.totalCount}개)
+                </span>
+              )}
+            </h2>
+          </div>
+
+          {!isUser && (searchType === "post" || searchType === "hashtag") && (
+            <PostList posts={currentResults} />
+          )}
+
+          {isUser && (
+            <div className="space-y-3">
+              {currentResults.map((user) => (
+                <div
+                  key={user.communityId}
+                  className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-4"
+                  onClick={() =>
+                    navigate(`/community/profile/${user.communityId}`)
+                  }
+                >
+                  {user.profileImage ? (
+                    <img
+                      src={user.profileImage}
+                      alt={user.nickname}
+                      className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full border-2 bg-gray-200 flex items-center justify-center">
+                      <UserRound className="w-6 h-6 text-gray-400" />
+                    </div>
+                  )}
+
+                  <div className="flex-1">
+                    <p className="font-bold text-lg">{user.nickname}</p>
+                    {user.description && (
+                      <p className="text-sm text-gray-500 mt-1">
+                        {user.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {currentHasMore && (
+            <button
+              onClick={handleLoadMore}
+              disabled={loading}
+              className="w-full mt-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:bg-gray-50 font-medium transition-colors"
+            >
+              {loading ? "로딩 중..." : "더보기"}
+            </button>
+          )}
+        </div>
+      )}
+
+      {currentResults.length === 0 && !loading && keyword && searched && (
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Search size={32} className="text-gray-400" />
+          </div>
+          <p className="text-gray-500 text-lg">검색 결과가 없습니다.</p>
+          <p className="text-gray-400 text-sm mt-2">
+            다른 검색어를 입력해보세요.
+          </p>
+        </div>
+      )}
+
+      {currentResults.length === 0 && !keyword && !loading && (
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Search size={32} className="text-rose-500" />
+          </div>
+          <p className="text-gray-600 text-lg">
+            검색어를 입력하고 검색해보세요!
+          </p>
+        </div>
+      )}
     </div>
   );
 };
