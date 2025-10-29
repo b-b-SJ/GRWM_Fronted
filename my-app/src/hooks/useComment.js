@@ -10,8 +10,8 @@ export function useComment() {
     async (postId, commentData) => {
       setLoading(true);
       setError(null);
-      console.log("commentData:", commentData); // ⭐ 여기 확인!
-      console.log("JSON:", JSON.stringify(commentData)); // ⭐ 실제 전송 데이터
+      console.log("commentData:", commentData);
+      console.log("JSON:", JSON.stringify(commentData)); // 실제 전송 데이터
       try {
         const response = await fetch(
           `/api/community-posts/${postId}/comments`,
@@ -28,7 +28,7 @@ export function useComment() {
         if (response.ok) {
           const data = await response.json();
           console.log("받은 댓글 데이터:", data);
-          console.log("생성된 댓글의 private 값:", data.private); // ⭐ 확인!
+          console.log("생성된 댓글의 private 값:", data.private);
           if (Array.isArray(data)) {
             setComments(data);
           } else {
@@ -121,13 +121,11 @@ export function useComment() {
   // useComment.js의 getCommentList
   const getCommentList = useCallback(
     async (postId) => {
-      console.log("🔍 댓글 목록 요청 시작, postId:", postId);
       setLoading(true);
       setError(null);
 
       try {
         const url = `/api/community-posts/${postId}/comments`;
-        console.log("📡 요청 URL:", url);
 
         const response = await fetch(url, {
           method: "GET",
@@ -137,35 +135,29 @@ export function useComment() {
           },
         });
 
-        console.log("📥 응답 상태:", response.status);
-        console.log("📥 응답 OK?:", response.ok);
-
         if (response.ok) {
           const data = await response.json();
-          console.log("✅ 받은 댓글 데이터:", data);
-          console.log("📊 데이터 타입:", typeof data);
-          console.log("📋 배열인가?:", Array.isArray(data));
 
           if (Array.isArray(data)) {
-            console.log("🔧 setComments 호출:", data);
-            return data; // ⭐ 배열 반환
+            console.log("setComments 호출:", data);
+            return data; // 배열 반환
           } else {
-            console.warn("⚠️ 배열이 아님:", data);
-            return []; // ⭐ 빈 배열 반환
+            console.warn("배열이 아님:", data);
+            return []; // 빈 배열 반환
           }
         } else {
-          // ⭐ 에러 응답 내용 확인
+          // 에러 응답 내용 확인
           const errorText = await response.text();
-          console.error("❌ 댓글 반환 실패:", response.status);
-          console.error("❌ 에러 내용:", errorText);
+          console.error("댓글 반환 실패:", response.status);
+          console.error("에러 내용:", errorText);
           setError("댓글 반환을 실패했어요");
-          return []; // ⭐ 빈 배열 반환
+          return []; // 빈 배열 반환
         }
       } catch (error) {
-        console.error("💥 에러 발생:", error);
-        console.error("💥 에러 메시지:", error.message);
+        console.error("에러 발생:", error);
+        console.error("에러 메시지:", error.message);
         setError("네트워크 에러가 발생했습니다");
-        return []; // ⭐ 빈 배열 반환
+        return []; // 빈 배열 반환
       } finally {
         setLoading(false);
       }
