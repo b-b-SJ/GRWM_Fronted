@@ -53,13 +53,9 @@ export const TeamPlannerProvider = ({ children }) => {
                     title: plannerData.title,
                     description: plannerData.description,
                     profileImage: plannerData.profileImage || '',
-                    creatorId: currentUser.userId
+                    creatorId: user.userId
                 }),
             });
-
-            if (!response.ok) {
-                throw new Error('플래너 생성에 실패했습니다.');
-            }
 
             const plannerId = await response.json();
             console.log('생성된 플래너 ID:', plannerId);
@@ -88,10 +84,6 @@ export const TeamPlannerProvider = ({ children }) => {
                     'Content-Type': 'application/json',
                 },
             });
-
-            if (!response.ok) {
-                throw new Error('플래너 목록을 불러오는데 실패했습니다.');
-            }
 
             const data = await response.json();
             console.log('받아온 플래너 목록:', data);
@@ -123,10 +115,6 @@ export const TeamPlannerProvider = ({ children }) => {
                 body: JSON.stringify(updateData),
             });
 
-            if (!response.ok) {
-                throw new Error('플래너 업데이트에 실패했습니다.');
-            }
-
             const updatedPlanner = await response.json();
 
             // 로컬 상태 업데이트
@@ -152,19 +140,14 @@ export const TeamPlannerProvider = ({ children }) => {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(`/api/team-planner/${plannerId}/delete`, {
+            await fetch(`/api/team-planner/${plannerId}/delete`, {
                 method: 'DELETE',
                 headers: {
                     ...getAuthHeaders(),
                     'Content-Type': 'application/json',
                 },
             });
-
-            if (!response.ok) {
-                throw new Error('플래너 삭제에 실패했습니다.');
-            }
-
-            // 로컬 상태에서 제거
+// 로컬 상태에서 제거
             setPlanners(prev => prev.filter(p => p.plannerId !== plannerId));
 
             if (currentPlanner?.plannerId === plannerId) {
@@ -179,36 +162,6 @@ export const TeamPlannerProvider = ({ children }) => {
     }, [currentPlanner, isAuthenticated, getAuthHeaders]);
 
     // ==================== 멤버 관리 ====================
-
-    // 멤버 추가
-    const addMember = useCallback(async (plannerId, memberId, role) => {
-        checkAuth();
-        setLoading(true);
-        setError(null);
-        try {
-            const response = await fetch(
-                `/api/team-planner/${plannerId}/member/${memberId}/${role}`,
-                {
-                    method: 'POST',
-                    headers: {
-                        ...getAuthHeaders(),
-                        'Content-Type': 'application/json',
-                    },
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error('멤버 추가에 실패했습니다.');
-            }
-
-            // 멤버 목록 다시 불러오기
-            await fetchMembers(plannerId);
-        } catch (error) {
-            handleError(error, '멤버 추가 중 오류가 발생했습니다.');
-        } finally {
-            setLoading(false);
-        }
-    }, [isAuthenticated, getAuthHeaders]);
 
     // 멤버 목록 조회
     const fetchMembers = useCallback(async (plannerId) => {
@@ -226,10 +179,6 @@ export const TeamPlannerProvider = ({ children }) => {
                     },
                 }
             );
-
-            if (!response.ok) {
-                throw new Error('멤버 목록을 불러오는데 실패했습니다.');
-            }
 
             const data = await response.json();
             console.log('받아온 멤버 목록 (MemberDto[]):', data);
@@ -249,13 +198,39 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
+    // 멤버 추가
+    const addMember = useCallback(async (plannerId, memberId, role) => {
+        checkAuth();
+        setLoading(true);
+        setError(null);
+        try {
+            await fetch(
+                `/api/team-planner/${plannerId}/member/${memberId}/${role}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+            // 멤버 목록 다시 불러오기
+            await fetchMembers(plannerId);
+        } catch (error) {
+            handleError(error, '멤버 추가 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders, fetchMembers]);
+
+
     // 멤버 삭제 (status를 'withdrawn'으로 변경)
     const removeMember = useCallback(async (plannerId, memberId) => {
         checkAuth();
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(
+            await fetch(
                 `/api/team-planner/${plannerId}/member/${memberId}`,
                 {
                     method: 'DELETE',
@@ -265,11 +240,6 @@ export const TeamPlannerProvider = ({ children }) => {
                     },
                 }
             );
-
-            if (!response.ok) {
-                throw new Error('멤버 삭제에 실패했습니다.');
-            }
-
             setMembers(prev => prev.filter(m => m.userId !== memberId));
         } catch (error) {
             handleError(error, '멤버 삭제 중 오류가 발생했습니다.');
@@ -284,7 +254,7 @@ export const TeamPlannerProvider = ({ children }) => {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(
+            await fetch(
                 `/api/team-planner/${plannerId}/member/${memberId}/${nickname}`,
                 {
                     method: 'PUT',
@@ -294,11 +264,6 @@ export const TeamPlannerProvider = ({ children }) => {
                     },
                 }
             );
-
-            if (!response.ok) {
-                throw new Error('멤버 별명 업데이트에 실패했습니다.');
-            }
-
             await fetchMembers(plannerId);
         } catch (error) {
             handleError(error, '멤버 별명 업데이트 중 오류가 발생했습니다.');
@@ -337,10 +302,6 @@ export const TeamPlannerProvider = ({ children }) => {
                 }
             );
 
-            if (!response.ok) {
-                throw new Error('일정 생성에 실패했습니다.');
-            }
-
             const scheduleId = await response.json();
             console.log('생성된 일정 ID:', scheduleId);
             return scheduleId;
@@ -367,11 +328,6 @@ export const TeamPlannerProvider = ({ children }) => {
                     },
                 }
             );
-
-            if (!response.ok) {
-                throw new Error('일정 상세 조회에 실패했습니다.');
-            }
-
             const data = await response.json();
             return data;
         } catch (error) {
@@ -399,10 +355,6 @@ export const TeamPlannerProvider = ({ children }) => {
                 }
             );
 
-            if (!response.ok) {
-                throw new Error('일정 수정에 실패했습니다.');
-            }
-
             const updatedSchedule = await response.json();
             return updatedSchedule;
         } catch (error) {
@@ -418,7 +370,7 @@ export const TeamPlannerProvider = ({ children }) => {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(
+            await fetch(
                 `/api/team-planner/${plannerId}/schedule/${scheduleId}/delete`,
                 {
                     method: 'DELETE',
@@ -428,11 +380,6 @@ export const TeamPlannerProvider = ({ children }) => {
                     },
                 }
             );
-
-            if (!response.ok) {
-                throw new Error('일정 삭제에 실패했습니다.');
-            }
-
             setSchedules(prev => prev.filter(s => s.scheduleId !== scheduleId));
         } catch (error) {
             handleError(error, '일정 삭제 중 오류가 발생했습니다.');
@@ -447,7 +394,7 @@ export const TeamPlannerProvider = ({ children }) => {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(
+            await fetch(
                 `/api/team-planner/${plannerId}/schedule/${scheduleId}/drag-drop`,
                 {
                     method: 'PUT',
@@ -458,10 +405,6 @@ export const TeamPlannerProvider = ({ children }) => {
                     body: JSON.stringify(dateTime),
                 }
             );
-
-            if (!response.ok) {
-                throw new Error('일정 날짜 수정에 실패했습니다.');
-            }
         } catch (error) {
             handleError(error, '일정 날짜 수정 중 오류가 발생했습니다.');
         } finally {
@@ -469,7 +412,7 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    // 일정에 참여하기
+    /* 일정에 참여하기 로직 삭제 ( 일정 참여 멤버 로직으로 통합)
     const joinSchedule = useCallback(async (plannerId, scheduleId, userId) => {
         checkAuth();
         setLoading(true);
@@ -498,6 +441,7 @@ export const TeamPlannerProvider = ({ children }) => {
             setLoading(false);
         }
     }, [isAuthenticated, getAuthHeaders]);
+    */
 
     // 일정 참여 멤버 추가
     const addScheduleMember = useCallback(async (plannerId, scheduleId) => {
@@ -516,10 +460,6 @@ export const TeamPlannerProvider = ({ children }) => {
                 }
             );
 
-            if (!response.ok) {
-                throw new Error('일정 멤버 추가에 실패했습니다.');
-            }
-
             const members = await response.json();
             return members;
         } catch (error) {
@@ -535,20 +475,16 @@ export const TeamPlannerProvider = ({ children }) => {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(
+            await fetch(
                 `/api/team-planner/${plannerId}/schedule/${scheduleId}/delete-member`,
                 {
-                    method: 'POST',
+                    method: 'DELETE',  // DELETE로 변경
                     headers: {
                         ...getAuthHeaders(),
-                        'Content-Type': 'application/json',
+                        // Content-Type 헤더 제거
                     },
                 }
             );
-
-            if (!response.ok) {
-                throw new Error('일정 멤버 삭제에 실패했습니다.');
-            }
         } catch (error) {
             handleError(error, '일정 멤버 삭제 중 오류가 발생했습니다.');
         } finally {
@@ -572,10 +508,6 @@ export const TeamPlannerProvider = ({ children }) => {
                     },
                 }
             );
-
-            if (!response.ok) {
-                throw new Error('월별 일정 조회에 실패했습니다.');
-            }
 
             const data = await response.json();
             setSchedules(data);
@@ -604,10 +536,6 @@ export const TeamPlannerProvider = ({ children }) => {
                 }
             );
 
-            if (!response.ok) {
-                throw new Error('주별 일정 조회에 실패했습니다.');
-            }
-
             const data = await response.json();
             setSchedules(data);
             return data;
@@ -634,10 +562,6 @@ export const TeamPlannerProvider = ({ children }) => {
                     },
                 }
             );
-
-            if (!response.ok) {
-                throw new Error('일별 일정 조회에 실패했습니다.');
-            }
 
             const data = await response.json();
             setSchedules(data);
@@ -669,10 +593,6 @@ export const TeamPlannerProvider = ({ children }) => {
                 }
             );
 
-            if (!response.ok) {
-                throw new Error('카테고리 생성에 실패했습니다.');
-            }
-
             const categoryId = await response.json();
             await fetchCategories(plannerId);
             return categoryId;
@@ -699,10 +619,6 @@ export const TeamPlannerProvider = ({ children }) => {
                     },
                 }
             );
-
-            if (!response.ok) {
-                throw new Error('카테고리 목록 조회에 실패했습니다.');
-            }
 
             const data = await response.json();
             setCategories(data);
@@ -732,10 +648,6 @@ export const TeamPlannerProvider = ({ children }) => {
                 }
             );
 
-            if (!response.ok) {
-                throw new Error('카테고리 수정에 실패했습니다.');
-            }
-
             const updatedCategory = await response.json();
             setCategories(prev =>
                 prev.map(c => c.categoryId === categoryId ? updatedCategory : c)
@@ -754,7 +666,7 @@ export const TeamPlannerProvider = ({ children }) => {
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(
+            await fetch(
                 `/api/team-planner/${plannerId}/category/${categoryId}`,
                 {
                     method: 'DELETE',
@@ -764,11 +676,6 @@ export const TeamPlannerProvider = ({ children }) => {
                     },
                 }
             );
-
-            if (!response.ok) {
-                throw new Error('카테고리 삭제에 실패했습니다.');
-            }
-
             setCategories(prev => prev.filter(c => c.categoryId !== categoryId));
         } catch (error) {
             handleError(error, '카테고리 삭제 중 오류가 발생했습니다.');
@@ -794,10 +701,6 @@ export const TeamPlannerProvider = ({ children }) => {
                 }
             );
 
-            if (!response.ok) {
-                throw new Error('카테고리별 일정 조회에 실패했습니다.');
-            }
-
             const data = await response.json();
             return data;
         } catch (error) {
@@ -809,7 +712,7 @@ export const TeamPlannerProvider = ({ children }) => {
 
     // ==================== 투두리스트 관리 ====================
 
-    // 투두 생성
+    // 투두리스트 생성
     const createTodo = useCallback(async (plannerId, scheduleId, todoData) => {
         checkAuth();
         setLoading(true);
@@ -823,16 +726,18 @@ export const TeamPlannerProvider = ({ children }) => {
                         ...getAuthHeaders(),
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(todoData),
+                    body: JSON.stringify({
+                        todoId: null,
+                        user: null,
+                        content: todoData.content,
+                        isCompleted: null,
+                        isPrivate: todoData.isPrivate
+                    }),
                 }
             );
 
-            if (!response.ok) {
-                throw new Error('투두 생성에 실패했습니다.');
-            }
-
-            const todoId = await response.json();
-            return todoId;
+            const createdTodoId = await response.json();  // 변수명 변경
+            return createdTodoId;
         } catch (error) {
             handleError(error, '투두 생성 중 오류가 발생했습니다.');
         } finally {
@@ -840,13 +745,14 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    // 투두 수정 및 완료 체크
+
+    // 투두리스트 수정 및 완료 체크
     const updateTodo = useCallback(async (plannerId, scheduleId, todoId, updateData) => {
         checkAuth();
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(
+            await fetch(
                 `/api/team-planner/${plannerId}/schedule/${scheduleId}/todo/${todoId}`,
                 {
                     method: 'PUT',
@@ -857,10 +763,6 @@ export const TeamPlannerProvider = ({ children }) => {
                     body: JSON.stringify(updateData),
                 }
             );
-
-            if (!response.ok) {
-                throw new Error('투두 수정에 실패했습니다.');
-            }
         } catch (error) {
             handleError(error, '투두 수정 중 오류가 발생했습니다.');
         } finally {
@@ -868,13 +770,13 @@ export const TeamPlannerProvider = ({ children }) => {
         }
     }, [isAuthenticated, getAuthHeaders]);
 
-    // 투두 삭제
+    // 투두리스트 삭제
     const deleteTodo = useCallback(async (plannerId, scheduleId, todoId) => {
         checkAuth();
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(
+            await fetch(
                 `/api/team-planner/${plannerId}/schedule/${scheduleId}/todo/${todoId}`,
                 {
                     method: 'DELETE',
@@ -884,10 +786,6 @@ export const TeamPlannerProvider = ({ children }) => {
                     },
                 }
             );
-
-            if (!response.ok) {
-                throw new Error('투두 삭제에 실패했습니다.');
-            }
         } catch (error) {
             handleError(error, '투두 삭제 중 오류가 발생했습니다.');
         } finally {
@@ -914,10 +812,6 @@ export const TeamPlannerProvider = ({ children }) => {
                     body: JSON.stringify(voteData),
                 }
             );
-
-            if (!response.ok) {
-                throw new Error('시간 투표 생성에 실패했습니다.');
-            }
 
             const voteId = await response.json();
             return voteId;
@@ -946,10 +840,6 @@ export const TeamPlannerProvider = ({ children }) => {
                 }
             );
 
-            if (!response.ok) {
-                throw new Error('시간 투표 제출에 실패했습니다.');
-            }
-
             const voteResponse = await response.json();
             return voteResponse;
         } catch (error) {
@@ -977,10 +867,6 @@ export const TeamPlannerProvider = ({ children }) => {
                 }
             );
 
-            if (!response.ok) {
-                throw new Error('시간 재투표에 실패했습니다.');
-            }
-
             const voteResponse = await response.json();
             return voteResponse;
         } catch (error) {
@@ -1006,10 +892,6 @@ export const TeamPlannerProvider = ({ children }) => {
                     },
                 }
             );
-
-            if (!response.ok) {
-                throw new Error('타임테이블 조회에 실패했습니다.');
-            }
 
             const data = await response.json();
             return data;
@@ -1039,10 +921,6 @@ export const TeamPlannerProvider = ({ children }) => {
                 }
             );
 
-            if (!response.ok) {
-                throw new Error('일정 검색에 실패했습니다.');
-            }
-
             const data = await response.json();
             return data;
         } catch (error) {
@@ -1068,10 +946,6 @@ export const TeamPlannerProvider = ({ children }) => {
                     },
                 }
             );
-
-            if (!response.ok) {
-                throw new Error('사용자별 일정 검색에 실패했습니다.');
-            }
 
             const data = await response.json();
             return data;
@@ -1116,7 +990,7 @@ export const TeamPlannerProvider = ({ children }) => {
         updateSchedule,
         deleteSchedule,
         updateScheduleDateTime,
-        joinSchedule,
+        // joinSchedule 삭제
         addScheduleMember,
         removeScheduleMember,
         fetchMonthlySchedules,
@@ -1130,7 +1004,7 @@ export const TeamPlannerProvider = ({ children }) => {
         deleteCategory,
         fetchSchedulesByCategory,
 
-        // Todo Management
+        // To-do Management
         createTodo,
         updateTodo,
         deleteTodo,
