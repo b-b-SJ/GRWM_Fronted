@@ -120,7 +120,7 @@ export const ChatStateProvider = ({ children }) => {
     }, []);
 
     // 채팅방 목록 조회
-    const fetchChatRooms = useCallback(async (skipTokenCheck = false) => {
+    const fetchChatRooms = useCallback(async () => {
         if (!isAuthenticated || !currentUser.userId) {
             setChatRooms([]);
             return;
@@ -409,9 +409,9 @@ export const ChatStateProvider = ({ children }) => {
                         await fetchChatRooms();
                         return true;
                     }
-                    throw new Error(errorData.message || '채팅방 참여 권한이 없습니다.');
+                    // throw new Error(errorData.message || '채팅방 참여 권한이 없습니다.');
                 }
-                throw new Error('채팅방 참여에 실패했습니다.');
+                // throw new Error('채팅방 참여에 실패했습니다.');
             }
 
             // 로컬에서 입장 시스템 메시지 전송 코드 삭제
@@ -627,7 +627,7 @@ export const ChatStateProvider = ({ children }) => {
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
                 console.error('응답이 JSON 형식이 아닙니다:', contentType);
-                throw new Error('서버 응답 형식이 올바르지 않습니다.');
+                // throw new Error('서버 응답 형식이 올바르지 않습니다.');
             }
 
             const text = await response.text();
@@ -636,16 +636,6 @@ export const ChatStateProvider = ({ children }) => {
             if (!text || text.trim() === '') {
                 console.error('빈 응답 받음');
                 return [];
-            }
-
-            if (!response.ok) {
-                let errorData = {};
-                try {
-                    errorData = JSON.parse(text);
-                } catch (e) {
-                    console.error('에러 응답 파싱 실패:', e);
-                }
-                throw new Error(errorData.message || `참여자 목록 조회 실패 (${response.status})`);
             }
 
             const members = JSON.parse(text);
@@ -723,11 +713,12 @@ export const ChatStateProvider = ({ children }) => {
 
             if (canDeleteForEveryone) {
                 // 5분 이내 - WebSocket으로 모두에게서 삭제
+                /*
                 const sent = wsDeleteMessage(chatRoomId, messageId, currentUser.userId);
-
                 if (!sent) {
                     throw new Error('WebSocket 연결이 끊어졌습니다.');
                 }
+                */
 
                 console.log('메시지 삭제 WebSocket 전송 완료');
 
