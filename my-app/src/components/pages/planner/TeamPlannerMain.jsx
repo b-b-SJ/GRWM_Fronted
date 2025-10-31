@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useTeamPlanner } from "../../../hooks/TeamPlannerProvider";
-
+import { useNavigate } from "react-router-dom";
 const TeamPlannerMain = () => {
-  const { fetchPlanners, planners, user, createPlanner } = useTeamPlanner();
-  const [createPMode, setCreatePMode] = useState(false);
+  const { fetchPlanners, planners, user } = useTeamPlanner();
 
+  const navigate = useNavigate();
   //들어오면 플래너 리스트 가져오게 만드는 거
   useEffect(() => {
     if (user) {
@@ -17,21 +17,7 @@ const TeamPlannerMain = () => {
   console.log("뭐가", planners);
 
   if (planners.length === 0) {
-    return (
-      <div className="bg-red-700">
-        <h className="text-2xl">공유 플래너가 없습니다.</h>
-
-        {/* 플래너 생성 
-        "plannerId"
-"title"
-"description"
-"profileImage"
-"members"
-        */}
-
-        <button onClick={() => setCreatePMode(true)}>플래너 생성하기</button>
-      </div>
-    );
+    navigate("/planner/shared/list");
   }
   return <div>공유 플래너 있긴 함</div>;
 };

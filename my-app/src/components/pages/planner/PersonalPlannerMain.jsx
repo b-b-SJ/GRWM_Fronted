@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCalendar } from "../../hooks/useCalendar";
-import { useScheduleFilter } from "../../hooks/useScheduleFilter";
-import PlannerSidebar from "../layout/PlannerSidebar";
-import PlannerHeaderWM from "./PlannerHeaderWM";
-import ScheduleModal from "./ScheduleModal";
+import { useCalendar } from "../../../hooks/useCalendar";
+import { useScheduleFilter } from "../../../hooks/useScheduleFilter";
+import PlannerSidebar from "../../layout/PlannerSidebar";
+import PlannerHeaderWM from "../../planner/PlannerHeaderWM";
+import ScheduleModal from "../../planner/ScheduleModal";
 
 const PersonalPlannerMain = ({ sidebarOpen }) => {
   const navigate = useNavigate();
@@ -38,7 +38,7 @@ const PersonalPlannerMain = ({ sidebarOpen }) => {
           selectedSc={selectedSc}
           setSelectedSc={setSelectedSc}
           // 공유 플래너로 이동 버튼
-          onNavigateToShared={() => navigate("/planner/shared")}
+          //onNavigateToShared={() => navigate("/planner/shared")}
         />
       )}
 

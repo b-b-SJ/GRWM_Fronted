@@ -3,11 +3,12 @@ import { Routes, Route, useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 
 // 개인 플래너 관련
-import PersonalPlannerMain from "../../planner/PersonalPlannerMain";
+import PersonalPlannerMain from "./PersonalPlannerMain";
 //import PersonalPlannerCreate from "../planner/personal/PersonalPlannerCreate";
 
 // 공유 플래너 관련
 import TeamPlannerMain from "./TeamPlannerMain";
+import TeamPlannerList from "./TeamPlannerList";
 
 const PlannerPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -40,7 +41,7 @@ const PlannerPage = () => {
             {/* 공유 플래너 */}
 
             <Route path="/shared" element={<TeamPlannerMain />} />
-
+            <Route path="/shared/list" element={<TeamPlannerList />} />
             {/* 기본값 - 개인 플래너로 */}
             <Route
               path="*"
