@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import DailyPlanner from "./DailyPlanner";
 import dummyImg from "../../img/dummy02.jpg"; //캘린더 사진
 import { useScheduleFilter } from "../../hooks/useScheduleFilter";
-
+import { useNavigate, useParams } from "react-router-dom";
 const PlannerHeaderWM = ({
   year,
   month,
@@ -28,10 +28,14 @@ const PlannerHeaderWM = ({
   selectedSc,
   nowPlanner,
   setNowPlanner,
+  plannerType,
 }) => {
-  console.log("rrrrr", currentDate);
-  //플래너 바꾸는 파트는 일단 뺌
-  console.log("지금 플래너", nowPlanner);
+  const { type } = useParams();
+  const navigate = useNavigate();
+
+  const handleGoToList = () => {
+    navigate(`/planner/list/${plannerType}`);
+  };
 
   //const [choosePlanner, setChoosePlanner] = useState("default");
   const [viewDate, setViewDate] = useState(new Date());
@@ -54,14 +58,16 @@ const PlannerHeaderWM = ({
           로직은 있긴 한데 그냥 모르겟어...;ㅠ*/}
           <div className="relative group inline-block">
             <button
-              onClick={() => {
-                setSelectCalendar(!selectCalendar);
-              }}
+              onClick={
+                handleGoToList
+                // () => { setSelectCalendar(!selectCalendar); }
+              }
               className="w-16 h-16 rounded-full bg-cover bg-center overflow-hidden"
               style={{ backgroundImage: `url(${dummyImg})` }} //캘린더 사진
             ></button>
             <div
               className="absolute left-0 top-full mt-2 w-48 bg-white border rounded-lg shadow-lg hidden group-hover:block"
+
               //달력 바꾸는 hover 창 -> 영역 좀 벗어나도 작동해야됨+클릭하면 hover일 때 보이는 거 고정으로 보여야됨
               //setNowPlanner 써서 캘린더 변경, plannerList map으로 보여줘야함
             >

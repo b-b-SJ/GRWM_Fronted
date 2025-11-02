@@ -63,7 +63,7 @@ const PersonalPlannerMain = ({ sidebarOpen }) => {
           nowPlanner={nowPlanner}
           setNowPlanner={setNowPlanner}
           plannerType="personal"
-          onNavigateToShared={() => navigate("/planner/shared")}
+          // onNavigateToShared={() => navigate("/planner/shared")}
         />
       </div>
 
