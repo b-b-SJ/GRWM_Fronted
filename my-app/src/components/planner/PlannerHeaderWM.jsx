@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import MonthlyPlanner from "./MonthlyPlanner";
 import WeeklyPlanner from "./WeeklyPlanner";
 //<UserRoundPlus />; //유저 아이콘임
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Users } from "lucide-react";
 import DailyPlanner from "./DailyPlanner";
 import { useScheduleFilter } from "../../hooks/useScheduleFilter";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
@@ -63,20 +63,34 @@ const PlannerHeaderWM = ({
       </div>
       <div className="flex items-center relative">
         <div className="flex items-center gap-7 px-4 outline-gray-700">
-          {/* 플래너 전환 
-      플래너 바꾸는 그런 건데 아직 어떤 식으로 구현해야될지 모르겟음 백
-          로직은 있긴 한데 그냥 모르겟어...;ㅠ*/}
+          {/* 플래너 전환
+           */}
           <div className="relative group inline-block">
             <button
-              onClick={
-                handleGoToList
-                // () => { setSelectCalendar(!selectCalendar); }
+              onClick={handleGoToList}
+              className={`w-20 h-20 rounded-full flex items-center justify-center bg-cover bg-center
+    ${
+      !nowPlannerInfo?.profileImage &&
+      (plannerType === "shared"
+        ? "bg-blue-100" // 공유 플래너 배경색
+        : "bg-gray-100") // 개인 플래너 배경색
+    }`}
+              style={
+                nowPlannerInfo?.profileImage
+                  ? { backgroundImage: `url(${nowPlannerInfo.profileImage})` }
+                  : {}
               }
-              className="w-16 h-16 rounded-full bg-cover bg-center overflow-hidden"
-              style={{
-                backgroundImage: `url(${nowPlannerInfo?.profileImage})`,
-              }} //캘린더 사진
-            ></button>
+            >
+              {!nowPlannerInfo?.profileImage && (
+                <Users
+                  className={`w-10 h-10 ${
+                    plannerType === "shared"
+                      ? "text-blue-500" // 공유 플래너 아이콘 색상
+                      : "text-gray-500" // 개인 플래너 아이콘 색상
+                  }`}
+                />
+              )}
+            </button>
             <div
               className="absolute left-0 top-full mt-2 w-48 bg-white border rounded-lg shadow-lg hidden group-hover:block"
 
