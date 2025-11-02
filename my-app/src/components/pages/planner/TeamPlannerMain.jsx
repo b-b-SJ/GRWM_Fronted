@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useCalendar } from "../../../hooks/useCalendar";
 import { useScheduleFilter } from "../../../hooks/useScheduleFilter";
@@ -9,14 +9,44 @@ import { useTeamPlanner } from "../../../hooks/TeamPlannerProvider";
 const TeamPlannerMain = ({ sidebarOpen }) => {
   const navigate = useNavigate();
   const calendar = useCalendar();
-  const { planners } = useTeamPlanner();
+  const { currentPlanner, setCurrentPlanner, planners, fetchPlanners } =
+    useTeamPlanner();
   const { plannerId } = useParams();
 
   const [viewMode, setViewMode] = useState("monthly");
 
   //임시였슨, 로컬 스토리지 사용할 예정<< 로컬 스토리지 관리는 plannerPage해서 해야할 것 같긴합니다
   const [nowPlanner, setNowPlanner] = useState(Number(plannerId));
+  useEffect(() => {
+    const loadPlanner = async () => {
+      if (plannerId) {
+        // 플래너 정보 로드
+        const existing = planners.find(
+          (p) => p.plannerId === Number(plannerId)
+        );
 
+        if (existing) {
+          setCurrentPlanner(existing);
+        } else {
+          await fetchPlanners();
+          const planner = planners.find(
+            (p) => p.plannerId === Number(plannerId)
+          );
+          if (planner) {
+            setCurrentPlanner(planner);
+          }
+        }
+
+        // localStorage에 저장
+        localStorage.setItem("lastPlannerType", "shared");
+        localStorage.setItem("lastSharedPlannerId", plannerId);
+
+        console.log("공유 플래너 저장:", plannerId);
+      }
+    };
+
+    loadPlanner();
+  }, [plannerId]);
   const [openScModal, setOpenScModal] = useState(false);
   const [selectedSc, setSelectedSc] = useState(null);
 

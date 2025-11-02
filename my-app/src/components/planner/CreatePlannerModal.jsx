@@ -66,7 +66,7 @@ const CreatePlannerModal = ({ isOpen, onClose, onSuccess }) => {
       >
         {/* 헤더 */}
         <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold">새 공유 플래너 만들기</h2>
+          <h2 className="text-xl font-bold">새 공유 플래너 생성</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full"
@@ -78,16 +78,16 @@ const CreatePlannerModal = ({ isOpen, onClose, onSuccess }) => {
         {/* 폼 내용 */}
         <form onSubmit={handleSubmit}>
           <div className="p-6">
-            {/* 🔥 가로 배치: 왼쪽 이미지, 오른쪽 입력 필드들 */}
+            {/* 가로 배치: 왼쪽 이미지, 오른쪽 입력 필드들 */}
             <div className="flex gap-6">
-              {/* 1️⃣ 왼쪽: 프로필 이미지 */}
+              {/*왼쪽: 이미지 */}
               <div className="flex-shrink-0">
                 <label className="block text-sm font-medium mb-2">
-                  프로필 사진 선택
+                  플래너 사진 선택
                 </label>
                 <label
                   htmlFor="image-upload"
-                  className="block w-48 h-48 rounded-xl bg-gray-200 flex items-center justify-center overflow-hidden border-2 border-gray-300 cursor-pointer hover:border-blue-400 transition-colors relative group"
+                  className=" w-48 h-48 rounded-xl bg-gray-200 flex items-center justify-center overflow-hidden border-2 border-gray-300 cursor-pointer hover:border-blue-400 transition-colors relative group"
                 >
                   {formData.profileImage ? (
                     <>
@@ -146,6 +146,9 @@ const CreatePlannerModal = ({ isOpen, onClose, onSuccess }) => {
                   <label className="block text-sm font-medium mb-2">
                     플래너 제목 <span className="text-red-500">*</span>
                   </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formData.title.length}/20
+                  </p>
                   <input
                     type="text"
                     name="title"
@@ -156,9 +159,6 @@ const CreatePlannerModal = ({ isOpen, onClose, onSuccess }) => {
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    {formData.title.length}/20
-                  </p>
                 </div>
 
                 {/* 플래너 설명 */}
@@ -173,7 +173,7 @@ const CreatePlannerModal = ({ isOpen, onClose, onSuccess }) => {
                     onChange={handleChange}
                     placeholder="이 플래너에 대한 간단한 설명을 입력하세요"
                     maxLength={100}
-                    rows={6}
+                    rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   {formData.description && (
@@ -201,7 +201,7 @@ const CreatePlannerModal = ({ isOpen, onClose, onSuccess }) => {
               disabled={loading || isUploading}
               className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400"
             >
-              {loading ? "생성 중..." : isUploading ? "업로드 중..." : "만들기"}
+              {loading ? "생성 중..." : isUploading ? "등록 중..." : "생성"}
             </button>
           </div>
         </form>

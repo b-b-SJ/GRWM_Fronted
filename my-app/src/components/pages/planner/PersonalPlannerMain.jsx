@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useCalendar } from "../../../hooks/useCalendar";
 import { useScheduleFilter } from "../../../hooks/useScheduleFilter";
 import PlannerSidebar from "../../layout/PlannerSidebar";
@@ -9,7 +9,7 @@ import ScheduleModal from "../../planner/ScheduleModal";
 const PersonalPlannerMain = ({ sidebarOpen }) => {
   const navigate = useNavigate();
   const calendar = useCalendar();
-
+  const { plannerId } = useParams();
   const [viewMode, setViewMode] = useState("monthly");
   const [nowPlanner, setNowPlanner] = useState(1001);
   const [openScModal, setOpenScModal] = useState(false);
@@ -19,6 +19,12 @@ const PersonalPlannerMain = ({ sidebarOpen }) => {
     nowPlanner,
     currentDate: calendar.currentDate,
   });
+
+  useEffect(() => {
+    // localStorage에 저장 -> 연결하면
+    localStorage.setItem("lastPlannerType", "personal");
+    localStorage.setItem("lastPersonalPlannerId", plannerId);
+  }, [plannerId]);
 
   return (
     <div className="flex flex-1">

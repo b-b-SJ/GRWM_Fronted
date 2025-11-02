@@ -4,12 +4,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useTeamPlanner } from "../../../hooks/TeamPlannerProvider";
 import { Plus, Users, User, ArrowLeft, Settings } from "lucide-react";
 import CreatePlannerModal from "../../planner/CreatePlannerModal";
+import EditPlannerModal from "../../planner/EditPlannerModal";
 
 const PlannerListPage = () => {
   const { type } = useParams(); // "shared" 또는 "personal"
   const navigate = useNavigate();
   const { planners, fetchPlanners, loading } = useTeamPlanner();
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [openCreateModal, setOpenCreateModal] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
   const [selectedPlanner, setSelectedPlanner] = useState(null);
 
@@ -51,6 +52,14 @@ const PlannerListPage = () => {
           >
             <ArrowLeft size={20} />
           </button>
+          <div className="">
+            <button onClick={() => navigate("/planner/list/shared")}>
+              공유 플래너
+            </button>
+            <button onClick={() => navigate("/planner/list/personal")}>
+              개인 플래너
+            </button>
+          </div>
 
           <h1 className="text-3xl font-bold">
             {isShared ? "공유 플래너" : "개인 플래너"}
@@ -67,7 +76,7 @@ const PlannerListPage = () => {
               </div>
               <p className="text-xl text-gray-500 mb-4">공유 플래너가 없어요</p>
               <button
-                onClick={() => setShowCreateModal(true)}
+                onClick={() => setOpenCreateModal(true)}
                 className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
               >
                 첫 플래너 만들기
@@ -136,7 +145,7 @@ const PlannerListPage = () => {
 
               {/* 플래너 추가 버튼 */}
               <button
-                onClick={() => setShowCreateModal(true)}
+                onClick={() => setOpenCreateModal(true)}
                 className="w-full border-2 border-dashed border-gray-300 rounded-lg p-8 hover:border-blue-400 hover:bg-blue-50 transition-colors flex flex-col items-center justify-center gap-2"
               >
                 <Plus size={32} className="text-gray-400" />
@@ -158,28 +167,18 @@ const PlannerListPage = () => {
         {/* 생성 모달 (공유 플래너만) */}
         {isShared && (
           <CreatePlannerModal
-            isOpen={showCreateModal}
-            onClose={() => setShowCreateModal(false)}
+            isOpen={openCreateModal}
+            onClose={() => setOpenCreateModal(false)}
             onSuccess={handleCreateSuccess}
           />
         )}
 
-        {/* TODO: 편집 모달 (나중에 구현) */}
         {openEditModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6">
-              <h2 className="text-xl font-bold mb-4">플래너 설정</h2>
-              <p className="text-gray-600 mb-4">
-                {selectedPlanner?.title} 설정 (준비 중)
-              </p>
-              <button
-                onClick={() => setOpenEditModal(false)}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg"
-              >
-                닫기
-              </button>
-            </div>
-          </div>
+          <EditPlannerModal
+            isOpen={openEditModal}
+            onClose={() => setOpenEditModal(false)}
+            //  onSuccess={handleCreateSuccess}
+          />
         )}
       </div>
     </div>
