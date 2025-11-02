@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route, useNavigate, Navigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
-
+import { useAuth } from "../../../hooks/AuthContext";
 //공통
 import PlannerListPage from "./PlannerListPage";
 
@@ -15,6 +15,72 @@ import TeamPlannerMain from "./TeamPlannerMain";
 const PlannerPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  const { user } = useAuth();
+  useEffect(() => {
+    if (user?.userId) {
+      console.log("사용자 감지:", user.userId);
+
+      // 저장된 userId와 비교
+      const savedUserId = localStorage.getItem("lastUserId");
+
+      if (savedUserId && savedUserId !== String(user.userId)) {
+        // 다른 계정!
+        console.log("다른 계정 감지! localStorage 초기화");
+        localStorage.removeItem("lastPlannerType");
+        localStorage.removeItem("lastSharedPlannerId");
+        localStorage.removeItem("lastPersonalPlannerId");
+      }
+
+      // 현재 userId 저장
+      localStorage.setItem("lastUserId", user.userId);
+    }
+  }, [user?.userId]);
+
+  const PersonalPlannerRedirect = () => {
+    const navigate = useNavigate();
+
+    useEffect(() => {
+      const lastPersonalId = localStorage.getItem("lastPersonalPlannerId");
+
+      console.log("🟢 PersonalPlannerRedirect:", lastPersonalId);
+
+      if (lastPersonalId) {
+        navigate(`/planner/personal/${lastPersonalId}`, { replace: true });
+      } else {
+        // 없으면 목록으로 (나중에 구현)
+        // 지금은 기본 플래너로
+        navigate("/planner/personal/1001", { replace: true });
+      }
+    }, [navigate]);
+
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-lg text-gray-500">개인 플래너로 이동 중...</div>
+      </div>
+    );
+  };
+  const SharedPlannerRedirect = () => {
+    const navigate = useNavigate();
+
+    useEffect(() => {
+      const lastSharedId = localStorage.getItem("lastSharedPlannerId");
+
+      console.log("🔵 SharedPlannerRedirect:", lastSharedId);
+
+      if (lastSharedId) {
+        navigate(`/planner/shared/${lastSharedId}`, { replace: true });
+      } else {
+        // 없으면 목록으로
+        navigate("/planner/list/shared", { replace: true });
+      }
+    }, [navigate]);
+
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-lg text-gray-500">공유 플래너로 이동 중...</div>
+      </div>
+    );
+  };
   const DefaultPlannerRedirect = () => {
     const navigate = useNavigate();
 
@@ -61,23 +127,29 @@ const PlannerPage = () => {
         {/* 메인 콘텐츠 - 라우팅 */}
         <div className="flex-1 min-w-0">
           <Routes>
-            {/* 개인 플래너 */}
+            {/* 기본 경로 - 리다이렉트 */}
             <Route path="/" element={<DefaultPlannerRedirect />} />
+            <Route path="/personal" element={<PersonalPlannerRedirect />} />
+            {/* 🔥 추가: /planner/shared (plannerId 없음) */}
+            <Route path="/shared" element={<SharedPlannerRedirect />} />
+
+            {/* 플래너 목록 */}
+            <Route path="/list/:type" element={<PlannerListPage />} />
+
+            {/* 개인 플래너 상세 */}
             <Route
               path="/personal/:plannerId"
               element={<PersonalPlannerMain sidebarOpen={sidebarOpen} />}
             />
 
-            <Route path="/list/:type" element={<PlannerListPage />} />
-            {/* 공유 플래너 */}
-
-            <Route path="/shared/:plannerId" element={<TeamPlannerMain />} />
-
-            {/* 기본값 - 개인 플래너로 */}
+            {/* 공유 플래너 상세 */}
             <Route
-              path="*"
-              element={<PersonalPlannerMain sidebarOpen={sidebarOpen} />}
+              path="/shared/:plannerId"
+              element={<TeamPlannerMain sidebarOpen={sidebarOpen} />}
             />
+
+            {/* 잘못된 경로 */}
+            <Route path="*" element={<Navigate to="/planner" replace />} />
           </Routes>
         </div>
       </div>
