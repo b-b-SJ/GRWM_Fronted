@@ -4,9 +4,9 @@ import WeeklyPlanner from "./WeeklyPlanner";
 //<UserRoundPlus />; //유저 아이콘임
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import DailyPlanner from "./DailyPlanner";
-import dummyImg from "../../img/dummy02.jpg"; //캘린더 사진
 import { useScheduleFilter } from "../../hooks/useScheduleFilter";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+
 const PlannerHeaderWM = ({
   year,
   month,
@@ -28,10 +28,14 @@ const PlannerHeaderWM = ({
   selectedSc,
   nowPlanner,
   setNowPlanner,
-  plannerType,
 }) => {
   const { type } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // 현재 경로에서 shared인지 personal인지 판단
+  const isShared = location.pathname.includes("/shared");
+  const plannerType = isShared ? "shared" : "personal";
 
   const handleGoToList = () => {
     navigate(`/planner/list/${plannerType}`);
@@ -63,7 +67,7 @@ const PlannerHeaderWM = ({
                 // () => { setSelectCalendar(!selectCalendar); }
               }
               className="w-16 h-16 rounded-full bg-cover bg-center overflow-hidden"
-              style={{ backgroundImage: `url(${dummyImg})` }} //캘린더 사진
+              style={{}} //캘린더 사진 backgroundImage:
             ></button>
             <div
               className="absolute left-0 top-full mt-2 w-48 bg-white border rounded-lg shadow-lg hidden group-hover:block"

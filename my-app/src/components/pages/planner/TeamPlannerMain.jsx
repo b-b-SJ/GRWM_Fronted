@@ -5,10 +5,11 @@ import { useScheduleFilter } from "../../../hooks/useScheduleFilter";
 import PlannerSidebar from "../../layout/PlannerSidebar";
 import PlannerHeaderWM from "../../planner/PlannerHeaderWM";
 import ScheduleModal from "../../planner/ScheduleModal";
-
+import { useTeamPlanner } from "../../../hooks/TeamPlannerProvider";
 const TeamPlannerMain = ({ sidebarOpen }) => {
   const navigate = useNavigate();
   const calendar = useCalendar();
+  const { planners } = useTeamPlanner();
 
   const [viewMode, setViewMode] = useState("monthly");
   const [nowPlanner, setNowPlanner] = useState(1001);

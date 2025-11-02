@@ -1,10 +1,12 @@
 // src/components/planner/groupPlanner/CreatePlannerModal.jsx
 import React, { useState } from "react";
-import { X, Users } from "lucide-react";
+import { X, Users, Upload, Images } from "lucide-react";
 import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
+import { useImgConverter } from "../../hooks/useImgConverter";
 
 const CreatePlannerModal = ({ isOpen, onClose, onSuccess }) => {
   const { createPlanner, loading } = useTeamPlanner();
+  const { getImageUrl, isUploading } = useImgConverter();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -20,6 +22,21 @@ const CreatePlannerModal = ({ isOpen, onClose, onSuccess }) => {
     }));
   };
 
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      const imageUrl = await getImageUrl(file);
+      setFormData((prev) => ({
+        ...prev,
+        profileImage: imageUrl,
+      }));
+    } catch (error) {
+      alert("이미지 업로드 실패: " + error.message);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -31,10 +48,8 @@ const CreatePlannerModal = ({ isOpen, onClose, onSuccess }) => {
     try {
       const plannerId = await createPlanner(formData);
       alert("플래너가 생성되었습니다!");
-      onSuccess(plannerId); // 성공 시 콜백
+      onSuccess(plannerId);
       onClose();
-
-      // 폼 초기화
       setFormData({ title: "", description: "", profileImage: "" });
     } catch (error) {
       alert("플래너 생성 실패: " + error.message);
@@ -44,12 +59,9 @@ const CreatePlannerModal = ({ isOpen, onClose, onSuccess }) => {
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div
-        className="bg-white rounded-lg w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-lg w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 헤더 */}
@@ -65,78 +77,112 @@ const CreatePlannerModal = ({ isOpen, onClose, onSuccess }) => {
 
         {/* 폼 내용 */}
         <form onSubmit={handleSubmit}>
-          <div className="p-6 space-y-6">
-            {/* 프로필 이미지 (선택) */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                플래너 이미지{" "}
-                <span className="text-gray-400 text-xs">(선택)</span>
-              </label>
-              <div className="flex items-center gap-4">
-                {formData.profileImage ? (
-                  <img
-                    src={formData.profileImage}
-                    alt="미리보기"
-                    className="w-20 h-20 rounded-full object-cover border-2 border-gray-300"
-                    onError={(e) => {
-                      e.target.style.display = "none";
-                    }}
-                  />
-                ) : (
-                  <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center">
-                    <Users size={32} className="text-gray-400" />
-                  </div>
-                )}
+          <div className="p-6">
+            {/* 🔥 가로 배치: 왼쪽 이미지, 오른쪽 입력 필드들 */}
+            <div className="flex gap-6">
+              {/* 1️⃣ 왼쪽: 프로필 이미지 */}
+              <div className="flex-shrink-0">
+                <label className="block text-sm font-medium mb-2">
+                  프로필 사진 선택
+                </label>
+                <label
+                  htmlFor="image-upload"
+                  className="block w-48 h-48 rounded-xl bg-gray-200 flex items-center justify-center overflow-hidden border-2 border-gray-300 cursor-pointer hover:border-blue-400 transition-colors relative group"
+                >
+                  {formData.profileImage ? (
+                    <>
+                      <img
+                        src={formData.profileImage}
+                        alt="미리보기"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                        }}
+                      />
+                      {/* 호버 시 오버레이 */}
+                      <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Images size={32} className="text-white" />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Users
+                        size={60}
+                        className="text-gray-400 group-hover:text-blue-500 transition-colors"
+                      />
+                      {/* 호버 시 업로드 아이콘 */}
+                      <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Upload size={32} className="text-white" />
+                      </div>
+                    </>
+                  )}
+
+                  {/* 업로드 중 표시 */}
+                  {isUploading && (
+                    <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center">
+                      <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
+                </label>
+
                 <input
-                  type="url"
-                  name="profileImage"
-                  value={formData.profileImage}
-                  onChange={handleChange}
-                  placeholder="이미지 URL을 입력하세요"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  id="image-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  disabled={isUploading}
+                  className="hidden"
                 />
-              </div>
-            </div>
 
-            {/* 플래너 이름 (필수) */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                플래너 이름 <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                placeholder="예: 우리 팀의 프로젝트"
-                maxLength={20}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                {formData.title.length}/20
-              </p>
-            </div>
-
-            {/* 설명 (선택) */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                설명 <span className="text-gray-400 text-xs">(선택)</span>
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                placeholder="이 플래너에 대한 간단한 설명을 입력하세요"
-                maxLength={100}
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              {formData.description && (
-                <p className="text-xs text-gray-500 mt-1">
-                  {formData.description.length}/100
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  클릭하여 이미지 업로드
                 </p>
-              )}
+              </div>
+
+              {/* 2️⃣ 오른쪽: 제목 & 설명 */}
+              <div className="flex-1 space-y-6">
+                {/* 플래너 제목 */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    플래너 제목 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleChange}
+                    placeholder="예: 우리 팀의 프로젝트"
+                    maxLength={20}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formData.title.length}/20
+                  </p>
+                </div>
+
+                {/* 플래너 설명 */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    플래너 설명{" "}
+                    <span className="text-gray-400 text-xs">(선택)</span>
+                  </label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    placeholder="이 플래너에 대한 간단한 설명을 입력하세요"
+                    maxLength={100}
+                    rows={6}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {formData.description && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {formData.description.length}/100
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -146,16 +192,16 @@ const CreatePlannerModal = ({ isOpen, onClose, onSuccess }) => {
               type="button"
               onClick={onClose}
               className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-              disabled={loading}
+              disabled={loading || isUploading}
             >
               취소
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || isUploading}
               className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400"
             >
-              {loading ? "생성 중..." : "만들기"}
+              {loading ? "생성 중..." : isUploading ? "업로드 중..." : "만들기"}
             </button>
           </div>
         </form>
