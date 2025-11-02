@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useCalendar } from "../../../hooks/useCalendar";
 import { useScheduleFilter } from "../../../hooks/useScheduleFilter";
 import PlannerSidebar from "../../layout/PlannerSidebar";
@@ -10,9 +10,13 @@ const TeamPlannerMain = ({ sidebarOpen }) => {
   const navigate = useNavigate();
   const calendar = useCalendar();
   const { planners } = useTeamPlanner();
+  const { plannerId } = useParams();
 
   const [viewMode, setViewMode] = useState("monthly");
-  const [nowPlanner, setNowPlanner] = useState(1001);
+
+  //임시였슨, 로컬 스토리지 사용할 예정<< 로컬 스토리지 관리는 plannerPage해서 해야할 것 같긴합니다
+  const [nowPlanner, setNowPlanner] = useState(Number(plannerId));
+
   const [openScModal, setOpenScModal] = useState(false);
   const [selectedSc, setSelectedSc] = useState(null);
 
@@ -38,6 +42,7 @@ const TeamPlannerMain = ({ sidebarOpen }) => {
           setOpenScModal={setOpenScModal}
           selectedSc={selectedSc}
           setSelectedSc={setSelectedSc}
+
           // 공유 플래너로 이동 버튼
           //onNavigateToShared={() => navigate("/planner/shared")}
         />

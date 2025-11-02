@@ -75,9 +75,8 @@ const DailyPlanner = ({
   const filtered = scFilter?.scDateFiltered
     ? getLabelnStyleStartEnd(scFilter.scDateFiltered)
     : null;
-  console.log("으아", filtered);
+
   const dateSchedules = filtered?.schedules || [];
-  console.log("어어ㅓ어엉", dateSchedules);
 
   //종일 일정들 걸러내는 필터링 함수 필요
 

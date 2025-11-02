@@ -10,7 +10,7 @@ const ScheduleListSidebar = ({
   filtering,
 }) => {
   const todaySc = filtering.scTodayFiltered;
-  console.log("사이드바용 오늘 스케쥴", todaySc);
+
   //null값-> 일정 없는 경우.에 대해서도 코딩 필요함
 
   //1. 사이드바

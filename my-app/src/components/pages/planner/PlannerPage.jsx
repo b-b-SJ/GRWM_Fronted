@@ -42,7 +42,7 @@ const PlannerPage = () => {
             <Route path="/list/:type" element={<PlannerListPage />} />
             {/* 공유 플래너 */}
 
-            <Route path="/shared" element={<TeamPlannerMain />} />
+            <Route path="/shared/:plannerId" element={<TeamPlannerMain />} />
 
             {/* 기본값 - 개인 플래너로 */}
             <Route

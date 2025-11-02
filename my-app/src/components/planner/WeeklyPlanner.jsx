@@ -19,7 +19,6 @@ const WeeklyPlanner = ({
   const thisweeks = weeks[weekFound];
   const calendar = useCalendar();
 
-  console.log("듀부김밥", scFilter.groupedDate);
   //시작 시간, 끝나는 시간 필요
   //
   const getLabelStartEnd = (groupedArr) => {
@@ -52,7 +51,6 @@ const WeeklyPlanner = ({
   const weekScheTime = scFilter.groupedDate
     ? getLabelStartEnd(scFilter.groupedDate)
     : [];
-  console.log("화깅ㄴ슨", weekScheTime);
 
   return (
     <div className="mt-4 mx-8">
@@ -75,7 +73,7 @@ const WeeklyPlanner = ({
             ? weekScheTime.find((d) => d.date === dateKey)
             : undefined;
           const daySchedules = dayObj ? dayObj.schedules : [];
-          console.log("우우우우ㅜ우웅ㅇ", daySchedules);
+
           return (
             <div
               key={d}

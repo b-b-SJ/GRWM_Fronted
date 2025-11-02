@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import DailyPlanner from "./DailyPlanner";
 import { useScheduleFilter } from "../../hooks/useScheduleFilter";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
 
 const PlannerHeaderWM = ({
   year,
@@ -29,7 +30,13 @@ const PlannerHeaderWM = ({
   nowPlanner,
   setNowPlanner,
 }) => {
-  const { type } = useParams();
+  const { planners } = useTeamPlanner();
+
+  const findNowPlannerInfo = () => {
+    return planners.find((planner) => planner.plannerId === nowPlanner);
+  };
+
+  const nowPlannerInfo = findNowPlannerInfo();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -41,19 +48,18 @@ const PlannerHeaderWM = ({
     navigate(`/planner/list/${plannerType}`);
   };
 
-  //const [choosePlanner, setChoosePlanner] = useState("default");
   const [viewDate, setViewDate] = useState(new Date());
   const scFilter = useScheduleFilter({ nowPlanner, currentDate });
 
   const goPrev = () => setCurrentDate((prev) => STEP[viewMode].prev(prev));
   const goNext = () => setCurrentDate((prev) => STEP[viewMode].next(prev));
-  // console.log("weeks in header:", weeks);
+
   const [selectCalendar, setSelectCalendar] = useState(false);
   return (
     //토글 버튼 - monthly, weekly 전환
     <div className="pt-4">
       <div className="mt-2 ml-24 flex items-start p-3 outline outline-gray-800 font-bold rounded-r-3xl rounded-tl-3xl w-fit pl-5 pr-5">
-        기여운 게 조은데 우뜩해..♡ 20자
+        {nowPlannerInfo?.title}
       </div>
       <div className="flex items-center relative">
         <div className="flex items-center gap-7 px-4 outline-gray-700">
@@ -67,7 +73,9 @@ const PlannerHeaderWM = ({
                 // () => { setSelectCalendar(!selectCalendar); }
               }
               className="w-16 h-16 rounded-full bg-cover bg-center overflow-hidden"
-              style={{}} //캘린더 사진 backgroundImage:
+              style={{
+                backgroundImage: `url(${nowPlannerInfo?.profileImage})`,
+              }} //캘린더 사진
             ></button>
             <div
               className="absolute left-0 top-full mt-2 w-48 bg-white border rounded-lg shadow-lg hidden group-hover:block"

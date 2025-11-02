@@ -194,7 +194,6 @@ export function useScheduleFilter({ nowPlanner, currentDate }) {
     //filter는 얕은 복사본 배열을 생성?함
   };
   const scPlannerFiltered = scPlannerFilter(schedules, nowPlanner);
-  console.log("ㅇ", currentDate); //아직 currentDate를 어디다가 써야될지 모르겟음
 
   //1. 일단 시간 슬라이스-> 따로 보관해두기
   //2. ([전체덩어리]+시간 초) 이런 게 여러개로 이루어져 있는 구조? - 3중 배열이 되는 건가?
@@ -247,7 +246,6 @@ export function useScheduleFilter({ nowPlanner, currentDate }) {
 
   //new Date() 말고 다른 걸 넣어야되는데 아직 모르겟떠염
   const scMonthFiltered = scMonthFilter(groupedDate, new Date()); //아직 다른 날짜들은 어케 해야할지 모루겟긔
-  console.log("ㄷㄷㄷㄷ", scMonthFiltered);
 
   const scDateFilter = (schedules, targetDate) => {
     const year = targetDate.getFullYear();

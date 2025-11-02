@@ -15,7 +15,7 @@ const MonthlyGrid = ({
   previewMap,
 }) => {
   const today = new Date();
-  console.log(weeks);
+
   return (
     <div>
       {/**요일 배열 */}
@@ -27,7 +27,6 @@ const MonthlyGrid = ({
         ))}
       </div>
       <div className="flex-row">
-        {console.log("ㅇ우", previewMap)}
         {/*^위에 className은 캘린더 전체 기중 */}
         {weeks.map((week, wi) => (
           <div key={wi} className="grid grid-cols-7 ">
