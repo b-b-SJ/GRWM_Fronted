@@ -42,14 +42,14 @@ const PlannerPage = () => {
     useEffect(() => {
       const lastPersonalId = localStorage.getItem("lastPersonalPlannerId");
 
-      console.log("🟢 PersonalPlannerRedirect:", lastPersonalId);
+      console.log(" PersonalPlannerRedirect:", lastPersonalId);
 
       if (lastPersonalId) {
         navigate(`/planner/personal/${lastPersonalId}`, { replace: true });
       } else {
         // 없으면 목록으로 (나중에 구현)
         // 지금은 기본 플래너로
-        navigate("/planner/personal/1001", { replace: true });
+        navigate("/planner/list/personal", { replace: true });
       }
     }, [navigate]);
 
@@ -65,7 +65,7 @@ const PlannerPage = () => {
     useEffect(() => {
       const lastSharedId = localStorage.getItem("lastSharedPlannerId");
 
-      console.log("🔵 SharedPlannerRedirect:", lastSharedId);
+      console.log(" SharedPlannerRedirect:", lastSharedId);
 
       if (lastSharedId) {
         navigate(`/planner/shared/${lastSharedId}`, { replace: true });
@@ -130,7 +130,6 @@ const PlannerPage = () => {
             {/* 기본 경로 - 리다이렉트 */}
             <Route path="/" element={<DefaultPlannerRedirect />} />
             <Route path="/personal" element={<PersonalPlannerRedirect />} />
-            {/* 🔥 추가: /planner/shared (plannerId 없음) */}
             <Route path="/shared" element={<SharedPlannerRedirect />} />
 
             {/* 플래너 목록 */}
