@@ -266,9 +266,9 @@ const WorkspaceSidebar = ({
                                                 {room.studyRoomName || room.name || '이름 없는 스터디룸'}
                                             </h3>
                                             <div className="flex items-center space-x-2 mt-1">
-                                                {room.subject && (
+                                                {room.category && (
                                                     <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                                                        {room.subject}
+                                                        {room.category}
                                                     </span>
                                                 )}
                                                 <span className="text-sm text-gray-500">
