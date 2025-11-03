@@ -345,8 +345,10 @@ const WorkspacePage = () => {
 
     const {
         studyRooms,
+        joinedStudyRooms,
         loading: isLoadingStudyRooms,
         fetchStudyRooms,
+        fetchJoinedStudyRooms,
         joinStudyRoom,
     } = useStudyRoomState();
 
@@ -385,7 +387,7 @@ const WorkspacePage = () => {
     useEffect(() => {
         console.log('[WorkspacePage] 데이터 로드 - 모드:', workspaceMode);
         if (isStudyRoom) {
-            fetchStudyRooms(0, 10);
+            fetchJoinedStudyRooms();
         } else {
             fetchChatRooms();
         }
@@ -407,17 +409,18 @@ const WorkspacePage = () => {
         }
     };
 
-    // 스터디룸 생성 성공 시 처리
+
+// 스터디룸 생성 성공 시 처리
     const handleStudyRoomCreated = async (studyRoomId) => {
         console.log('[WorkspacePage] 스터디룸 생성 완료:', studyRoomId);
 
         try {
-            await joinStudyRoom(studyRoomId);
-            await fetchStudyRooms(0, 10);
-
-            setSelectedStudyRoom(studyRoomId);
-            setSelectedChatRoom(null); // 다른 모드 ID 클리어
-            setCurrentView('study');
+            // joinStudyRoom에서 이미 모든 처리를 했으므로 바로 화면 전환
+            setTimeout(() => {
+                setSelectedStudyRoom(studyRoomId);
+                setSelectedChatRoom(null);
+                setCurrentView('study');
+            }, 300);
         } catch (error) {
             console.error('[WorkspacePage] 스터디룸 입장 실패:', error);
             alert(`스터디룸 입장 실패: ${error.message}`);
@@ -474,17 +477,25 @@ const WorkspacePage = () => {
         console.log('[WorkspacePage] 스터디룸 참여 from explorer:', studyRoomId);
 
         try {
-            await joinStudyRoom(studyRoomId);
-            await fetchStudyRooms(0, 10);
+            // joinStudyRoom이 모든 목록 갱신을 처리
+            const success = await joinStudyRoom(studyRoomId);
 
+            if (!success) {
+                throw new Error('스터디룸 참여에 실패했습니다.');
+            }
+
+            console.log('[WorkspacePage] 스터디룸 참여 성공, 화면 전환');
+
+            // 약간의 지연 후 화면 전환 (데이터 동기화 대기)
             setTimeout(() => {
                 setSelectedStudyRoom(studyRoomId);
                 setSelectedChatRoom(null);
                 setCurrentView('study');
-            }, 500);
+            }, 300);
 
         } catch (error) {
             console.error('[WorkspacePage] 스터디룸 참여 실패:', error);
+            alert(`스터디룸 참여 실패: ${error.message}`);
             throw error;
         }
     };
@@ -537,7 +548,7 @@ const WorkspacePage = () => {
                     sidebarOpen={workspaceSidebarOpen}
                     toggleSidebar={toggleWorkspaceSidebar}
                     chatRooms={chatRooms}
-                    studyRooms={studyRooms}
+                    studyRooms={joinedStudyRooms}
                     selectedRoom={currentSelectedRoom}
                     setSelectedRoom={handleSelectRoom}
                     workspaceMode={workspaceMode}

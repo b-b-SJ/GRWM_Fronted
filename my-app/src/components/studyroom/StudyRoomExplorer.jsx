@@ -46,14 +46,14 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
 
         // 카테고리 필터
         if (selectedCategory !== '전체') {
-            filtered = filtered.filter(room => room.subject === selectedCategory);
+            filtered = filtered.filter(room => room.category === selectedCategory);
         }
 
         // 검색 필터
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
             filtered = filtered.filter(room =>
-                (room.studyRoomName || '').toLowerCase().includes(query) ||
+                (room.name || '').toLowerCase().includes(query) ||
                 (room.description || '').toLowerCase().includes(query)
             );
         }
@@ -72,7 +72,7 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
 
         // 인원 초과 확인
         const currentMembers = room.currentMembers || room.userCount || 0;
-        const maxMembers = room.maxMembers || 10;
+        const maxMembers = room.maxMembers || 8;
 
         if (currentMembers >= maxMembers) {
             alert('스터디룸 인원이 가득 찼습니다.');

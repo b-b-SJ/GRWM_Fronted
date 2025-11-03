@@ -232,7 +232,7 @@ Authorization:Bearer ${accessToken}
                 if (event.data.startsWith('CONNECTED')) {
                     console.log('[StudyRoom] STOMP 연결 성공');
 
-                    // Todo 토픽 구독
+                    // To-do 토픽 구독
                     const todoSubId = `sub-todo-${studyRoomId}-${Date.now()}`;
                     const todoSubscribeFrame = `SUBSCRIBE
 id:${todoSubId}
@@ -404,7 +404,7 @@ id:${subId}
         console.log('[StudyRoom] WebSocket 연결 해제 완료');
     }, [cleanupConnection]);
 
-    // Todo 업데이트 전송
+    // To-do 업데이트 전송
     const sendTodoUpdate = useCallback((studyRoomId, todoData) => {
         const ws = websocketRef.current;
 

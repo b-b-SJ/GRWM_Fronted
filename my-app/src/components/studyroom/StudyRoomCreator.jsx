@@ -11,7 +11,7 @@ import { useAuth } from '../../hooks/AuthContext';
  */
 const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
     const { user } = useAuth();
-    const { createStudyRoom, joinStudyRoom, fetchStudyRooms } = useStudyRoomState();
+    const { createStudyRoom, joinStudyRoom, fetchStudyRooms, fetchJoinedStudyRooms } = useStudyRoomState();
 
     const [formData, setFormData] = useState({
         name: '',
@@ -71,9 +71,9 @@ const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
         try {
             setLoadingMessage('스터디룸을 생성하고 있습니다...');
 
-            // 1. 스터디룸 생성 API 호출 - 필드명 수정
+            // 1. 스터디룸 생성 API 호출
             const studyRoomData = {
-                name: formData.name, // 수정: formData.name 직접 사용
+                name: formData.name,
                 category: formData.category,
                 description: formData.description,
                 duration: formData.duration,
@@ -93,7 +93,6 @@ const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
             setLoadingMessage('스터디룸에 참여하고 있습니다...');
 
             // 2. 생성된 스터디룸에 자동 참여
-            // joinStudyRoom이 내부적으로 fetchStudyRoomDetail을 호출함
             const joinSuccess = await joinStudyRoom(studyRoomId);
 
             if (!joinSuccess) {
@@ -101,13 +100,8 @@ const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
             }
 
             console.log('[StudyRoomCreator] 스터디룸 참여 성공');
-            setLoadingMessage('스터디룸 목록을 업데이트하고 있습니다...');
 
-            // 3. 스터디룸 목록 새로고침
-            await fetchStudyRooms(0, 10);
-
-            console.log('[StudyRoomCreator] 목록 새로고침 완료');
-
+            // joinStudyRoom에서 이미 목록 갱신을 하므로 여기서는 불필요
             // 폼 초기화
             setFormData({
                 name: '',
@@ -122,7 +116,7 @@ const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
 
             alert('스터디룸이 성공적으로 생성되고 입장되었습니다!');
 
-            // 부모 컴포넌트에 알림 (WorkspacePage로 ID 전달)
+            // 부모 컴포넌트에 알림
             if (onRoomCreated) {
                 console.log('[StudyRoomCreator] onRoomCreated 콜백 호출, ID:', studyRoomId);
                 onRoomCreated(studyRoomId);

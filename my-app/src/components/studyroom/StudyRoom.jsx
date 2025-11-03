@@ -60,19 +60,8 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
 
         console.log('[StudyRoom] WebSocket 이벤트 핸들러 등록');
 
-        // To-do 이벤트 핸들러
-        const removeTodoHandler = addTodoHandler((event) => {
-            console.log('[StudyRoom] Todo 이벤트 수신:', event);
-            // To-do 목록 새로고침
-            fetchTodos(studyRoomId);
-        });
-
-        // 리액션 이벤트 핸들러
-        const removeReactionHandler = addReactionHandler((event) => {
-            console.log('[StudyRoom] 리액션 이벤트 수신:', event);
-            // To-do 목록 새로고침 (리액션 포함)
-            fetchTodos(studyRoomId);
-        });
+        // To-do와 리액션은 WebSocket 이벤트를 받지 않으므로,
+        // CRUD 작업 후 수동으로 fetchTodos 호출
 
         // 투표 이벤트 핸들러
         const removeVoteHandler = addVoteHandler((event) => {
@@ -110,12 +99,10 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
         // 클린업: 핸들러 제거
         return () => {
             console.log('[StudyRoom] WebSocket 이벤트 핸들러 제거');
-            removeTodoHandler();
-            removeReactionHandler();
             removeVoteHandler();
             removeRoomHandler();
         };
-    }, [studyRoomId, addTodoHandler, addReactionHandler, addVoteHandler, addRoomHandler]);
+    }, [studyRoomId, addVoteHandler, addRoomHandler]);
 
     // 스터디룸 참여 및 WebSocket 연결
     useEffect(() => {
@@ -128,23 +115,16 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
 
         const initializeStudyRoom = async () => {
             try {
-                // 1. 스터디룸 참여 (joinStudyRoom이 fetchStudyRoomDetail 포함)
-                console.log('[StudyRoom] joinStudyRoom 호출');
-                const joinSuccess = await joinStudyRoom(studyRoomId);
-
-                if (!joinSuccess) {
-                    console.error('[StudyRoom] joinStudyRoom 실패');
-                    return;
+                // currentStudyRoom이 이미 있는지 확인
+                if (!currentStudyRoom || currentStudyRoom.studyRoomId !== studyRoomId) {
+                    console.log('[StudyRoom] 스터디룸 상세 정보 로드');
+                    await fetchStudyRoomDetail(studyRoomId);
+                    await fetchTodos(studyRoomId);
+                } else {
+                    console.log('[StudyRoom] 스터디룸 정보 이미 로드됨');
                 }
 
-                console.log('[StudyRoom] joinStudyRoom 성공');
-
-                // 2. To-do 목록 로드
-                console.log('[StudyRoom] fetchTodos 호출');
-                await fetchTodos(studyRoomId);
-                console.log('[StudyRoom] fetchTodos 완료');
-
-                // 3. WebSocket 연결 (약간의 지연 후)
+                // WebSocket 연결 (약간의 지연 후)
                 setTimeout(() => {
                     console.log('[StudyRoom] WebSocket 연결 시작');
                     connect(studyRoomId);
@@ -161,16 +141,14 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
         return () => {
             console.log('[StudyRoom] 컴포넌트 언마운트 - 정리 시작');
             disconnect();
-            // leaveStudyRoom은 사용자가 명시적으로 나갈 때만 호출
         };
-    }, [studyRoomId, user]);
+    }, [studyRoomId, user]); // currentStudyRoom 의존성 제거
 
     // 남은 시간 계산 및 타이머
     useEffect(() => {
-        // currentStudyRoom이 로드되고 endTime이 있는지 확인
+        // currentStudyRoom이 없거나 endTime이 없으면 실행하지 않음
         if (!currentStudyRoom || !currentStudyRoom.endTime) {
-            console.log('[StudyRoom] currentStudyRoom 또는 endTime 없음:', currentStudyRoom);
-            setRemainingTime(null);
+            console.log('[StudyRoom] 타이머 시작 불가 - currentStudyRoom 또는 endTime 없음');
             return;
         }
 
@@ -178,34 +156,68 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
 
         const updateTimer = () => {
             const now = new Date();
-            const endTime = new Date(currentStudyRoom.endTime);
-            const diff = endTime - now;
-            const minutes = Math.floor(diff / 1000 / 60);
+            let endTime;
 
-            console.log('[StudyRoom] 남은 시간:', minutes, '분');
-            setRemainingTime(minutes);
+            try {
+                // endTime 파싱 처리
+                if (currentStudyRoom.endTime.includes('T')) {
+                    // ISO 8601 형식: "2024-11-03T16:01:54.077055"
+                    endTime = new Date(currentStudyRoom.endTime);
+                } else if (currentStudyRoom.endTime.includes(':')) {
+                    // 시간만 있는 형식: "16:01:54.077055"
+                    const today = new Date();
+                    const timeStr = currentStudyRoom.endTime.split('.')[0]; // 밀리초 제거
+                    const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+                    endTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes, seconds);
 
-            // 5분 전 투표 시작
-            if (minutes === 5 && !voteStatus.isVoting && !showVoteAlert) {
-                console.log('[StudyRoom] 연장 투표 시작');
-                setShowVoteAlert(true);
-                const requiredVotes = Math.ceil(currentStudyRoom.currentMembers / 2);
-                setVoteStatus({
-                    isVoting: true,
-                    votedUsers: [],
-                    totalVotes: 0,
-                    requiredVotes
-                });
-                setHasVoted(false);
-            }
+                    // 만약 계산된 시간이 현재 시간보다 과거라면 다음날로 설정
+                    if (endTime < now) {
+                        endTime.setDate(endTime.getDate() + 1);
+                    }
+                } else {
+                    console.error('[StudyRoom] 알 수 없는 endTime 형식:', currentStudyRoom.endTime);
+                    setRemainingTime(null);
+                    return;
+                }
 
-            // 시간 종료
-            if (minutes <= 0) {
-                console.log('[StudyRoom] 스터디룸 시간 종료');
-                alert('스터디룸 시간이 종료되었습니다.');
-                disconnect();
-                leaveStudyRoom(studyRoomId);
-                onBack();
+                // endTime이 유효한 날짜인지 확인
+                if (isNaN(endTime.getTime())) {
+                    console.error('[StudyRoom] 유효하지 않은 endTime:', currentStudyRoom.endTime);
+                    setRemainingTime(null);
+                    return;
+                }
+
+                const diff = endTime - now;
+                const minutes = Math.floor(diff / 1000 / 60);
+
+                console.log('[StudyRoom] 남은 시간:', minutes, '분', '(endTime:', endTime.toISOString(), ')');
+                setRemainingTime(minutes);
+
+                // 5분 전 투표 시작
+                if (minutes === 5 && !voteStatus.isVoting && !showVoteAlert) {
+                    console.log('[StudyRoom] 연장 투표 시작');
+                    setShowVoteAlert(true);
+                    const requiredVotes = Math.ceil(currentStudyRoom.currentMembers / 2);
+                    setVoteStatus({
+                        isVoting: true,
+                        votedUsers: [],
+                        totalVotes: 0,
+                        requiredVotes
+                    });
+                    setHasVoted(false);
+                }
+
+                // 시간 종료
+                if (minutes <= 0) {
+                    console.log('[StudyRoom] 스터디룸 시간 종료');
+                    alert('스터디룸 시간이 종료되었습니다.');
+                    disconnect();
+                    leaveStudyRoom(studyRoomId);
+                    onBack();
+                }
+            } catch (error) {
+                console.error('[StudyRoom] 타이머 업데이트 오류:', error);
+                setRemainingTime(null);
             }
         };
 
@@ -266,40 +278,51 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
         if (!newTodo.trim()) return;
 
         const result = await createTodo(studyRoomId, {
-            content: newTodo.trim(),
-            userId: user.communityId
+            content: newTodo.trim()
         });
 
         if (result) {
             setNewTodo('');
             setIsAddingTodo(false);
+            // WebSocket 이벤트가 없으므로 수동으로 목록 새로고침
+            await fetchTodos(studyRoomId);
         }
     };
 
-    // To-Do 완료/미완료 토글
+// To-Do 완료/미완료 토글
     const handleToggleTodo = async (todoId, currentCompleted) => {
         if (currentCompleted) {
             await updateTodo(studyRoomId, todoId, { isCompleted: false });
         } else {
             await completeTodo(studyRoomId, todoId);
         }
+        // 수동으로 목록 새로고침
+        await fetchTodos(studyRoomId);
     };
 
-    // To-Do 삭제
+// To-Do 삭제
     const handleDeleteTodo = async (todoId) => {
         if (window.confirm('이 To-Do를 삭제하시겠습니까?')) {
-            await deleteTodo(studyRoomId, todoId);
+            const success = await deleteTodo(studyRoomId, todoId);
+            if (success) {
+                // 수동으로 목록 새로고침
+                await fetchTodos(studyRoomId);
+            }
         }
     };
 
-    // 리액션 추가
+// 리액션 추가
     const handleLikeTodo = async (todoUserId, todoId) => {
         if (todoUserId === user?.communityId) {
             alert('자신의 To-Do에는 리액션을 추가할 수 없습니다.');
             return;
         }
 
-        await addTodoReaction(studyRoomId, todoId, '👍');
+        const reactionId = await addTodoReaction(studyRoomId, todoId);
+        if (reactionId) {
+            // 수동으로 목록 새로고침
+            await fetchTodos(studyRoomId);
+        }
     };
 
     // 연장 투표

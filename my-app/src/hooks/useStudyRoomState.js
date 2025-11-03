@@ -24,6 +24,7 @@ export const useStudyRoomState = () => {
 
     // 스터디룸 상태
     const [studyRooms, setStudyRooms] = useState([]);
+    const [joinedStudyRooms, setJoinedStudyRooms] = useState([]);
     const [currentStudyRoom, setCurrentStudyRoom] = useState(null);
     const [todos, setTodos] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -72,99 +73,12 @@ export const useStudyRoomState = () => {
     // ========== WebSocket 이벤트 핸들러 ==========
 
     useEffect(() => {
-        // To-do 이벤트 핸들러
-        const removeTodoHandler = addTodoHandler((event) => {
-            console.log('Todo 이벤트 수신:', event);
-
-            switch (event.type) {
-                case 'TODO_CREATED':
-                    setTodos(prev => {
-                        // 중복 체크
-                        if (prev.some(todo => todo.todoId === event.data.todoId)) {
-                            return prev;
-                        }
-                        return [...prev, event.data];
-                    });
-                    break;
-                case 'TODO_UPDATED':
-                    setTodos(prev => prev.map(todo =>
-                        todo.todoId === todo.todoId ? event.data : todo
-                    ));
-                    break;
-
-                case 'TODO_DELETED':
-                    setTodos(prev => prev.filter(todo => todo.todoId !== event.data.todoId));
-                    break;
-
-                case 'TODO_COMPLETED':
-                    setTodos(prev => prev.map(todo =>
-                        todo.todoId === event.data.todoId ? event.data : todo
-                    ));
-                    break;
-            }
-        });
-
-        // 리액션 이벤트 핸들러
-        const removeReactionHandler = addReactionHandler((event) => {
-            console.log('리액션 이벤트 수신:', event);
-
-            switch (event.type) {
-                case 'REACTION_ADDED':
-                    setTodos(prev => prev.map(todo => {
-                        if (todo.todoId === event.data.todoId) {
-                            return {
-                                ...todo,
-                                reactions: [...(todo.reactions || []), event.data.reaction]
-                            };
-                        }
-                        return todo;
-                    }));
-                    break;
-
-                case 'REACTION_DELETED':
-                    setTodos(prev => prev.map(todo => {
-                        if (todo.todoId === event.data.todoId) {
-                            return {
-                                ...todo,
-                                reactions: (todo.reactions || []).filter(
-                                    r => r.reactionId !== event.data.reactionId
-                                )
-                            };
-                        }
-                        return todo;
-                    }));
-                    break;
-            }
-        });
-
-        // 투표 이벤트 핸들러
-        const removeVoteHandler = addVoteHandler((event) => {
-            console.log('투표 이벤트 수신:', event);
-
-            switch (event.type) {
-                case 'VOTE_UPDATED':
-                    // 투표 현황 UI 업데이트 (필요시 별도 상태로 관리)
-                    console.log('투표 현황:', event.data);
-                    break;
-
-                case 'ROOM_EXTENDED':
-                    if (currentStudyRoom) {
-                        setCurrentStudyRoom(prev => ({
-                            ...prev,
-                            extensionCount: event.data.extendedCount,
-                            endTime: event.data.newEndTime
-                        }));
-                    }
-                    break;
-            }
-        });
-
         // 스터디룸 이벤트 핸들러
         const removeRoomHandler = addRoomHandler((event) => {
             console.log('스터디룸 이벤트 수신:', event);
 
             switch (event.type) {
-                case 'USER_JOIN':
+                case 'USER_JOINED':
                     if (currentStudyRoom) {
                         setCurrentStudyRoom(prev => ({
                             ...prev,
@@ -197,9 +111,6 @@ export const useStudyRoomState = () => {
 
         // 클린업
         return () => {
-            removeTodoHandler();
-            removeReactionHandler();
-            removeVoteHandler();
             removeRoomHandler();
         };
     }, [addTodoHandler, addReactionHandler, addVoteHandler, addRoomHandler,
@@ -241,6 +152,8 @@ export const useStudyRoomState = () => {
         }
     }, [isAuthenticated, getAuthHeaders, handleApiError]);
 
+    // ========== fetch API ==========
+
     /**
      * 스터디룸 전체 목록 조회
      * GET /api/study-rooms?page=0&limit=10
@@ -280,6 +193,41 @@ export const useStudyRoomState = () => {
         }
     }, [getAuthHeaders, handleApiError]);
 
+
+    /**
+     * 참여중인 스터디룸 조회
+     * GET /api/study-rooms/joined
+     */
+    const fetchJoinedStudyRooms = useCallback(async () => {
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            const response = await fetch(
+                `/api/study-rooms/joined`,
+                {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('참여 중인 스터디룸 조회 성공:', data);
+
+            setJoinedStudyRooms(data.joinedStudyRooms || []);
+            return data;
+        } catch (error) {
+            return handleApiError(error, '참여 중인 스터디룸 조회');
+        } finally {
+            setLoading(false);
+        }
+    }, [isAuthenticated, getAuthHeaders, handleApiError]);
+
     /**
      * 스터디룸 상세 정보 조회
      * GET /api/study-rooms/{studyRoomId}
@@ -309,10 +257,84 @@ export const useStudyRoomState = () => {
             const data = await response.json();
             console.log('스터디룸 상세 조회 성공:', data);
 
-            setCurrentStudyRoom(data);
-            return data;
+            const mappedRoom = {
+                studyRoomId: studyRoomId,
+                name: data.name,
+                description: data.description,
+                category: data.category,
+                creator: data.creator,
+                extensionTime: data.extensionTime,
+
+                roomName: data.name,
+                endTime: data.endTime || data.studyRoomDto?.endTime,
+                startTime: data.startTime || data.studyRoomDto?.startTime,
+                duration: data.duration,
+                extensionCount: data.extensionCount || 0,
+
+                users: data.studyRoomDto?.users || data.users || [],
+                currentMembers: data.studyRoomDto?.users?.length || data.users?.length || 1,
+                maxMembers: data.maxMembers || 8,
+
+                todoList: data.todoList || [],
+                currentUserStatus: data.currentUserStatus
+            };
+
+            console.log('[useStudyRoomState] mappedRoom:', mappedRoom); // 디버깅용
+
+            //  현재 참여자 목록을 todos 상태에 저장
+            if (mappedRoom.todoList.length > 0) {
+                // fetchTodos() 대신 여기서 상세 DTO에 포함된 todoList를 초기 상태로 사용
+                setTodos(mappedRoom.todoList);
+            }
+
+            setCurrentStudyRoom(mappedRoom); // 매핑된 객체를 저장
+            return mappedRoom;
         } catch (error) {
             return handleApiError(error, '스터디룸 상세 조회');
+        } finally {
+            setLoading(false);
+        }
+    }, [getAuthHeaders, handleApiError]);
+
+    /**
+     * To-do 목록 조회
+     * GET /api/study-rooms/{studyRoomId}/todos
+     */
+    const fetchTodos = useCallback(async (studyRoomId) => {
+        if (!studyRoomId) {
+            setError('유효하지 않은 스터디룸 ID입니다.');
+            return null;
+        }
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            const response = await fetch(
+                `/api/study-rooms/${studyRoomId}/todos`,
+                {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Todo 목록 조회 성공:', data);
+            const mappedTodos = (data.todos || []).map(todo => ({
+                ...todo,
+                content: todo.title,
+                userId: todo.creatorId
+            }));
+
+            setTodos(mappedTodos);
+
+            return data.todos;
+        } catch (error) {
+            return handleApiError(error, 'Todo 목록 조회');
         } finally {
             setLoading(false);
         }
@@ -338,6 +360,8 @@ export const useStudyRoomState = () => {
         setError(null);
 
         try {
+            console.log('[useStudyRoomState] 스터디룸 참여 시작:', studyRoomId);
+
             const response = await fetch(
                 `/api/study-rooms/${studyRoomId}/join`,
                 {
@@ -347,29 +371,47 @@ export const useStudyRoomState = () => {
             );
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
             }
 
             const success = await response.json();
-            console.log('스터디룸 참여 성공:', success);
+            console.log('[useStudyRoomState] 스터디룸 참여 API 응답:', success);
 
             if (success) {
-                // 상세 정보 조회
+                // 1. 참여 중인 스터디룸 목록 새로고침 (사이드바 업데이트용)
+                console.log('[useStudyRoomState] 참여 중인 스터디룸 목록 새로고침');
+                await fetchJoinedStudyRooms();
+
+                // 2. 전체 스터디룸 목록 새로고침 (탐색 페이지 업데이트용)
+                console.log('[useStudyRoomState] 전체 스터디룸 목록 새로고침');
+                await fetchStudyRooms(0, 10);
+
+                // 3. 상세 정보 조회
+                console.log('[useStudyRoomState] 스터디룸 상세 정보 조회');
                 await fetchStudyRoomDetail(studyRoomId);
-                // To-do 목록 조회
+
+                // 4. To-do 목록 조회
+                console.log('[useStudyRoomState] To-do 목록 조회');
                 await fetchTodos(studyRoomId);
-                // WebSocket 연결
+
+                // 5. WebSocket 연결
+                console.log('[useStudyRoomState] WebSocket 연결 시작');
                 connectWebSocket(studyRoomId);
+
+                console.log('[useStudyRoomState] 스터디룸 참여 완료');
             }
 
             return success;
         } catch (error) {
+            console.error('[useStudyRoomState] 스터디룸 참여 오류:', error);
             handleApiError(error, '스터디룸 참여');
             return false;
         } finally {
             setLoading(false);
         }
-    }, [isAuthenticated, getAuthHeaders, handleApiError, fetchStudyRoomDetail, connectWebSocket]);
+    }, [isAuthenticated, getAuthHeaders, handleApiError, fetchStudyRoomDetail,
+        fetchTodos, fetchJoinedStudyRooms, fetchStudyRooms, connectWebSocket]);
 
     /**
      * 스터디룸 퇴장
@@ -423,56 +465,11 @@ export const useStudyRoomState = () => {
         }
     }, [isAuthenticated, getAuthHeaders, handleApiError, disconnectWebSocket]);
 
-    // ========== To-do API ==========
-
-    /**
-     * To-do 목록 조회
-     * GET /api/study-rooms/{studyRoomId}/todos
-     */
-    const fetchTodos = useCallback(async (studyRoomId) => {
-        if (!studyRoomId) {
-            setError('유효하지 않은 스터디룸 ID입니다.');
-            return null;
-        }
-
-        setLoading(true);
-        setError(null);
-
-        try {
-            const response = await fetch(
-                `/api/study-rooms/${studyRoomId}/todos`,
-                {
-                    method: 'GET',
-                    headers: getAuthHeaders()
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            console.log('Todo 목록 조회 성공:', data);
-            const mappedTodos = (data.todos || []).map(todo => ({
-                ...todo,
-                content: todo.title,
-                userId: todo.creatorId
-            }));
-
-            setTodos(mappedTodos);
-
-            return data.todos;
-        } catch (error) {
-            return handleApiError(error, 'Todo 목록 조회');
-        } finally {
-            setLoading(false);
-        }
-    }, [getAuthHeaders, handleApiError]);
+    // ========== To-do API  (fetch 제외) ==========
 
     /**
      * To-do 작성
      * POST /api/study-rooms/{studyRoomId}/todos
-     * WebSocket으로 실시간 공유 (백엔드에서 자동 브로드캐스트)
      */
     const createTodo = useCallback(async (studyRoomId, todoData) => {
         if (!isAuthenticated) {
@@ -489,12 +486,19 @@ export const useStudyRoomState = () => {
         setError(null);
 
         try {
+            const requestBody = {
+                content: todoData.content || todoData.title,
+                // 백엔드 DTO에 있는 필드 추가
+            };
+
+            console.log('[useStudyRoomState] Todo 작성 요청:', requestBody);
+
             const response = await fetch(
                 `/api/study-rooms/${studyRoomId}/todos`,
                 {
                     method: 'POST',
                     headers: getAuthHeaders(),
-                    body: JSON.stringify(todoData)
+                    body: JSON.stringify(requestBody)
                 }
             );
 
@@ -503,11 +507,9 @@ export const useStudyRoomState = () => {
             }
 
             const newTodo = await response.json();
-            console.log('Todo 작성 성공:', newTodo);
+            console.log('[useStudyRoomState] Todo 작성 성공:', newTodo);
 
-            // 백엔드에서 WebSocket으로 브로드캐스트하므로
-            // 여기서는 로컬 상태 업데이트만 수행 (WebSocket 핸들러가 처리)
-
+            // WebSocket으로 실시간 동기화되므로 로컬 상태는 업데이트하지 않음
             return newTodo;
         } catch (error) {
             return handleApiError(error, 'Todo 작성');
@@ -519,7 +521,6 @@ export const useStudyRoomState = () => {
     /**
      * To-do 수정
      * PUT /api/study-rooms/{studyRoomId}/todos/{todoId}
-     * WebSocket으로 실시간 공유 (백엔드에서 자동 브로드캐스트)
      */
     const updateTodo = useCallback(async (studyRoomId, todoId, todoData) => {
         if (!isAuthenticated) {
@@ -536,12 +537,20 @@ export const useStudyRoomState = () => {
         setError(null);
 
         try {
+            // isCompleted를 포함한 업데이트 요청
+            const requestBody = {
+                content: todoData.content || todoData.title,
+                isCompleted: todoData.isCompleted
+            };
+
+            console.log('[useStudyRoomState] Todo 수정 요청:', requestBody);
+
             const response = await fetch(
                 `/api/study-rooms/${studyRoomId}/todos/${todoId}`,
                 {
                     method: 'PUT',
                     headers: getAuthHeaders(),
-                    body: JSON.stringify(todoData)
+                    body: JSON.stringify(requestBody)
                 }
             );
 
@@ -550,7 +559,7 @@ export const useStudyRoomState = () => {
             }
 
             const updatedTodo = await response.json();
-            console.log('Todo 수정 성공:', updatedTodo);
+            console.log('[useStudyRoomState] Todo 수정 성공:', updatedTodo);
 
             return updatedTodo;
         } catch (error) {
@@ -649,9 +658,9 @@ export const useStudyRoomState = () => {
     /**
      * To-do 리액션 추가
      * POST /api/study-rooms/{studyRoomId}/todos/{todoId}/reactions
-     * WebSocket으로 실시간 공유 (백엔드에서 자동 브로드캐스트)
+     * 백엔드: emoji를 받지 않고, reactionId만 반환
      */
-    const addTodoReaction = useCallback(async (studyRoomId, todoId, emoji) => {
+    const addTodoReaction = useCallback(async (studyRoomId, todoId) => {
         if (!isAuthenticated) {
             setError('로그인이 필요합니다.');
             return null;
@@ -666,12 +675,14 @@ export const useStudyRoomState = () => {
         setError(null);
 
         try {
+            console.log('[useStudyRoomState] 리액션 추가 요청:', { studyRoomId, todoId });
+
             const response = await fetch(
                 `/api/study-rooms/${studyRoomId}/todos/${todoId}/reactions`,
                 {
                     method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ emoji })
+                    headers: getAuthHeaders()
+                    // body 없음 - 백엔드에서 userDetails로부터 사용자 정보 가져옴
                 }
             );
 
@@ -680,7 +691,7 @@ export const useStudyRoomState = () => {
             }
 
             const reactionId = await response.json();
-            console.log('리액션 추가 성공:', reactionId);
+            console.log('[useStudyRoomState] 리액션 추가 성공:', reactionId);
 
             return reactionId;
         } catch (error) {
@@ -903,6 +914,7 @@ export const useStudyRoomState = () => {
         // 스터디룸 API
         createStudyRoom,
         fetchStudyRooms,
+        fetchJoinedStudyRooms,
         fetchStudyRoomDetail,
         joinStudyRoom,
         leaveStudyRoom,
