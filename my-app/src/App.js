@@ -8,6 +8,7 @@ import CommunityPage from "./components/pages/community/CommunityPage";
 import WorkspacePage from './components/pages/WorkspacePage';
 import { ChatStateProvider } from './hooks/useChatState';
 import { WebSocketProvider } from './hooks/WebSocketContext';
+import { StudyRoomWebSocketProvider } from './hooks/StudyRoomWebSocketContext';
 import AuthPage from './components/pages/auth/AuthPage';
 import { AuthProvider } from './hooks/AuthContext';
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -19,6 +20,7 @@ const App = () => {
         <AuthProvider>
             <BrowserRouter>
                 <WebSocketProvider>
+                    <StudyRoomWebSocketProvider>
                     <ChatStateProvider>
                         <TeamPlannerProvider>
                             <Routes>
@@ -38,6 +40,7 @@ const App = () => {
                             </Routes>
                         </TeamPlannerProvider>
                     </ChatStateProvider>
+                    </StudyRoomWebSocketProvider>
                 </WebSocketProvider>
             </BrowserRouter>
         </AuthProvider>

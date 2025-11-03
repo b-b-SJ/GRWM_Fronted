@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Clock, Users, Lock, Unlock, X, Key } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Search, Clock, Users, Lock, Unlock, X, Key, RefreshCw } from 'lucide-react';
 import { useStudyRoomState } from '../../hooks/useStudyRoomState';
 
 /**
@@ -7,12 +7,10 @@ import { useStudyRoomState } from '../../hooks/useStudyRoomState';
  * - 공개 스터디룸 목록 조회
  * - 카테고리별 필터링
  * - 비공개 스터디룸 비밀번호 입력
- * - useStudyRoomState API 연동
  */
 const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
-    const { fetchStudyRooms, loading } = useStudyRoomState();
+    const { studyRooms, fetchStudyRooms, loading } = useStudyRoomState();
 
-    const [studyRooms, setStudyRooms] = useState([]);
     const [filteredRooms, setFilteredRooms] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('전체');
@@ -29,13 +27,22 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
     const categories = ['전체', '일반', '자격증', '스터디', '기타'];
 
     // 스터디룸 목록 불러오기
+    const loadStudyRooms = useCallback(async () => {
+        await fetchStudyRooms(0, 50);
+    }, [fetchStudyRooms]);
+
     useEffect(() => {
         loadStudyRooms();
-    }, []);
+    }, [loadStudyRooms]);
 
     // 검색 및 필터링
     useEffect(() => {
-        let filtered = studyRooms;
+        if (!studyRooms || studyRooms.length === 0) {
+            setFilteredRooms([]);
+            return;
+        }
+
+        let filtered = [...studyRooms];
 
         // 카테고리 필터
         if (selectedCategory !== '전체') {
@@ -54,24 +61,7 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
         setFilteredRooms(filtered);
     }, [studyRooms, searchQuery, selectedCategory]);
 
-    const loadStudyRooms = async () => {
-        try {
-            const data = await fetchStudyRooms(0, 50); // 탐색용이므로 더 많이 가져오기
-
-            if (data && data.studyRooms) {
-                // ACTIVE 상태인 스터디룸만 필터링
-                const activeRooms = data.studyRooms.filter(
-                    room => room.status === 'ACTIVE' || room.status === 'active'
-                );
-                setStudyRooms(activeRooms);
-            }
-        } catch (error) {
-            console.error('Failed to fetch study rooms:', error);
-            alert('스터디룸 목록을 불러오는데 실패했습니다.');
-        }
-    };
-
-    const handleJoinRoom = (room) => {
+    const handleJoinRoom = async (room) => {
         const roomId = room.studyRoomId || room.id;
 
         // 이미 참여중인 방인지 확인
@@ -103,7 +93,14 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
 
         // 공개 방은 바로 참여
         if (onJoinRoom) {
-            onJoinRoom(roomId, false, null);
+            try {
+                await onJoinRoom(roomId, false, null);
+                // 참여 성공 후 목록 새로고침
+                await loadStudyRooms();
+            } catch (error) {
+                console.error('Failed to join room:', error);
+                alert('스터디룸 참여에 실패했습니다.');
+            }
         }
     };
 
@@ -126,6 +123,8 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
         try {
             if (onJoinRoom) {
                 await onJoinRoom(passwordModal.roomId, true, passwordModal.password);
+                // 참여 성공 후 목록 새로고침
+                await loadStudyRooms();
             }
             closePasswordModal();
         } catch (error) {
@@ -171,9 +170,19 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
     return (
         <div className="flex-1 flex flex-col p-6">
             <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-800 mb-2">
-                    스터디룸 탐색
-                </h1>
+                <div className="flex items-center justify-between mb-2">
+                    <h1 className="text-2xl font-bold text-gray-800">
+                        스터디룸 탐색
+                    </h1>
+                    <button
+                        onClick={loadStudyRooms}
+                        disabled={loading}
+                        className="flex items-center space-x-2 px-3 py-2 text-sm text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                        <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                        <span>새로고침</span>
+                    </button>
+                </div>
                 <p className="text-gray-600 text-sm">
                     다양한 스터디룸을 찾아 함께 공부해보세요
                 </p>
@@ -230,7 +239,7 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
                         {filteredRooms.map((room, index) => {
                             const roomId = room.studyRoomId || room.id;
                             const isJoined = joinedRoomIds.includes(roomId);
-                            const currentMembers = room.currentMembers || room.userCount || 0;
+                            const currentMembers = room.currentMembers || 0;
                             const maxMembers = room.maxMembers || 10;
                             const isFull = currentMembers >= maxMembers;
                             const remainingMinutes = getRemainingTime(room.endTime);

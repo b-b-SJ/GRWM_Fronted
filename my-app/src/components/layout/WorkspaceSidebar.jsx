@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, Search, Hash, Lock, Crown, MessageCircle, BookOpen, Plus, RefreshCw } from 'lucide-react';
 
-// 남은 시간 계산 헬퍼 함수 (베타)
+// 남은 시간 계산 헬퍼 함수
 const calculateTimeRemaining = (endTime) => {
     const now = new Date();
     const end = new Date(endTime);
@@ -19,10 +19,11 @@ const calculateTimeRemaining = (endTime) => {
 };
 
 /**
- * 채팅방의 사이드바 컴포넌트
- * - useChatState의 데이터 구조에 맞게 필드명 수정
- * - 로딩 상태 및 새로고침 기능 추가
- * - 채팅방과 스터디룸을 전환할 수 있는 협업공간 사이드바
+ * WorkspaceSidebar - 모드 구분 개선
+ * 주요 변경사항:
+ * 1. 모드 전환 시 명확한 로깅
+ * 2. 선택된 방 표시 개선
+ * 3. 에러 방지를 위한 안전한 ID 접근
  */
 const WorkspaceSidebar = ({
                               sidebarOpen,
@@ -43,6 +44,32 @@ const WorkspaceSidebar = ({
         { id: '채팅방', label: '채팅방', icon: MessageCircle },
         { id: '스터디룸', label: '스터디룸', icon: BookOpen }
     ];
+
+    const isStudyRoomMode = workspaceMode === '스터디룸';
+
+    // 모드 전환 핸들러
+    const handleModeChange = (newMode) => {
+        console.log('[WorkspaceSidebar] 모드 전환:', workspaceMode, '->', newMode);
+        setWorkspaceMode(newMode);
+        setCurrentView('rooms');
+        setSelectedRoom(null); // 선택 초기화
+    };
+
+    // 방 선택 핸들러
+    const handleRoomClick = (roomId, roomName) => {
+        console.log('[WorkspaceSidebar] 방 선택:', {
+            mode: workspaceMode,
+            roomId,
+            roomName
+        });
+
+        if (!roomId) {
+            console.error('[WorkspaceSidebar] roomId가 없습니다!');
+            return;
+        }
+
+        setSelectedRoom(roomId);
+    };
 
     return (
         <div className={`
@@ -89,17 +116,15 @@ const WorkspaceSidebar = ({
                     <div className="flex bg-gray-100 rounded-lg p-1">
                         {workspaceModes.map((mode) => {
                             const IconComponent = mode.icon;
+                            const isActive = workspaceMode === mode.id;
+
                             return (
                                 <button
                                     key={mode.id}
-                                    onClick={() => {
-                                        setWorkspaceMode(mode.id);
-                                        setCurrentView('rooms');
-                                        setSelectedRoom(null);
-                                    }}
+                                    onClick={() => handleModeChange(mode.id)}
                                     className={`
                                         flex-1 flex items-center justify-center space-x-2 py-2 px-3 rounded-md transition-all
-                                        ${workspaceMode === mode.id
+                                        ${isActive
                                         ? 'bg-white text-blue-600 shadow-sm font-medium'
                                         : 'text-gray-600 hover:text-gray-800'
                                     }
@@ -113,7 +138,7 @@ const WorkspaceSidebar = ({
                     </div>
                 </div>
 
-                {/* 채팅방 탐색 및 생성 버튼 */}
+                {/* 탐색 및 생성 버튼 */}
                 <div className="space-y-2">
                     <button
                         onClick={() => setCurrentView('explore')}
@@ -146,7 +171,7 @@ const WorkspaceSidebar = ({
                         </div>
                     )}
 
-                    {/* 채팅방이 없는 경우 */}
+                    {/* 채팅방/스터디룸이 없는 경우 */}
                     {!isLoadingRooms &&
                         ((workspaceMode === '채팅방' && chatRooms.length === 0) ||
                             (workspaceMode === '스터디룸' && studyRooms.length === 0)) && (
@@ -166,31 +191,28 @@ const WorkspaceSidebar = ({
 
                     {/* 채팅방 목록 */}
                     {!isLoadingRooms && workspaceMode === '채팅방' && chatRooms.map((room, index) => {
+                        // 안전한 ID 접근
                         const chatRoomId = room.chatRoomId || room.id || room.roomId;
+                        const roomName = room.chatRoomName || room.roomName || room.name || '이름 없는 채팅방';
                         const unreadCount = unreadCounts[chatRoomId] || 0;
+                        const isSelected = selectedRoom === chatRoomId;
+
+                        if (!chatRoomId) {
+                            console.warn('[WorkspaceSidebar] chatRoomId가 없는 방:', room);
+                            return null;
+                        }
 
                         return (
                             <div
-                                key={chatRoomId || `fallback-${index}`}
-                                onClick={() => {
-                                    if (chatRoomId) {
-                                        console.log('Selecting room with chatRoomId:', chatRoomId);
-                                        setSelectedRoom(chatRoomId);
-                                        setCurrentView('chat');
-                                    } else {
-                                        console.error('chatRoomId is undefined for room:', room);
-                                        console.error('Available room keys:', Object.keys(room));
-                                        alert('채팅방 ID를 찾을 수 없습니다. 백엔드 API 응답을 확인해주세요.');
-                                    }
-                                }}
+                                key={chatRoomId}
+                                onClick={() => handleRoomClick(chatRoomId, roomName)}
                                 className={`
-                                p-3 rounded-lg cursor-pointer transition-colors mb-1
-                                ${selectedRoom === chatRoomId
+                                    p-3 rounded-lg cursor-pointer transition-colors mb-1
+                                    ${isSelected
                                     ? 'bg-blue-50 border-l-4 border-blue-600'
                                     : 'hover:bg-gray-50'
                                 }
-                                ${!chatRoomId ? 'opacity-50 cursor-not-allowed' : ''}
-                            `}
+                                `}
                             >
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center space-x-3 flex-1 min-w-0">
@@ -207,7 +229,7 @@ const WorkspaceSidebar = ({
                                         {/* 채팅방 정보 표시 */}
                                         <div className="flex-1 min-w-0">
                                             <h3 className="font-medium text-gray-800 truncate">
-                                                {room.chatRoomName || room.roomName || room.name || '이름 없는 채팅방'}
+                                                {roomName}
                                             </h3>
                                             <p className="text-sm text-gray-500">
                                                 {room.currentMembers || room.members || 0}명 참여중
@@ -236,26 +258,28 @@ const WorkspaceSidebar = ({
 
                     {/* 스터디룸 목록 */}
                     {!isLoadingRooms && workspaceMode === '스터디룸' && studyRooms.map((room, index) => {
+                        // ID 접근
                         const studyRoomId = room.studyRoomId || room.id;
+                        const roomName = room.studyRoomName || room.name || '이름 없는 스터디룸';
                         const isActive = room.status === 'ACTIVE' || room.status === 'active';
                         const timeRemaining = room.endTime ? calculateTimeRemaining(room.endTime) : null;
+                        const isSelected = selectedRoom === studyRoomId;
+
+                        if (!studyRoomId) {
+                            console.warn('[WorkspaceSidebar] studyRoomId가 없는 방:', room);
+                            return null;
+                        }
 
                         return (
                             <div
-                                key={studyRoomId || `study-fallback-${index}`}
-                                onClick={() => {
-                                    if (studyRoomId) {
-                                        setSelectedRoom(studyRoomId);
-                                        setCurrentView('study');
-                                    }
-                                }}
+                                key={studyRoomId}
+                                onClick={() => handleRoomClick(studyRoomId, roomName)}
                                 className={`
                                     p-3 rounded-lg cursor-pointer transition-colors mb-1
-                                    ${selectedRoom === studyRoomId
+                                    ${isSelected
                                     ? 'bg-green-50 border-l-4 border-green-600'
                                     : 'hover:bg-gray-50'
                                 }
-                                    ${!studyRoomId ? 'opacity-50 cursor-not-allowed' : ''}
                                 `}
                             >
                                 <div className="flex items-center justify-between mb-2">
@@ -263,7 +287,7 @@ const WorkspaceSidebar = ({
                                         <BookOpen size={14} className="text-green-600" />
                                         <div className="flex-1 min-w-0">
                                             <h3 className="font-medium text-gray-800 truncate">
-                                                {room.studyRoomName || room.name || '이름 없는 스터디룸'}
+                                                {roomName}
                                             </h3>
                                             <div className="flex items-center space-x-2 mt-1">
                                                 {room.category && (

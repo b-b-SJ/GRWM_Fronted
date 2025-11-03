@@ -1,32 +1,46 @@
 // src/hooks/AuthContext.js
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
-// 로그인, 회원가입 관리
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
-    const [user, setUser] = useState(null); // 사용자 정보 상태 추가
+    const [user, setUser] = useState(null);
+    const [currentStudyRoomId, setCurrentStudyRoomId] = useState(null); // 현재 참여 중인 방 ID
 
-    // 처음 렌더 시 토큰 확인 및 사용자 정보 복원
+    // 초기 로드 시 토큰 및 사용자 정보 복원
     useEffect(() => {
         const accessToken = localStorage.getItem('accessToken');
         const userData = localStorage.getItem('userData');
+        const studyRoomId = localStorage.getItem('currentStudyRoomId');
 
         if (accessToken && userData) {
             try {
                 const parsedUserData = JSON.parse(userData);
                 setIsAuthenticated(true);
                 setUser(parsedUserData);
+
+                // 현재 참여 중인 방 정보 복원
+                if (studyRoomId) {
+                    setCurrentStudyRoomId(studyRoomId);
+                }
             } catch (error) {
                 console.error('사용자 데이터 파싱 오류:', error);
-                // 잘못된 데이터가 있다면 정리
-                localStorage.removeItem('accessToken');
-                localStorage.removeItem('userData');
+                clearAllStorage();
             }
         }
+    }, []);
+
+    // 모든 저장소 정리
+    const clearAllStorage = useCallback(() => {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('userData');
+        localStorage.removeItem('currentStudyRoomId');
+        setIsAuthenticated(false);
+        setUser(null);
+        setCurrentStudyRoomId(null);
     }, []);
 
     const login = async (loginId, password) => {
@@ -47,37 +61,27 @@ export const AuthProvider = ({ children }) => {
 
             if (response.ok) {
                 const data = await response.json();
-
-                // API 응답에서 tokenType, accessToken, username, userId 추출
                 const { tokenType, accessToken, username, userId, communityNickname } = data;
 
-                if (!accessToken) {
-                    setError('서버 응답에 토큰이 없습니다.');
+                if (!accessToken || !userId) {
+                    setError('서버 응답에 필수 정보가 없습니다.');
                     return { success: false, error: '서버 응답 오류' };
                 }
 
-                if (!userId) {
-                    setError('서버 응답에 사용자 ID가 없습니다.');
-                    return { success: false, error: '서버 응답 오류' };
-                }
+                // 새로운 사용자 정보 저장
+                const userData = {
+                    userId: userId,
+                    username: username,
+                    loginId: loginId,
+                    communityNickname: communityNickname,
+                    communityId: userId // communityId 추가 (스터디룸에서 사용)
+                };
 
-                // 토큰과 사용자 정보를 localStorage에 저장 (userId 포함)
                 localStorage.setItem('accessToken', accessToken);
-                localStorage.setItem('userData', JSON.stringify({
-                    userId: userId,
-                    username: username,
-                    loginId: loginId,
-                    communityNickname : communityNickname
-                }));
+                localStorage.setItem('userData', JSON.stringify(userData));
 
-                // 상태 업데이트
                 setIsAuthenticated(true);
-                setUser({
-                    userId: userId,
-                    username: username,
-                    loginId: loginId,
-                    communityNickname : communityNickname
-                });
+                setUser(userData);
 
                 return {
                     success: true,
@@ -136,16 +140,31 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = () => {
-        // 토큰과 사용자 정보 모두 제거
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('userData');
-        setIsAuthenticated(false);
-        setUser(null);
-    };
+    const logout = useCallback(() => {
+        console.log('[Auth] 로그아웃 - 모든 데이터 정리');
+        clearAllStorage();
+    }, [clearAllStorage]);
 
-    // API 호출 시 사용할 인증 헤더를 가져오는 헬퍼 함수
-    const getAuthHeaders = () => {
+    // 스터디룸 참여 정보 저장
+    const setJoinedStudyRoom = useCallback((studyRoomId) => {
+        console.log('[Auth] 스터디룸 참여 정보 저장:', studyRoomId);
+        setCurrentStudyRoomId(studyRoomId);
+        if (studyRoomId) {
+            localStorage.setItem('currentStudyRoomId', studyRoomId);
+        } else {
+            localStorage.removeItem('currentStudyRoomId');
+        }
+    }, []);
+
+    // 스터디룸 퇴장 정보 제거
+    const clearJoinedStudyRoom = useCallback(() => {
+        console.log('[Auth] 스터디룸 참여 정보 제거');
+        setCurrentStudyRoomId(null);
+        localStorage.removeItem('currentStudyRoomId');
+    }, []);
+
+    // API 호출 시 사용할 인증 헤더
+    const getAuthHeaders = useCallback(() => {
         const accessToken = localStorage.getItem('accessToken');
         if (accessToken) {
             return {
@@ -156,9 +175,9 @@ export const AuthProvider = ({ children }) => {
         return {
             'Content-Type': 'application/json'
         };
-    };
+    }, []);
 
-    // 토큰이 유효한지 확인하는 함수 (옵션으로)
+    // 토큰 유효성 검증
     const validateToken = async () => {
         const accessToken = localStorage.getItem('accessToken');
         if (!accessToken) {
@@ -192,13 +211,16 @@ export const AuthProvider = ({ children }) => {
             isAuthenticated,
             isLoading,
             error,
-            user, // 사용자 정보 제공
+            user,
+            currentStudyRoomId, // 현재 참여 중인 방 ID
             login,
             signup,
             logout,
             clearError,
-            getAuthHeaders, // API 호출용 헤더 함수 제공
-            validateToken // 토큰 검증 함수 제공
+            getAuthHeaders,
+            validateToken,
+            setJoinedStudyRoom, // 스터디룸 참여 정보 저장
+            clearJoinedStudyRoom // 스터디룸 참여 정보 제거
         }}>
             {children}
         </AuthContext.Provider>

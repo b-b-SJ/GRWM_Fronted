@@ -1,247 +1,331 @@
-import React, { useState, useEffect } from 'react';
-import { Clock, Users, CheckCircle2, Circle, ThumbsUp, Plus, X, ChevronLeft, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Clock, Users, CheckCircle2, Circle, ThumbsUp, Plus, X, ChevronLeft, AlertCircle, Wifi, WifiOff } from 'lucide-react';
+import { useStudyRoomState } from '../../hooks/useStudyRoomState';
+import { useStudyRoomWebSocket } from '../../hooks/StudyRoomWebSocketContext';
+import { useAuth } from '../../hooks/AuthContext';
 
 /**
- * 스터디룸 메인 컴포넌트
- * - To-Do 리스트 작성 및 관리
- * - 다른 참여자들의 To-Do 리스트 보기
- * - 완료된 To-Do에 엄지척 반응
- * - 종료 5분 전 연장 투표
- *
- * @param {string} studyRoomId - 스터디룸 ID (API 조회용)
- * @param {function} onBack - 뒤로가기 콜백
+ * 스터디룸 메인 컴포넌트 (WebSocket 통합)
+ * 수정사항:
+ * 1. WebSocket connect() 호출 추가
+ * 2. WebSocket 이벤트 핸들러 등록
+ * 3. 컴포넌트 언마운트 시 명시적 disconnect
  */
 const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
-    // TODO: API - 스터디룸 정보 가져오기
-    // GET /api/study-rooms/${studyRoomId}
-    const [roomInfo, setRoomInfo] = useState({
-        roomId: studyRoomId,
-        roomName: '자격증 준비 스터디',
-        category: '자격증',
-        description: '함께 자격증 공부해요',
-        duration: 120, // 분
-        extensionTime: 30,
-        endTime: new Date(Date.now() + 120 * 60 * 1000), // 2시간 후
-        createdAt: new Date(),
-        currentMembers: 3,
-        maxMembers: 10
-    });
+    const { user } = useAuth();
+    const {
+        currentStudyRoom,
+        todos,
+        loading,
+        error,
+        fetchStudyRoomDetail,
+        fetchTodos,
+        joinStudyRoom,
+        createTodo,
+        updateTodo,
+        deleteTodo,
+        completeTodo,
+        addTodoReaction,
+        voteExtension,
+        leaveStudyRoom,
+        clearError
+    } = useStudyRoomState();
 
-    // TODO: API - 현재 로그인한 사용자 정보 가져오기
-    // GET /api/users/me
-    const [currentUser] = useState({
-        userId: 10,
-        username: '농담곰러버'
-    });
+    // WebSocket 훅 사용
+    const {
+        connectionStatus,
+        connect,
+        disconnect,
+        addTodoHandler,
+        addReactionHandler,
+        addVoteHandler,
+        addRoomHandler
+    } = useStudyRoomWebSocket();
 
-    // TODO: API - 참여자 목록 및 To-Do 리스트 가져오기
-    // WebSocket으로 실시간 동기화: ws://api/study-rooms/${studyRoomId}/ws
-    const [participants, setParticipants] = useState([
-        {
-            userId: 10,
-            username: '농담곰러버',
-            todos: []
-        },
-        {
-            userId: 20,
-            username: '치이카와',
-            todos: [
-                { id: 'todo-1', content: '1장 정리하기', completed: true, likes: 2 },
-                { id: 'todo-2', content: '2장 문제 풀기', completed: false, likes: 0 }
-            ]
-        },
-        {
-            userId: 30,
-            username: '하치와레',
-            todos: [
-                { id: 'todo-3', content: '모의고사 풀기', completed: true, likes: 1 }
-            ]
-        }
-    ]);
-
-    // 투표 상태
+    const [newTodo, setNewTodo] = useState('');
+    const [isAddingTodo, setIsAddingTodo] = useState(false);
+    const [remainingTime, setRemainingTime] = useState(0);
+    const [showVoteAlert, setShowVoteAlert] = useState(false);
     const [voteStatus, setVoteStatus] = useState({
         isVoting: false,
         votedUsers: [],
         totalVotes: 0,
-        requiredVotes: 2 // 과반수
+        requiredVotes: 0
     });
+    const [hasVoted, setHasVoted] = useState(false);
 
-    // 시간 관련 상태
-    const [remainingTime, setRemainingTime] = useState(0);
-    const [showVoteAlert, setShowVoteAlert] = useState(false);
-
-    // 새 To-Do 입력
-    const [newTodo, setNewTodo] = useState('');
-    const [isAddingTodo, setIsAddingTodo] = useState(false);
-
-    // TODO: WebSocket 연결 설정
+    // WebSocket 이벤트 핸들러 등록
     useEffect(() => {
-        // const ws = new WebSocket(`ws://api/study-rooms/${studyRoomId}/ws`);
-        //
-        // ws.onmessage = (event) => {
-        //     const data = JSON.parse(event.data);
-        //     switch(data.type) {
-        //         case 'TODO_ADDED':
-        //         case 'TODO_UPDATED':
-        //         case 'TODO_DELETED':
-        //         case 'TODO_LIKED':
-        //             // 참여자 목록 업데이트
-        //             setParticipants(data.participants);
-        //             break;
-        //         case 'VOTE_UPDATED':
-        //             setVoteStatus(data.voteStatus);
-        //             break;
-        //     }
-        // };
-        //
-        // return () => ws.close();
-    }, [studyRoomId]);
+        if (!studyRoomId) return;
 
-    // 남은 시간 계산
+        console.log('[StudyRoom] WebSocket 이벤트 핸들러 등록');
+
+        // To-do 이벤트 핸들러
+        const removeTodoHandler = addTodoHandler((event) => {
+            console.log('[StudyRoom] Todo 이벤트 수신:', event);
+            // To-do 목록 새로고침
+            fetchTodos(studyRoomId);
+        });
+
+        // 리액션 이벤트 핸들러
+        const removeReactionHandler = addReactionHandler((event) => {
+            console.log('[StudyRoom] 리액션 이벤트 수신:', event);
+            // To-do 목록 새로고침 (리액션 포함)
+            fetchTodos(studyRoomId);
+        });
+
+        // 투표 이벤트 핸들러
+        const removeVoteHandler = addVoteHandler((event) => {
+            console.log('[StudyRoom] 투표 이벤트 수신:', event);
+
+            if (event.type === 'VOTE_UPDATED') {
+                setVoteStatus(prev => ({
+                    ...prev,
+                    totalVotes: event.data.currentVotes,
+                    votedUsers: event.data.votedUserIds || []
+                }));
+            } else if (event.type === 'ROOM_EXTENDED') {
+                alert(`투표가 통과되었습니다! ${event.data.extensionMinutes}분 연장됩니다.`);
+                setShowVoteAlert(false);
+                setVoteStatus(prev => ({ ...prev, isVoting: false }));
+                // 스터디룸 정보 새로고침
+                fetchStudyRoomDetail(studyRoomId);
+            }
+        });
+
+        // 스터디룸 이벤트 핸들러
+        const removeRoomHandler = addRoomHandler((event) => {
+            console.log('[StudyRoom] 스터디룸 이벤트 수신:', event);
+
+            if (event.type === 'USER_JOINED' || event.type === 'USER_LEFT') {
+                // 참여자 변경 시 스터디룸 정보 새로고침
+                fetchStudyRoomDetail(studyRoomId);
+            } else if (event.type === 'ROOM_CLOSED') {
+                alert('스터디룸이 종료되었습니다.');
+                leaveStudyRoom(studyRoomId);
+                onBack();
+            }
+        });
+
+        // 클린업: 핸들러 제거
+        return () => {
+            console.log('[StudyRoom] WebSocket 이벤트 핸들러 제거');
+            removeTodoHandler();
+            removeReactionHandler();
+            removeVoteHandler();
+            removeRoomHandler();
+        };
+    }, [studyRoomId, addTodoHandler, addReactionHandler, addVoteHandler, addRoomHandler]);
+
+    // 스터디룸 참여 및 WebSocket 연결
     useEffect(() => {
-        const timer = setInterval(() => {
+        if (!studyRoomId || !user) {
+            console.log('[StudyRoom] studyRoomId 또는 user가 없음');
+            return;
+        }
+
+        console.log('[StudyRoom] 스터디룸 초기화 시작:', studyRoomId);
+
+        const initializeStudyRoom = async () => {
+            try {
+                // 1. 스터디룸 참여 (joinStudyRoom이 fetchStudyRoomDetail 포함)
+                console.log('[StudyRoom] joinStudyRoom 호출');
+                const joinSuccess = await joinStudyRoom(studyRoomId);
+
+                if (!joinSuccess) {
+                    console.error('[StudyRoom] joinStudyRoom 실패');
+                    return;
+                }
+
+                console.log('[StudyRoom] joinStudyRoom 성공');
+
+                // 2. To-do 목록 로드
+                console.log('[StudyRoom] fetchTodos 호출');
+                await fetchTodos(studyRoomId);
+                console.log('[StudyRoom] fetchTodos 완료');
+
+                // 3. WebSocket 연결 (약간의 지연 후)
+                setTimeout(() => {
+                    console.log('[StudyRoom] WebSocket 연결 시작');
+                    connect(studyRoomId);
+                }, 500);
+
+            } catch (error) {
+                console.error('[StudyRoom] 초기화 오류:', error);
+            }
+        };
+
+        initializeStudyRoom();
+
+        // 컴포넌트 언마운트 시 정리
+        return () => {
+            console.log('[StudyRoom] 컴포넌트 언마운트 - 정리 시작');
+            disconnect();
+            // leaveStudyRoom은 사용자가 명시적으로 나갈 때만 호출
+        };
+    }, [studyRoomId, user]);
+
+    // 남은 시간 계산 및 타이머
+    useEffect(() => {
+        // currentStudyRoom이 로드되고 endTime이 있는지 확인
+        if (!currentStudyRoom || !currentStudyRoom.endTime) {
+            console.log('[StudyRoom] currentStudyRoom 또는 endTime 없음:', currentStudyRoom);
+            setRemainingTime(null);
+            return;
+        }
+
+        console.log('[StudyRoom] 타이머 시작 - endTime:', currentStudyRoom.endTime);
+
+        const updateTimer = () => {
             const now = new Date();
-            const diff = roomInfo.endTime - now;
+            const endTime = new Date(currentStudyRoom.endTime);
+            const diff = endTime - now;
             const minutes = Math.floor(diff / 1000 / 60);
 
+            console.log('[StudyRoom] 남은 시간:', minutes, '분');
             setRemainingTime(minutes);
 
-            // 5분 전에 투표 시작
-            if (minutes === 5 && !voteStatus.isVoting) {
+            // 5분 전 투표 시작
+            if (minutes === 5 && !voteStatus.isVoting && !showVoteAlert) {
+                console.log('[StudyRoom] 연장 투표 시작');
                 setShowVoteAlert(true);
-                setVoteStatus(prev => ({ ...prev, isVoting: true }));
-                // TODO: API - 투표 시작 알림
-                // POST /api/study-rooms/${studyRoomId}/vote/start
+                const requiredVotes = Math.ceil(currentStudyRoom.currentMembers / 2);
+                setVoteStatus({
+                    isVoting: true,
+                    votedUsers: [],
+                    totalVotes: 0,
+                    requiredVotes
+                });
+                setHasVoted(false);
             }
 
             // 시간 종료
             if (minutes <= 0) {
-                clearInterval(timer);
+                console.log('[StudyRoom] 스터디룸 시간 종료');
                 alert('스터디룸 시간이 종료되었습니다.');
-                if (onBack) onBack();
+                disconnect();
+                leaveStudyRoom(studyRoomId);
+                onBack();
             }
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, [roomInfo.endTime, voteStatus.isVoting, onBack, studyRoomId]);
-
-    // To-Do 추가
-    const handleAddTodo = () => {
-        if (!newTodo.trim()) return;
-
-        const newTodoItem = {
-            id: `todo-${Date.now()}`,
-            content: newTodo.trim(),
-            completed: false,
-            likes: 0
         };
 
-        setParticipants(prev => prev.map(p =>
-            p.userId === currentUser.userId
-                ? { ...p, todos: [...p.todos, newTodoItem] }
-                : p
-        ));
+        // 즉시 한 번 실행
+        updateTimer();
 
-        setNewTodo('');
-        setIsAddingTodo(false);
+        // 1초마다 업데이트
+        const timer = setInterval(updateTimer, 1000);
 
-        // TODO: API - To-Do 추가
-        // POST /api/study-rooms/${studyRoomId}/todos
-        // Body: { content: newTodo.trim() }
-        console.log('Add todo:', newTodoItem);
+        return () => {
+            console.log('[StudyRoom] 타이머 정리');
+            clearInterval(timer);
+        };
+    }, [currentStudyRoom, voteStatus.isVoting, showVoteAlert, studyRoomId, leaveStudyRoom, onBack, disconnect]);
+
+    // 사용자별 To-Do 그룹화
+    const participantTodos = useCallback(() => {
+        if (!currentStudyRoom || !user) return [];
+
+        const userTodoMap = {};
+
+        // 현재 사용자를 먼저 추가
+        userTodoMap[user.communityId] = {
+            userId: user.communityId,
+            username: user.communityNickname,
+            todos: []
+        };
+
+        // 스터디룸의 다른 사용자들 추가
+        currentStudyRoom.users?.forEach(roomUser => {
+            if (!userTodoMap[roomUser.communityId]) {
+                userTodoMap[roomUser.communityId] = {
+                    userId: roomUser.communityId,
+                    username: roomUser.communityNickname,
+                    todos: []
+                };
+            }
+        });
+
+        // To-Do를 사용자별로 그룹화
+        todos?.forEach(todo => {
+            if (userTodoMap[todo.userId]) {
+                userTodoMap[todo.userId].todos.push(todo);
+            }
+        });
+
+        // 현재 사용자를 맨 앞에 배치
+        const result = Object.values(userTodoMap);
+        return result.sort((a, b) => {
+            if (a.userId === user.communityId) return -1;
+            if (b.userId === user.communityId) return 1;
+            return 0;
+        });
+    }, [currentStudyRoom, todos, user]);
+
+    // To-Do 추가
+    const handleAddTodo = async () => {
+        if (!newTodo.trim()) return;
+
+        const result = await createTodo(studyRoomId, {
+            content: newTodo.trim(),
+            userId: user.communityId
+        });
+
+        if (result) {
+            setNewTodo('');
+            setIsAddingTodo(false);
+        }
     };
 
     // To-Do 완료/미완료 토글
-    const handleToggleTodo = (todoId) => {
-        setParticipants(prev => prev.map(p =>
-            p.userId === currentUser.userId
-                ? {
-                    ...p,
-                    todos: p.todos.map(t =>
-                        t.id === todoId ? { ...t, completed: !t.completed } : t
-                    )
-                }
-                : p
-        ));
-
-        // TODO: API - To-Do 상태 변경
-        // PATCH /api/study-rooms/${studyRoomId}/todos/${todoId}
-        // Body: { completed: !currentCompleted }
-        console.log('Toggle todo:', todoId);
+    const handleToggleTodo = async (todoId, currentCompleted) => {
+        if (currentCompleted) {
+            await updateTodo(studyRoomId, todoId, { isCompleted: false });
+        } else {
+            await completeTodo(studyRoomId, todoId);
+        }
     };
 
     // To-Do 삭제
-    const handleDeleteTodo = (todoId) => {
-        setParticipants(prev => prev.map(p =>
-            p.userId === currentUser.userId
-                ? { ...p, todos: p.todos.filter(t => t.id !== todoId) }
-                : p
-        ));
-
-        // TODO: API - To-Do 삭제
-        // DELETE /api/study-rooms/${studyRoomId}/todos/${todoId}
-        console.log('Delete todo:', todoId);
+    const handleDeleteTodo = async (todoId) => {
+        if (window.confirm('이 To-Do를 삭제하시겠습니까?')) {
+            await deleteTodo(studyRoomId, todoId);
+        }
     };
 
-    // 엄지척 추가
-    const handleLikeTodo = (userId, todoId) => {
-        if (userId === currentUser.userId) {
-            alert('자신의 To-Do에는 좋아요를 누를 수 없습니다.');
+    // 리액션 추가
+    const handleLikeTodo = async (todoUserId, todoId) => {
+        if (todoUserId === user?.communityId) {
+            alert('자신의 To-Do에는 리액션을 추가할 수 없습니다.');
             return;
         }
 
-        setParticipants(prev => prev.map(p =>
-            p.userId === userId
-                ? {
-                    ...p,
-                    todos: p.todos.map(t =>
-                        t.id === todoId ? { ...t, likes: t.likes + 1 } : t
-                    )
-                }
-                : p
-        ));
-
-        // TODO: API - 좋아요 추가
-        // POST /api/study-rooms/${studyRoomId}/todos/${todoId}/like
-        console.log('Like todo:', { userId, todoId });
+        await addTodoReaction(studyRoomId, todoId, '👍');
     };
 
     // 연장 투표
-    const handleVote = (approve) => {
-        if (voteStatus.votedUsers.includes(currentUser.userId)) {
+    const handleVote = async (approve) => {
+        if (hasVoted) {
             alert('이미 투표하셨습니다.');
             return;
         }
 
-        const newVotedUsers = [...voteStatus.votedUsers, currentUser.userId];
-        const newTotalVotes = approve ? voteStatus.totalVotes + 1 : voteStatus.totalVotes;
+        const vote = approve ? 'agree' : 'disagree';
+        const result = await voteExtension(studyRoomId, vote);
 
-        setVoteStatus(prev => ({
-            ...prev,
-            votedUsers: newVotedUsers,
-            totalVotes: newTotalVotes
-        }));
-
-        // 모든 참여자가 투표했거나 과반수 달성
-        if (newVotedUsers.length === roomInfo.currentMembers) {
-            if (newTotalVotes >= voteStatus.requiredVotes) {
-                alert(`투표가 통과되었습니다! ${roomInfo.extensionTime}분 연장됩니다.`);
-                setRoomInfo(prev => ({
-                    ...prev,
-                    endTime: new Date(prev.endTime.getTime() + roomInfo.extensionTime * 60 * 1000)
-                }));
-            } else {
-                alert('투표가 부결되었습니다. 스터디룸은 예정대로 종료됩니다.');
-            }
-            setVoteStatus(prev => ({ ...prev, isVoting: false }));
-            setShowVoteAlert(false);
+        if (result) {
+            setHasVoted(true);
         }
+    };
 
-        // TODO: API - 투표하기
-        // POST /api/study-rooms/${studyRoomId}/vote
-        // Body: { approve: boolean }
-        console.log('Vote:', { approve, userId: currentUser.userId });
+    // 스터디룸 퇴장
+    const handleLeaveRoom = async () => {
+        if (window.confirm('스터디룸에서 나가시겠습니까?')) {
+            disconnect();
+            const success = await leaveStudyRoom(studyRoomId);
+            if (success) {
+                onBack();
+            }
+        }
     };
 
     const formatTime = (minutes) => {
@@ -253,6 +337,17 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
         return `${mins}분`;
     };
 
+    // WebSocket 연결 상태 아이콘
+    const ConnectionStatusIcon = () => {
+        if (connectionStatus === 'connected') {
+            return <Wifi size={16} className="text-green-500" title="실시간 연결됨" />;
+        } else if (connectionStatus === 'connecting') {
+            return <Wifi size={16} className="text-yellow-500 animate-pulse" title="연결 중..." />;
+        } else {
+            return <WifiOff size={16} className="text-red-500" title="연결 끊김" />;
+        }
+    };
+
     // 참여자 카드 컴포넌트
     const ParticipantCard = ({ participant, isCurrentUser }) => (
         <div className="bg-white rounded-xl overflow-hidden border-2 border-gray-200 hover:border-blue-300 transition-all shadow-md">
@@ -262,12 +357,10 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                     ? 'bg-gradient-to-br from-blue-500 to-blue-600'
                     : 'bg-gradient-to-br from-indigo-500 to-purple-600'
             }`}>
-                {/* 프로필 이미지 */}
                 <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl font-bold text-white border-2 border-white/30">
-                    {participant.username.charAt(0)}
+                    {participant.username.charAt(0).toUpperCase()}
                 </div>
 
-                {/* 닉네임 및 진행률 */}
                 <div className="flex-1">
                     <div className="flex items-center space-x-2">
                         <h3 className="font-bold text-white text-lg">{participant.username}</h3>
@@ -276,7 +369,7 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                         )}
                     </div>
                     <p className="text-sm text-white/90 mt-1 font-medium">
-                        {participant.todos.filter(t => t.completed).length}/{participant.todos.length} 완료
+                        {participant.todos.filter(t => t.isCompleted).length}/{participant.todos.length} 완료
                     </p>
                 </div>
             </div>
@@ -287,13 +380,14 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                     <button
                         onClick={() => setIsAddingTodo(true)}
                         className="w-full mb-3 py-2 border-2 border-dashed border-blue-300 rounded-lg text-blue-600 hover:border-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-all text-sm flex items-center justify-center space-x-2 font-medium"
+                        disabled={connectionStatus !== 'connected'}
                     >
                         <Plus size={16} />
-                        <span>목표 추가</span>
+                        <span>To-do 추가</span>
                     </button>
                 )}
 
-                {/* To-Do 입력 폼 (현재 사용자만) */}
+                {/* To-Do 입력 폼 */}
                 {isCurrentUser && isAddingTodo && (
                     <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                         <input
@@ -301,7 +395,7 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                             value={newTodo}
                             onChange={(e) => setNewTodo(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleAddTodo()}
-                            placeholder="학습 목표를 입력하세요..."
+                            placeholder="오늘의 목표는?"
                             className="w-full px-3 py-2 bg-white border border-blue-300 rounded text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-2 text-sm"
                             autoFocus
                             maxLength={100}
@@ -318,7 +412,7 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                             </button>
                             <button
                                 onClick={handleAddTodo}
-                                disabled={!newTodo.trim()}
+                                disabled={!newTodo.trim() || loading || connectionStatus !== 'connected'}
                                 className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500"
                             >
                                 추가
@@ -331,14 +425,16 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                 <div className="space-y-2">
                     {participant.todos.length === 0 ? (
                         <div className="text-center py-8 text-gray-400">
-                            <p className="text-sm">아직 학습 목표가 없습니다</p>
+                            <p className="text-sm">
+                                {isCurrentUser ? '오늘의 목표를 추가해보세요!' : '아직 To-Do가 없습니다'}
+                            </p>
                         </div>
                     ) : (
                         participant.todos.map(todo => (
                             <div
-                                key={todo.id}
-                                className={`p-2.5 rounded-lg border ${
-                                    todo.completed
+                                key={todo.todoId}
+                                className={`p-2.5 rounded-lg border transition-all ${
+                                    todo.isCompleted
                                         ? 'bg-green-50 border-green-200'
                                         : 'bg-white border-gray-200'
                                 }`}
@@ -347,18 +443,19 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                                     <div className="flex items-start space-x-2 flex-1 min-w-0">
                                         {isCurrentUser ? (
                                             <button
-                                                onClick={() => handleToggleTodo(todo.id)}
+                                                onClick={() => handleToggleTodo(todo.todoId, todo.isCompleted)}
                                                 className="flex-shrink-0 mt-0.5"
+                                                disabled={loading || connectionStatus !== 'connected'}
                                             >
-                                                {todo.completed ? (
+                                                {todo.isCompleted ? (
                                                     <CheckCircle2 size={18} className="text-green-600" />
                                                 ) : (
-                                                    <Circle size={18} className="text-gray-400" />
+                                                    <Circle size={18} className="text-gray-400 hover:text-blue-500" />
                                                 )}
                                             </button>
                                         ) : (
                                             <div className="flex-shrink-0 mt-0.5">
-                                                {todo.completed ? (
+                                                {todo.isCompleted ? (
                                                     <CheckCircle2 size={18} className="text-green-600" />
                                                 ) : (
                                                     <Circle size={18} className="text-gray-400" />
@@ -366,27 +463,29 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                                             </div>
                                         )}
                                         <span className={`text-sm flex-1 break-words ${
-                                            todo.completed ? 'line-through text-gray-500' : 'text-gray-800'
+                                            todo.isCompleted ? 'line-through text-gray-500' : 'text-gray-800'
                                         }`}>
                                             {todo.content}
                                         </span>
                                     </div>
                                     <div className="flex items-center space-x-1 ml-2">
-                                        {!isCurrentUser && todo.completed && (
+                                        {!isCurrentUser && todo.isCompleted && (
                                             <button
-                                                onClick={() => handleLikeTodo(participant.userId, todo.id)}
+                                                onClick={() => handleLikeTodo(participant.userId, todo.todoId)}
                                                 className="flex items-center space-x-1 px-1.5 py-1 text-blue-600 hover:bg-blue-100 rounded transition-colors"
+                                                disabled={loading || connectionStatus !== 'connected'}
                                             >
                                                 <ThumbsUp size={14} />
-                                                {todo.likes > 0 && (
-                                                    <span className="text-xs font-medium">{todo.likes}</span>
+                                                {todo.reactions && todo.reactions.length > 0 && (
+                                                    <span className="text-xs font-medium">{todo.reactions.length}</span>
                                                 )}
                                             </button>
                                         )}
                                         {isCurrentUser && (
                                             <button
-                                                onClick={() => handleDeleteTodo(todo.id)}
+                                                onClick={() => handleDeleteTodo(todo.todoId)}
                                                 className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                                                disabled={loading || connectionStatus !== 'connected'}
                                             >
                                                 <X size={14} />
                                             </button>
@@ -401,6 +500,52 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
         </div>
     );
 
+    // 로딩 상태
+    if (loading && !currentStudyRoom) {
+        return (
+            <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">스터디룸 정보를 불러오는 중...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // 에러 상태
+    if (error && !currentStudyRoom) {
+        return (
+            <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
+                <div className="text-center">
+                    <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
+                    <p className="text-gray-800 font-semibold mb-2">스터디룸을 불러올 수 없습니다</p>
+                    <p className="text-gray-600 text-sm mb-4">{error}</p>
+                    <div className="flex space-x-2 justify-center">
+                        <button
+                            onClick={() => {
+                                clearError();
+                                joinStudyRoom(studyRoomId);
+                            }}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        >
+                            다시 시도
+                        </button>
+                        <button
+                            onClick={onBack}
+                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                        >
+                            목록으로
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!currentStudyRoom) return null;
+
+    const participants = participantTodos();
+
     return (
         <div className="flex-1 flex flex-col h-full bg-gradient-to-br from-blue-50 to-indigo-50">
             {/* 상단 헤더 */}
@@ -408,21 +553,28 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                         <button
-                            onClick={onBack}
+                            onClick={handleLeaveRoom}
                             className="p-2 hover:bg-blue-100 rounded-lg transition-colors text-gray-600"
                         >
                             <ChevronLeft size={20} />
                         </button>
                         <div>
-                            <h1 className="text-xl font-bold text-gray-800">{roomInfo.roomName}</h1>
-                            <p className="text-sm text-gray-600">{roomInfo.description}</p>
+                            <h1 className="text-xl font-bold text-gray-800">{currentStudyRoom.roomName}</h1>
+                            <p className="text-sm text-gray-600">{currentStudyRoom.description}</p>
                         </div>
                     </div>
                     <div className="flex items-center space-x-6">
                         <div className="flex items-center space-x-2">
+                            <ConnectionStatusIcon />
+                            <span className="text-xs text-gray-600">
+                                {connectionStatus === 'connected' ? '실시간' :
+                                    connectionStatus === 'connecting' ? '연결 중' : '오프라인'}
+                            </span>
+                        </div>
+                        <div className="flex items-center space-x-2">
                             <Users size={16} className="text-blue-600" />
                             <span className="text-sm text-gray-700 font-medium">
-                                {roomInfo.currentMembers}/{roomInfo.maxMembers}
+                                {currentStudyRoom.currentMembers}/{currentStudyRoom.maxMembers}
                             </span>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -435,6 +587,18 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                 </div>
             </div>
 
+            {/* 연결 끊김 경고 */}
+            {connectionStatus !== 'connected' && (
+                <div className="bg-yellow-50 border-b border-yellow-200 px-6 py-3">
+                    <div className="flex items-center space-x-3">
+                        <AlertCircle size={18} className="text-yellow-600" />
+                        <p className="text-sm text-yellow-800">
+                            실시간 연결이 끊어졌습니다. 다른 참여자의 업데이트를 받을 수 없습니다.
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {/* 연장 투표 알림 */}
             {showVoteAlert && voteStatus.isVoting && (
                 <div className="bg-amber-50 border-b border-amber-200 px-6 py-4">
@@ -443,46 +607,60 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                             <AlertCircle size={20} className="text-amber-600" />
                             <div>
                                 <p className="text-sm font-semibold text-amber-900">
-                                    종료 5분 전입니다! 스터디룸을 {roomInfo.extensionTime}분 연장하시겠습니까?
+                                    종료 5분 전입니다! 스터디룸을 {currentStudyRoom.extensionTime}분 연장하시겠습니까?
                                 </p>
                                 <p className="text-xs text-amber-700 mt-1">
                                     투표 현황: {voteStatus.totalVotes}/{voteStatus.requiredVotes}
-                                    ({voteStatus.votedUsers.length}/{roomInfo.currentMembers}명 참여)
+                                    ({voteStatus.votedUsers.length}/{currentStudyRoom.currentMembers}명 참여)
                                 </p>
                             </div>
                         </div>
-                        {!voteStatus.votedUsers.includes(currentUser.userId) && (
+                        {!hasVoted && (
                             <div className="flex space-x-2">
                                 <button
                                     onClick={() => handleVote(false)}
                                     className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
+                                    disabled={loading || connectionStatus !== 'connected'}
                                 >
                                     아니요
                                 </button>
                                 <button
                                     onClick={() => handleVote(true)}
                                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                                    disabled={loading || connectionStatus !== 'connected'}
                                 >
                                     네, 연장할래요
                                 </button>
                             </div>
                         )}
+                        {hasVoted && (
+                            <span className="text-sm text-amber-700 font-medium">
+                                투표 완료 ✓
+                            </span>
+                        )}
                     </div>
                 </div>
             )}
 
-            {/* 메인 컨텐츠 - 화상통화 그리드 스타일 */}
+            {/* 메인 컨텐츠 */}
             <div className="flex-1 overflow-y-auto p-6">
                 <div className="max-w-7xl mx-auto">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {participants.map(participant => (
-                            <ParticipantCard
-                                key={participant.userId}
-                                participant={participant}
-                                isCurrentUser={participant.userId === currentUser.userId}
-                            />
-                        ))}
-                    </div>
+                    {participants.length === 0 ? (
+                        <div className="text-center py-12">
+                            <Users size={48} className="text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-600">참여자 정보를 불러오는 중...</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {participants.map(participant => (
+                                <ParticipantCard
+                                    key={participant.userId}
+                                    participant={participant}
+                                    isCurrentUser={participant.userId === user?.communityId}
+                                />
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
