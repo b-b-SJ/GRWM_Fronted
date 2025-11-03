@@ -78,6 +78,7 @@ const TeamMemberSidebar = ({ plannerId }) => {
             member={member}
             plannerId={plannerId}
             isManager={isManager}
+            user={user}
           />
         ))}
 

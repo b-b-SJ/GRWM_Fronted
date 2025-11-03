@@ -1,35 +1,57 @@
 import { useState } from "react";
 import { useTeamPlanner } from "../../../hooks/TeamPlannerProvider";
+import { useAuth } from "../../../hooks/AuthContext";
 import { Crown, User, Edit2, Trash2, Check, X } from "lucide-react";
 
 const MemberCard = ({ member, plannerId, isManager }) => {
-  const {
-    removeMember,
-    updateMemberNickname,
-    // updateMemberRole - 이건 백엔드 API가 있다면 추가
-  } = useTeamPlanner();
+  const { removeMember, updateMemberNickname } = useTeamPlanner();
+  const { user } = useAuth(); //  현재 로그인 사용자
 
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [newNickname, setNewNickname] = useState(member.nickname || "");
-  const [isChangingRole, setIsChangingRole] = useState(false);
 
-  // 별명 수정 저장
+  // 본인인지 확인
+  const isMe = Number(member.userId) === Number(user?.userId);
+
+  // 별명 수정/삭제 (빈 문자열도 허용)
   const handleSaveNickname = async () => {
-    if (!newNickname.trim()) {
-      alert("별명을 입력해주세요");
-      return;
-    }
+    // 별명이 비어있어도 OK (삭제 가능)
+    const trimmedNickname = newNickname.trim();
 
     try {
-      await updateMemberNickname(plannerId, member.userId, newNickname);
+      // 빈 문자열이면 본명으로 돌아감
+      await updateMemberNickname(
+        plannerId,
+        member.userId,
+        trimmedNickname || member.username
+      );
       setIsEditingNickname(false);
-      alert("별명이 변경되었습니다!");
+
+      if (trimmedNickname) {
+        alert("별명이 변경되었습니다!");
+      } else {
+        alert("별명이 삭제되었습니다. 본명이 표시됩니다.");
+      }
     } catch (error) {
       alert("별명 변경 실패: " + error.message);
     }
   };
 
-  // 멤버 삭제
+  // 별명 삭제 (빈 문자열로 저장)
+  const handleRemoveNickname = async () => {
+    if (window.confirm("별명을 삭제하시겠습니까? 본명이 표시됩니다.")) {
+      try {
+        await updateMemberNickname(plannerId, member.userId, member.username);
+        setNewNickname("");
+        setIsEditingNickname(false);
+        alert("별명이 삭제되었습니다!");
+      } catch (error) {
+        alert("별명 삭제 실패: " + error.message);
+      }
+    }
+  };
+
+  // 멤버 삭제 (관리자만)
   const handleRemove = async () => {
     if (window.confirm(`${member.username}님을 팀에서 제거하시겠습니까?`)) {
       try {
@@ -69,38 +91,61 @@ const MemberCard = ({ member, plannerId, isManager }) => {
 
         {/* 정보 영역 */}
         <div className="flex-1 min-w-0">
-          {/* 별명/이름 */}
+          {/* 별명 수정 모드 */}
           {isEditingNickname ? (
-            <div className="flex items-center gap-2 mb-1">
-              <input
-                type="text"
-                value={newNickname}
-                onChange={(e) => setNewNickname(e.target.value)}
-                className="flex-1 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                maxLength={20}
-              />
-              <button
-                onClick={handleSaveNickname}
-                className="p-1 text-green-600 hover:bg-green-50 rounded"
-              >
-                <Check size={16} />
-              </button>
-              <button
-                onClick={() => {
-                  setIsEditingNickname(false);
-                  setNewNickname(member.nickname || "");
-                }}
-                className="p-1 text-red-600 hover:bg-red-50 rounded"
-              >
-                <X size={16} />
-              </button>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={newNickname}
+                  onChange={(e) => setNewNickname(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleSaveNickname();
+                    }
+                  }}
+                  placeholder="별명 입력"
+                  className="flex-1 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  maxLength={20}
+                />
+                <button
+                  onClick={handleSaveNickname}
+                  className="p-1 text-green-600 hover:bg-green-50 rounded"
+                  title="저장"
+                >
+                  <Check size={16} />
+                </button>
+                <button
+                  onClick={() => {
+                    setIsEditingNickname(false);
+                    setNewNickname(member.nickname || "");
+                  }}
+                  className="p-1 text-red-600 hover:bg-red-50 rounded"
+                  title="취소"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* 별명 삭제 버튼 */}
+              {member.nickname && (
+                <button
+                  onClick={handleRemoveNickname}
+                  className="text-xs text-red-500 hover:text-red-700 underline"
+                >
+                  별명 삭제
+                </button>
+              )}
             </div>
           ) : (
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold text-sm truncate">
-                {member.nickname || member.username}
+              <h3 className="font-semibold text-md truncate">
+                {member.username}
               </h3>
-              {isManager && (
+
+              {/* 본인만 별명 수정 가능 */}
+              {isMe && (
                 <button
                   onClick={() => setIsEditingNickname(true)}
                   className="p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded"
@@ -111,13 +156,19 @@ const MemberCard = ({ member, plannerId, isManager }) => {
             </div>
           )}
 
-          {/* 본명 & 이메일 */}
-          <p className="text-xs text-gray-500 truncate">{member.username}</p>
+          {/*  (별명이 있을 때만 별명 표시) */}
+          {member.nickname && (
+            <p className="text-xs text-gray-500 truncate">
+              {`(${member.nickname})`}
+            </p>
+          )}
+
+          {/* 이메일 */}
           {member.email && (
             <p className="text-xs text-gray-400 truncate">{member.email}</p>
           )}
 
-          {/* 역할 표시 */}
+          {/* 역할 & 액션 */}
           <div className="mt-2 flex items-center justify-between">
             <span
               className={`text-xs px-2 py-1 rounded-full ${
@@ -129,11 +180,12 @@ const MemberCard = ({ member, plannerId, isManager }) => {
               {member.role === "manager" ? "관리자" : "멤버"}
             </span>
 
-            {/* 삭제 버튼 (manager만, 본인은 제외) */}
-            {isManager && member.role !== "manager" && (
+            {/* 관리자는 다른 멤버 삭제 가능 (관리자끼리는 삭제 불가) */}
+            {isManager && !isMe && member.role !== "manager" && (
               <button
                 onClick={handleRemove}
                 className="p-1 text-red-500 hover:bg-red-50 rounded"
+                title="팀에서 제거"
               >
                 <Trash2 size={14} />
               </button>
