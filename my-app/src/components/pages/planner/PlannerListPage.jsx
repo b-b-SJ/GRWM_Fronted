@@ -177,7 +177,10 @@ const PlannerListPage = () => {
           <EditPlannerModal
             isOpen={openEditModal}
             onClose={() => setOpenEditModal(false)}
-            //  onSuccess={handleCreateSuccess}
+            planner={selectedPlanner}
+            onSuccess={() => {
+              fetchPlanners(); // 플래너 목록 새로고침
+            }}
           />
         )}
       </div>
