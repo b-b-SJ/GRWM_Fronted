@@ -260,7 +260,7 @@ const WorkspaceSidebar = ({
                     {!isLoadingRooms && workspaceMode === '스터디룸' && studyRooms.map((room, index) => {
                         // ID 접근
                         const studyRoomId = room.studyRoomId || room.id;
-                        const roomName = room.studyRoomName || room.name || '이름 없는 스터디룸';
+                        const roomName = room.name || '이름 없는 스터디룸';
                         const isActive = room.status === 'ACTIVE' || room.status === 'active';
                         const timeRemaining = room.endTime ? calculateTimeRemaining(room.endTime) : null;
                         const isSelected = selectedRoom === studyRoomId;

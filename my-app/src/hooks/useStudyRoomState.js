@@ -76,37 +76,29 @@ export const useStudyRoomState = () => {
         const removeTodoHandler = addTodoHandler((event) => {
             console.log('Todo 이벤트 수신:', event);
 
-            const receivedTodo = event.data;
-
-            const mappedTodo = {
-                ...receivedTodo,
-                content: receivedTodo.title,
-                userId: receivedTodo.creatorId
-            };
-
             switch (event.type) {
                 case 'TODO_CREATED':
                     setTodos(prev => {
                         // 중복 체크
-                        if (prev.some(todo => todo.todoId === mappedTodo.todoId)) {
+                        if (prev.some(todo => todo.todoId === event.data.todoId)) {
                             return prev;
                         }
-                        return [...prev, mappedTodo];
+                        return [...prev, event.data];
                     });
                     break;
                 case 'TODO_UPDATED':
                     setTodos(prev => prev.map(todo =>
-                        todo.todoId === mappedTodo.todoId ? mappedTodo : todo
+                        todo.todoId === todo.todoId ? event.data : todo
                     ));
                     break;
 
                 case 'TODO_DELETED':
-                    setTodos(prev => prev.filter(todo => todo.todoId !== mappedTodo.todoId));
+                    setTodos(prev => prev.filter(todo => todo.todoId !== event.data.todoId));
                     break;
 
                 case 'TODO_COMPLETED':
                     setTodos(prev => prev.map(todo =>
-                        todo.todoId === mappedTodo.todoId ? mappedTodo : todo
+                        todo.todoId === event.data.todoId ? event.data : todo
                     ));
                     break;
             }
@@ -172,7 +164,7 @@ export const useStudyRoomState = () => {
             console.log('스터디룸 이벤트 수신:', event);
 
             switch (event.type) {
-                case 'USER_JOINED':
+                case 'USER_JOIN':
                     if (currentStudyRoom) {
                         setCurrentStudyRoom(prev => ({
                             ...prev,
@@ -502,10 +494,7 @@ export const useStudyRoomState = () => {
                 {
                     method: 'POST',
                     headers: getAuthHeaders(),
-                    body: JSON.stringify({
-                        title: todoData.content, // 컴포넌트에서 content로 넘겨준 값을 title로 매핑
-                        description: '' // DTO 매핑용으로 추가 (임시)
-                    })
+                    body: JSON.stringify(todoData)
                 }
             );
 
