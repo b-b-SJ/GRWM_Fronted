@@ -6,6 +6,8 @@ import PlannerSidebar from "../../layout/PlannerSidebar";
 import PlannerHeaderWM from "../../planner/PlannerHeaderWM";
 import ScheduleModal from "../../planner/ScheduleModal";
 import { useTeamPlanner } from "../../../hooks/TeamPlannerProvider";
+import TeamMemberSidebar from "../../planner/teamPlanner/TeamMemberSidebar";
+
 const TeamPlannerMain = ({ sidebarOpen }) => {
   const navigate = useNavigate();
   const calendar = useCalendar();
@@ -101,6 +103,7 @@ const TeamPlannerMain = ({ sidebarOpen }) => {
           plannerType="shared"
         />
       </div>
+      <TeamMemberSidebar plannerId={nowPlanner} />
 
       {/* 일정 모달 */}
       {openScModal && (

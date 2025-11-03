@@ -3,11 +3,12 @@ import React, { useState } from "react";
 import { X, Users, Upload, Images } from "lucide-react";
 import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
 import { useImgConverter } from "../../hooks/useImgConverter";
+import { useAuth } from "../../hooks/AuthContext";
 
 const CreatePlannerModal = ({ isOpen, onClose, onSuccess }) => {
-  const { createPlanner, loading } = useTeamPlanner();
+  const { createPlanner, addMember, loading } = useTeamPlanner();
   const { getImageUrl, isUploading } = useImgConverter();
-
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -47,6 +48,10 @@ const CreatePlannerModal = ({ isOpen, onClose, onSuccess }) => {
 
     try {
       const plannerId = await createPlanner(formData);
+      console.log("2단계: 생성자를 관리자로 추가 중...");
+      await addMember(plannerId, user.userId, "manager");
+      console.log("관리자로 추가 완료!");
+
       alert("플래너가 생성되었습니다!");
       onSuccess(plannerId);
       onClose();
