@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useScheduleFilter } from "../../hooks/useScheduleFilter";
+import { useScheduleGrouping } from "../../hooks/useScheduleFilter";
 import ScheduleFormModal from "./ScheduleFormModal";
 
 import {

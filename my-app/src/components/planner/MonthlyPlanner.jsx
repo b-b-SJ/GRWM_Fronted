@@ -1,7 +1,7 @@
 import React from "react";
 import { useCalendar } from "../../hooks/useCalendar";
 import MonthlyGrid from "./MonthlyGrid";
-import { useScheduleFilter } from "../../hooks/useScheduleFilter";
+import { useScheduleGrouping } from "../../hooks/useScheduleFilter";
 const MonthlyPlanner = ({
   weeks,
   month,
@@ -11,7 +11,6 @@ const MonthlyPlanner = ({
   year,
   scFilter,
 }) => {
-  console.log("저 여기에 잇어요");
   const calendar = useCalendar();
   //  const scFilter = useScheduleFilter(currentDate, nowPlanner);
   //얘를 보내야됨

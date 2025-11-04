@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useCalendar } from "../../../hooks/useCalendar";
-import { useScheduleFilter } from "../../../hooks/useScheduleFilter";
+import { useScheduleGrouping } from "../../../hooks/useScheduleFilter";
 import PlannerSidebar from "../../layout/PlannerSidebar";
 import PlannerHeaderWM from "../../planner/PlannerHeaderWM";
 import ScheduleModal from "../../planner/ScheduleModal";
@@ -15,7 +15,7 @@ const PersonalPlannerMain = ({ sidebarOpen }) => {
   const [openScModal, setOpenScModal] = useState(false);
   const [selectedSc, setSelectedSc] = useState(null);
 
-  const scheduleFilter = useScheduleFilter({
+  const scheduleFilter = useScheduleGrouping({
     nowPlanner,
     currentDate: calendar.currentDate,
   });

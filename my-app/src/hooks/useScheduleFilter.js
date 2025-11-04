@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export function useScheduleFilter() {
+export function useScheduleGrouping() {
   //1. 일단 시간 슬라이스-> 따로 보관해두기
   //2. ([전체덩어리]+시간 초) 이런 게 여러개로 이루어져 있는 구조? - 3중 배열이 되는 건가?
   //3. 날짜별로 묶어? 정리?해

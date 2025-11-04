@@ -1,6 +1,6 @@
 import React from "react";
 import { useCalendar } from "../../hooks/useCalendar";
-import { useScheduleFilter } from "../../hooks/useScheduleFilter";
+import { useScheduleGrouping } from "../../hooks/useScheduleFilter";
 import { Clock, MapPin } from "lucide-react";
 
 const WeeklyPlanner = ({

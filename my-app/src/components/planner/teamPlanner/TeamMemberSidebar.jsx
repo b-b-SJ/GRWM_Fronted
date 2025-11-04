@@ -21,8 +21,7 @@ const TeamMemberSidebar = ({ plannerId }) => {
   // 현재 사용자가 이 플래너에서 manager인지 확인
   const currentUserMember = members.find((m) => m.userId === user?.userId);
   const isManager = currentUserMember?.role === "manager";
-  console.log("관리자임까?", isManager, currentUserMember, members, user);
-  console.log("뭐가 들었누", localStorage.getItem("userData"));
+
   return (
     <div className="w-80 border-l bg-white h-full overflow-y-auto">
       {/* 헤더 */}
