@@ -1,29 +1,19 @@
-// src/components/planner/groupPlanner/EditPlannerModal.jsx
-import React, { useState, useEffect } from "react";
-import { X, Users, Upload, Images, Trash2 } from "lucide-react";
-import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
-import { useImgConverter } from "../../hooks/useImgConverter";
+// src/components/planner/groupPlanner/CreatePlannerModal.jsx
+import React, { useState } from "react";
+import { X, Users, Upload, Images } from "lucide-react";
+import { useTeamPlanner } from "../../../hooks/TeamPlannerProvider";
+import { useImgConverter } from "../../../hooks/useImgConverter";
+import { useAuth } from "../../../hooks/AuthContext";
 
-const EditPlannerModal = ({ isOpen, onClose, planner, onSuccess }) => {
-  const { updatePlanner, deletePlanner, loading } = useTeamPlanner();
+const CreatePlannerModal = ({ isOpen, onClose, onSuccess }) => {
+  const { createPlanner, addMember, loading } = useTeamPlanner();
   const { getImageUrl, isUploading } = useImgConverter();
-
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     profileImage: "",
   });
-
-  // 모달이 열릴 때 기존 플래너 정보로 폼 초기화
-  useEffect(() => {
-    if (planner) {
-      setFormData({
-        title: planner.title || "",
-        description: planner.description || "",
-        profileImage: planner.profileImage || "",
-      });
-    }
-  }, [planner]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,7 +38,6 @@ const EditPlannerModal = ({ isOpen, onClose, planner, onSuccess }) => {
     }
   };
 
-  // 수정 제출
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -58,32 +47,17 @@ const EditPlannerModal = ({ isOpen, onClose, planner, onSuccess }) => {
     }
 
     try {
-      await updatePlanner(planner.plannerId, formData);
-      alert("플래너가 수정되었습니다!");
-      onSuccess();
-      onClose();
-    } catch (error) {
-      alert("플래너 수정 실패: " + error.message);
-    }
-  };
+      const plannerId = await createPlanner(formData);
+      console.log("2단계: 생성자를 관리자로 추가 중...");
+      await addMember(plannerId, user.userId, "manager");
+      console.log("관리자로 추가 완료!");
 
-  // 삭제 처리
-  const handleDelete = async () => {
-    if (
-      !window.confirm(
-        "정말로 이 플래너를 삭제하시겠습니까?\n삭제된 플래너는 복구할 수 없습니다."
-      )
-    ) {
-      return;
-    }
-
-    try {
-      await deletePlanner(planner.plannerId);
-      alert("플래너가 삭제되었습니다!");
-      onSuccess();
+      alert("플래너가 생성되었습니다!");
+      onSuccess(plannerId);
       onClose();
+      setFormData({ title: "", description: "", profileImage: "" });
     } catch (error) {
-      alert("플래너 삭제 실패: " + error.message);
+      alert("플래너 생성 실패: " + error.message);
     }
   };
 
@@ -97,7 +71,7 @@ const EditPlannerModal = ({ isOpen, onClose, planner, onSuccess }) => {
       >
         {/* 헤더 */}
         <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold">플래너 수정</h2>
+          <h2 className="text-xl font-bold">새 공유 플래너 생성</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full"
@@ -111,14 +85,14 @@ const EditPlannerModal = ({ isOpen, onClose, planner, onSuccess }) => {
           <div className="p-6">
             {/* 가로 배치: 왼쪽 이미지, 오른쪽 입력 필드들 */}
             <div className="flex gap-6">
-              {/* 왼쪽: 프로필 이미지 */}
+              {/*왼쪽: 이미지 */}
               <div className="flex-shrink-0">
                 <label className="block text-sm font-medium mb-2">
                   플래너 사진 선택
                 </label>
                 <label
                   htmlFor="image-upload"
-                  className="w-48 h-48 rounded-xl bg-gray-200 flex items-center justify-center overflow-hidden border-2 border-gray-300 cursor-pointer hover:border-blue-400 transition-colors relative group"
+                  className=" w-48 h-48 rounded-xl bg-gray-200 flex items-center justify-center overflow-hidden border-2 border-gray-300 cursor-pointer hover:border-blue-400 transition-colors relative group"
                 >
                   {formData.profileImage ? (
                     <>
@@ -166,17 +140,20 @@ const EditPlannerModal = ({ isOpen, onClose, planner, onSuccess }) => {
                 />
 
                 <p className="text-xs text-gray-500 mt-2 text-center">
-                  클릭하여 이미지 변경
+                  클릭하여 이미지 업로드
                 </p>
               </div>
 
-              {/* 오른쪽: 제목 & 설명 */}
+              {/* 2️⃣ 오른쪽: 제목 & 설명 */}
               <div className="flex-1 space-y-6">
                 {/* 플래너 제목 */}
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     플래너 제목 <span className="text-red-500">*</span>
                   </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formData.title.length}/20
+                  </p>
                   <input
                     type="text"
                     name="title"
@@ -187,9 +164,6 @@ const EditPlannerModal = ({ isOpen, onClose, planner, onSuccess }) => {
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    {formData.title.length}/20
-                  </p>
                 </div>
 
                 {/* 플래너 설명 */}
@@ -218,36 +192,22 @@ const EditPlannerModal = ({ isOpen, onClose, planner, onSuccess }) => {
           </div>
 
           {/* 하단 버튼 */}
-          <div className="sticky bottom-0 bg-white border-t p-4 flex gap-3 justify-between">
-            {/* 왼쪽: 삭제 버튼 */}
+          <div className="sticky bottom-0 bg-white border-t p-4 flex gap-3 justify-end">
             <button
               type="button"
-              onClick={handleDelete}
-              disabled={loading}
-              className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-gray-400 flex items-center gap-2"
+              onClick={onClose}
+              className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              disabled={loading || isUploading}
             >
-              <Trash2 size={18} />
-              삭제
+              취소
             </button>
-
-            {/* 오른쪽: 취소/저장 버튼 */}
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                disabled={loading || isUploading}
-              >
-                취소
-              </button>
-              <button
-                type="submit"
-                disabled={loading || isUploading}
-                className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400"
-              >
-                {loading ? "저장 중..." : isUploading ? "업로드 중..." : "저장"}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={loading || isUploading}
+              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400"
+            >
+              {loading ? "생성 중..." : isUploading ? "등록 중..." : "생성"}
+            </button>
           </div>
         </form>
       </div>
@@ -255,4 +215,4 @@ const EditPlannerModal = ({ isOpen, onClose, planner, onSuccess }) => {
   );
 };
 
-export default EditPlannerModal;
+export default CreatePlannerModal;

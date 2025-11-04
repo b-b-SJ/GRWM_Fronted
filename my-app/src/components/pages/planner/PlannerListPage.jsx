@@ -3,8 +3,8 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTeamPlanner } from "../../../hooks/TeamPlannerProvider";
 import { Plus, Users, User, ArrowLeft, Settings } from "lucide-react";
-import CreatePlannerModal from "../../planner/CreatePlannerModal";
-import EditPlannerModal from "../../planner/EditPlannerModal";
+import CreatePlannerModal from "../../planner/plannerBasicCRUD/CreatePlannerModal";
+import EditPlannerModal from "../../planner/plannerBasicCRUD/EditPlannerModal";
 
 const PlannerListPage = () => {
   const { type } = useParams(); // "shared" 또는 "personal"

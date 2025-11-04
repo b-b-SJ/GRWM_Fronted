@@ -9,13 +9,13 @@ import {
 } from "lucide-react";
 import MonthlyGrid from "../planner/MonthlyGrid";
 import { useCalendar } from "../../hooks/useCalendar";
-import { useScheduleFilter } from "../../hooks/useScheduleFilter";
+//import { useScheduleFilter } from "../../hooks/useScheduleFilter";
+import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
+import ScheduleFormModal from "../planner/ScheduleFormModal";
 
 const PlannerSidebar = ({
   sidebarClassName,
   viewMode,
-  //year = { year },
-  // month = { month },
   currentDate,
   setCurrentDate,
   weeks,
@@ -26,16 +26,55 @@ const PlannerSidebar = ({
   setOpenScModal,
   selectedSc,
   setSelectedSc,
+  plannerType = "shared", // "personal" 또는 "shared"
 }) => {
   const [scheduleOpen, setScheduleOpen] = useState(true);
   const [todoOpen, setTodoOpen] = useState(true);
   const [tempDate, setTempDate] = useState(currentDate);
-  //console.log("plannerSidebar", viewMode);
+  const [todaySchedules, setTodaySchedules] = useState(null);
+
+  //일정 추가 모달 관리
+  const [openAddModal, setOpenAddModal] = useState(false);
+  const [selectedDateForAdd, setSelectedDateForAdd] = useState(null);
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  const { fetchMonthlySchedules, fetchDailySchedules, fetchWeeklySchedules } =
+    useTeamPlanner();
+
+  const handleScheduleCreated = () => {
+    console.log("일정 생성 성공! 목록 새로고침");
+    console.log("어", todaySchedules);
+    // 월간 일정 다시 불러오기
+    if (nowPlanner) {
+      fetchMonthlySchedules(nowPlanner, year, month + 1); // month는 0부터 시작하므로 +1
+      fetchWeeklySchedules(nowPlanner, year, 1); //1은 일단 임의
+      fetchDailySchedules(nowPlanner, year, month, today.getDate());
+    }
+  };
+
+  useEffect(() => {
+    const loadTodaySchedules = async () => {
+      if (!nowPlanner) return;
+
+      const schedules = await fetchDailySchedules(
+        nowPlanner,
+        year,
+        month + 1,
+        today.getDate()
+      );
+
+      setTodaySchedules(schedules);
+    };
+
+    loadTodaySchedules();
+  }, [nowPlanner, fetchDailySchedules]);
+
   //const prevMonth = new Date(tempDate);
   //const nextMonth = new Date(tempDate);
   const sideDate = new Date(tempDate);
   const calendar = useCalendar();
-  const scFilter = useScheduleFilter({ nowPlanner, currentDate });
+  //const scFilter = useScheduleFilter({ nowPlanner, currentDate });
 
   //useCalendar에서 직접 그냥 가져옴; - 메인 캘린더랑 분리를 위해서
   const firstDayOfMonth = new Date(
@@ -133,16 +172,23 @@ const PlannerSidebar = ({
             />
           </button>
           {scheduleOpen === true && (
-            <ScheduleListSidebar
-              filtering={scFilter}
-              //scDateFiltered={scTodayFiltered}
-              className="max-h-60 min-h-60"
-              openScModal={openScModal}
-              setOpenScModal={setOpenScModal}
-              selectedSc={selectedSc}
-              setSelectedSc={setSelectedSc}
-              currentDate={currentDate}
-            />
+            <>
+              <ScheduleListSidebar
+                className="max-h-60 min-h-60"
+                openScModal={openScModal}
+                setOpenScModal={setOpenScModal}
+                selectedSc={selectedSc}
+                setSelectedSc={setSelectedSc}
+                currentDate={currentDate}
+                scToday={todaySchedules}
+              />
+              <button
+                className="text-sm text-left"
+                onClick={() => setOpenAddModal(true)}
+              >
+                + 일정 추가하기
+              </button>
+            </>
           )}
 
           <button
@@ -160,10 +206,24 @@ const PlannerSidebar = ({
           </button>
           {/**나중에 공간 늘리면 됨 */}
           <div className=" ">
-            {todoOpen === true && <TodoList className="max-h-60 min-h-60" />}
+            {todoOpen === true && (
+              <>
+                <TodoList className="max-h-60 min-h-60" />
+                <button className="text-sm text-left">+ 할일 추가하기</button>
+              </>
+            )}
           </div>
         </div>
       </div>
+      <ScheduleFormModal
+        isOpen={openAddModal}
+        onClose={() => setOpenAddModal(false)}
+        mode="create"
+        plannerId={nowPlanner}
+        plannerType={plannerType}
+        selectedDate={selectedDateForAdd}
+        onSuccess={handleScheduleCreated}
+      />
     </div>
   );
 };

@@ -123,10 +123,6 @@ const TodoList = ({ className = "" }) => {
           ))}
         </ul>
       </div>
-      <button className="text-sm font-normal justify-end">
-        <Plus size={16} className="inline mr-1" />
-        할일 추가하기
-      </button>
       <div>{/* AddTodo 팝업 열어야됨 */}</div>
     </div>
   );

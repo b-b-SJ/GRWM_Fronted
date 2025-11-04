@@ -24,7 +24,9 @@ const ScheduleFormModal = ({
 
   // ==================== State 관리 ====================
   const { plannerId } = useParams();
-  console.log("아이디함 까봐라", plannerId);
+
+  const nowPlannerId = Number(plannerId);
+
   const [formData, setFormData] = useState({
     title: "",
     categoryId: null,
@@ -47,9 +49,9 @@ const ScheduleFormModal = ({
    * 3. edit 모드면 기존 데이터 로드
    */
   useEffect(() => {
-    if (isOpen && plannerId) {
+    if (isOpen && nowPlannerId) {
       // 카테고리 목록 불러오기
-      fetchCategories(plannerId);
+      fetchCategories(nowPlannerId);
 
       // create 모드 + 날짜가 선택되어 있으면
       if (mode === "create" && selectedDate) {
@@ -74,7 +76,7 @@ const ScheduleFormModal = ({
         });
       }
     }
-  }, [isOpen, plannerId, mode, selectedDate, initialData, fetchCategories]);
+  }, [isOpen, nowPlannerId, mode, selectedDate, initialData, fetchCategories]);
 
   // ==================== 헬퍼 함수 ====================
 
@@ -162,7 +164,7 @@ const ScheduleFormModal = ({
       if (mode === "create") {
         // ===== 일정 생성 =====
         const scheduleData = {
-          plannerId: plannerId,
+          plannerId: nowPlannerId,
           categoryId: formData.categoryId || null, // Optional<Long>
           title: formData.title,
           startDateTime: formData.startDateTime,
@@ -173,7 +175,7 @@ const ScheduleFormModal = ({
         };
 
         console.log("일정 생성 요청:", scheduleData);
-        const scheduleId = await createSchedule(plannerId, scheduleData);
+        const scheduleId = await createSchedule(nowPlannerId, scheduleData);
 
         if (scheduleId) {
           alert("일정이 생성되었습니다!");
@@ -203,7 +205,7 @@ const ScheduleFormModal = ({
 
         console.log("일정 수정 요청:", updateData);
         const updatedSchedule = await updateSchedule(
-          plannerId,
+          nowPlannerId,
           scheduleId,
           updateData
         );
