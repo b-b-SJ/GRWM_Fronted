@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Clock, MapPin, Trash } from "lucide-react";
 import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
-import { useParams } from "react-router-dom";
+
 const ScheduleListSidebar = ({
   className = "",
   openScModal,
@@ -9,26 +9,21 @@ const ScheduleListSidebar = ({
   selectedSc,
   setSelectedSc,
   todaySc,
+  onScheduleDeleted, // ✅ 삭제 후 콜백
+  nowPlanner, // ✅ plannerId 받기
 }) => {
-  //const todaySc = filtering.scTodayFiltered;
-
   const { deleteSchedule } = useTeamPlanner();
-  const { plannerId } = useParams();
-  const nowPlanner = Number(plannerId);
-  //null값-> 일정 없는 경우.에 대해서도 코딩 필요함
+  const [deletingId, setDeletingId] = useState(null); // 삭제 중인 일정 ID
 
-  //1. 사이드바
-  //2. 월간
-  //3. 주간
-  //4. 일간
-  console.log("여기까지 제대로 오시나요?", todaySc);
+  console.log("ScheduleListSidebar 렌더링, todaySc:", todaySc);
 
+  // ✅ 시간 라벨 생성 함수
   const getLabelStartEnd = (sc) => {
-    const now = new Date(); //혹시나 재활용할 수 있을까 싶어서 new Date()대신에 new Date(sc.date)를 넣었었는데
-    //기본이 9시로 설정 되어있어서 계속 안되더라
+    if (!sc || !Array.isArray(sc)) return [];
+
+    const now = new Date();
 
     return sc.map((schedule) => {
-      //기존에서 label을 추가한 객체 생성
       const sdt = new Date(schedule.startDateTime);
       const edt = new Date(schedule.finishDateTime);
 
@@ -53,52 +48,89 @@ const ScheduleListSidebar = ({
       }
 
       return {
-        ...schedule, // 원래 schedule 정보
-        label, // 추가된 시간 정보
+        ...schedule,
+        label,
       };
     });
   };
 
-  // null여부 확인
-  const todayScheSideTime = todaySc ? getLabelStartEnd(todaySc) : [];
-  console.log("안 걸러지나요?", todayScheSideTime);
+  // ✅ 일정 삭제 핸들러
+  const handleDelete = async (scheduleId) => {
+    if (!window.confirm("이 일정을 삭제하시겠습니까?")) {
+      return;
+    }
+
+    setDeletingId(scheduleId);
+
+    try {
+      console.log(`일정 ${scheduleId} 삭제 시작...`);
+      await deleteSchedule(nowPlanner, scheduleId);
+      console.log("일정 삭제 성공!");
+
+      // ✅ 부모 컴포넌트에 삭제 완료 알림
+      if (onScheduleDeleted) {
+        onScheduleDeleted(scheduleId);
+      }
+    } catch (error) {
+      console.error("일정 삭제 실패:", error);
+      alert("일정 삭제에 실패했습니다");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const todayScheSideTime = getLabelStartEnd(todaySc);
+  console.log("가공된 일정 데이터:", todayScheSideTime);
+
   return (
-    //일단은 사이드바전용이라고 생각하고 코드 짜기
-    <div className="rounded-2xl ">
+    <div className="rounded-2xl">
       <div className={`p-3 overflow-y-auto ${className} space-y-3`}>
         {todayScheSideTime && todayScheSideTime.length > 0 ? (
           todayScheSideTime.map((schedule) => (
             <div
               key={schedule.scheduleId}
-              className="p-3 grid-rows-2  bg-gray-100 rounded-xl"
-              // onClick={() => {
-              // setOpenScModal(true);
-              //  setSelectedSc(schedule.scheduleId);
-              // }}
+              className={`p-3 bg-gray-100 rounded-xl relative ${
+                deletingId === schedule.scheduleId ? "opacity-50" : ""
+              }`}
             >
-              {console.log(schedule.scheduleId)}
-              <h3 className="text-md font-medium  mb-2">{schedule.title}</h3>
-              <h3 className="flex text-xs text-gray-900 gap-2">
-                <div className="flex gap-1">
-                  <Clock size={14} />
-                  {schedule.label}
-                </div>
-                <div className="flex gap-1">
-                  <MapPin size={14} />
-                  {schedule.location}
-                </div>
-              </h3>
-
-              <button
-                className="p-3 text-red-300 hover:bg-red-100"
-                onClick={() => deleteSchedule(nowPlanner, schedule.scheduleId)}
+              <div
+                className="cursor-pointer"
+                onClick={() => {
+                  setOpenScModal(true);
+                  setSelectedSc(schedule.scheduleId);
+                }}
               >
-                <Trash />
+                <h3 className="text-md font-medium mb-2">{schedule.title}</h3>
+                <div className="flex text-xs text-gray-900 gap-2">
+                  <div className="flex gap-1 items-center">
+                    <Clock size={14} />
+                    {schedule.label}
+                  </div>
+                  {schedule.location && (
+                    <div className="flex gap-1 items-center">
+                      <MapPin size={14} />
+                      {schedule.location}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ✅ 삭제 버튼 */}
+              <button
+                className="absolute top-2 right-2 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation(); // 부모의 onClick 이벤트 방지
+                  handleDelete(schedule.scheduleId);
+                }}
+                disabled={deletingId === schedule.scheduleId}
+                title="일정 삭제"
+              >
+                <Trash size={16} />
               </button>
             </div>
           ))
         ) : (
-          <div className="text-center text-gray-400">
+          <div className="text-center text-gray-400 py-8">
             <div>오늘 일정이 없습니다.</div>
           </div>
         )}
@@ -108,7 +140,6 @@ const ScheduleListSidebar = ({
 };
 
 export default ScheduleListSidebar;
-
 {
   /*
 //객체 기준.
