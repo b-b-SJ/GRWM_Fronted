@@ -28,7 +28,7 @@ const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
     const [error, setError] = useState('');
     const [loadingMessage, setLoadingMessage] = useState('');
 
-    const categories = ['일반', '프로그래밍', '자격증', '어학', '취업준비', '기타'];
+    const categories = ['일반', '자격증', '스터디', '기타'];
     const durationOptions = [30, 60, 90, 120];
     const extensionOptions = [10, 20, 30, 60];
 

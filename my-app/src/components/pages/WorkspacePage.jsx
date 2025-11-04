@@ -345,12 +345,17 @@ const WorkspacePage = () => {
 
     const {
         studyRooms,
-        joinedStudyRooms,
+        joinedStudyRoom,
         loading: isLoadingStudyRooms,
         fetchStudyRooms,
-        fetchJoinedStudyRooms,
+        fetchJoinedStudyRoom,
         joinStudyRoom,
     } = useStudyRoomState();
+
+    // joinedStudyRoom 상태 변경 감지
+    useEffect(() => {
+        console.log('[WorkspacePage] joinedStudyRoom 상태 변경:', joinedStudyRoom);
+    }, [joinedStudyRoom]);
 
     const isStudyRoom = workspaceMode === '스터디룸';
 
@@ -387,7 +392,7 @@ const WorkspacePage = () => {
     useEffect(() => {
         console.log('[WorkspacePage] 데이터 로드 - 모드:', workspaceMode);
         if (isStudyRoom) {
-            fetchJoinedStudyRooms();
+            fetchJoinedStudyRoom();
         } else {
             fetchChatRooms();
         }
@@ -464,7 +469,7 @@ const WorkspacePage = () => {
                 joinRoom(chatRoomId);
                 setSelectedStudyRoom(null);
                 setCurrentView('chat');
-            }, 500);
+            }, 300);
 
         } catch (error) {
             console.error('[WorkspacePage] 채팅방 참여 실패:', error);
@@ -472,21 +477,24 @@ const WorkspacePage = () => {
         }
     };
 
-    // 탐색 페이지에서 스터디룸 참여
+    // WorkspacePage.js의 handleJoinStudyRoomFromExplorer 수정
     const handleJoinStudyRoomFromExplorer = async (studyRoomId, isPrivate = false, password = null) => {
         console.log('[WorkspacePage] 스터디룸 참여 from explorer:', studyRoomId);
 
         try {
-            // joinStudyRoom이 모든 목록 갱신을 처리
             const success = await joinStudyRoom(studyRoomId);
 
             if (!success) {
                 throw new Error('스터디룸 참여에 실패했습니다.');
             }
 
-            console.log('[WorkspacePage] 스터디룸 참여 성공, 화면 전환');
+            console.log('[WorkspacePage] 스터디룸 참여 성공, 목록 갱신');
 
-            // 약간의 지연 후 화면 전환 (데이터 동기화 대기)
+            // 참여 중인 스터디룸 목록 새로고침
+            const updatedRooms = await fetchJoinedStudyRoom();
+            console.log('[WorkspacePage] 갱신된 스터디룸 목록:', updatedRooms);
+
+            // 약간 더 긴 지연으로 상태 전파 보장
             setTimeout(() => {
                 setSelectedStudyRoom(studyRoomId);
                 setSelectedChatRoom(null);
@@ -509,7 +517,7 @@ const WorkspacePage = () => {
     const handleRefreshRooms = () => {
         console.log('[WorkspacePage] 목록 새로고침 - 모드:', workspaceMode);
         if (isStudyRoom) {
-            fetchStudyRooms(0, 10);
+            fetchJoinedStudyRoom();
         } else {
             fetchChatRooms();
         }
@@ -536,7 +544,9 @@ const WorkspacePage = () => {
     };
 
     // 현재 모드에 따른 방 목록
-    const currentRooms = isStudyRoom ? studyRooms : chatRooms;
+    const currentRooms = isStudyRoom
+        ? (joinedStudyRoom ? [joinedStudyRoom] : [])
+        : chatRooms;
     const currentIsLoading = isStudyRoom ? isLoadingStudyRooms : isLoadingRooms;
     const currentSelectedRoom = isStudyRoom ? selectedStudyRoom : selectedChatRoom;
 
@@ -548,7 +558,7 @@ const WorkspacePage = () => {
                     sidebarOpen={workspaceSidebarOpen}
                     toggleSidebar={toggleWorkspaceSidebar}
                     chatRooms={chatRooms}
-                    studyRooms={joinedStudyRooms}
+                    joinedStudyRoom={joinedStudyRoom ? [joinedStudyRoom] : []}
                     selectedRoom={currentSelectedRoom}
                     setSelectedRoom={handleSelectRoom}
                     workspaceMode={workspaceMode}
@@ -588,7 +598,7 @@ const WorkspacePage = () => {
                         isStudyRoom ? (
                             <StudyRoomExplorer
                                 onJoinRoom={handleJoinStudyRoomFromExplorer}
-                                joinedRoomIds={studyRooms.map(room => room.studyRoomId)}
+                                joinedRoomIds={joinedStudyRoom ? [joinedStudyRoom.studyRoomId] : []}
                             />
                         ) : (
                             <ChatRoomExplorer

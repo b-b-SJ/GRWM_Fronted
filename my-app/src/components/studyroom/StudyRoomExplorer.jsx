@@ -28,7 +28,7 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
 
     // 스터디룸 목록 불러오기
     const loadStudyRooms = useCallback(async () => {
-        await fetchStudyRooms(0, 50);
+        await fetchStudyRooms(0, 10);
     }, [fetchStudyRooms]);
 
     useEffect(() => {
@@ -240,7 +240,7 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
                             const roomId = room.studyRoomId || room.id;
                             const isJoined = joinedRoomIds.includes(roomId);
                             const currentMembers = room.currentMembers || 0;
-                            const maxMembers = room.maxMembers || 10;
+                            const maxMembers = room.maxMembers || 8;
                             const isFull = currentMembers >= maxMembers;
                             const remainingMinutes = getRemainingTime(room.endTime);
 
@@ -262,9 +262,9 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
                                                     <Unlock size={14} className="text-gray-400 flex-shrink-0" />
                                                 )}
                                             </div>
-                                            {room.subject && (
+                                            {room.category && (
                                                 <span className="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
-                                                    {room.subject}
+                                                    {room.category}
                                                 </span>
                                             )}
                                         </div>

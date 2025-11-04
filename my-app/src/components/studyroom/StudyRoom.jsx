@@ -259,6 +259,11 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
 
         // To-Do를 사용자별로 그룹화
         todos?.forEach(todo => {
+            if (!todo.userId) {
+                console.warn('[StudyRoom] Todo에 userId가 없음:', todo);
+                return;
+            }
+
             if (userTodoMap[todo.userId]) {
                 userTodoMap[todo.userId].todos.push(todo);
             }

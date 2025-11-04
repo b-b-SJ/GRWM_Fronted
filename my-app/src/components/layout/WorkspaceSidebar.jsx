@@ -29,7 +29,7 @@ const WorkspaceSidebar = ({
                               sidebarOpen,
                               toggleSidebar,
                               chatRooms = [],
-                              studyRooms = [],
+                              joinedStudyRoom = [],
                               selectedRoom,
                               setSelectedRoom,
                               workspaceMode,
@@ -40,6 +40,10 @@ const WorkspaceSidebar = ({
                               onRefreshStudyRooms,
                               unreadCounts = {}
                           }) => {
+    // 컴포넌트 렌더링 시 로그
+    console.log('[WorkspaceSidebar] 렌더링');
+    console.log('[WorkspaceSidebar] workspaceMode:', workspaceMode);
+    console.log('[WorkspaceSidebar] studyRooms:', joinedStudyRoom);
     const workspaceModes = [
         { id: '채팅방', label: '채팅방', icon: MessageCircle },
         { id: '스터디룸', label: '스터디룸', icon: BookOpen }
@@ -174,7 +178,7 @@ const WorkspaceSidebar = ({
                     {/* 채팅방/스터디룸이 없는 경우 */}
                     {!isLoadingRooms &&
                         ((workspaceMode === '채팅방' && chatRooms.length === 0) ||
-                            (workspaceMode === '스터디룸' && studyRooms.length === 0)) && (
+                            (workspaceMode === '스터디룸' && joinedStudyRoom.length === 0)) && (
                             <div className="text-center py-8">
                                 <div className="text-gray-400 mb-2">
                                     {workspaceMode === '채팅방' ? (
@@ -257,7 +261,7 @@ const WorkspaceSidebar = ({
                     })}
 
                     {/* 스터디룸 목록 */}
-                    {!isLoadingRooms && workspaceMode === '스터디룸' && studyRooms.map((room, index) => {
+                    {!isLoadingRooms && workspaceMode === '스터디룸' && joinedStudyRoom.map((room, index) => {
                         // ID 접근
                         const studyRoomId = room.studyRoomId || room.id;
                         const roomName = room.name || '이름 없는 스터디룸';

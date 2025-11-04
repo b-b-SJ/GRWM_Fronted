@@ -133,7 +133,7 @@ export const StudyRoomWebSocketProvider = ({ children }) => {
             if (ws.readyState === WebSocket.OPEN) {
                 try {
                     ws.send('\n');
-                    console.log('[StudyRoom] Heartbeat sent');
+
                 } catch (error) {
                     console.error('[StudyRoom] Heartbeat 전송 실패:', error);
                 }
@@ -228,7 +228,6 @@ Authorization:Bearer ${accessToken}
             };
 
             ws.onmessage = (event) => {
-                // STOMP CONNECTED 프레임
                 if (event.data.startsWith('CONNECTED')) {
                     console.log('[StudyRoom] STOMP 연결 성공');
 
@@ -241,7 +240,6 @@ destination:/topic/studyroom.${studyRoomId}.todo
 \0`;
                     ws.send(todoSubscribeFrame);
                     subscriptionIdsRef.current.push(todoSubId);
-                    console.log('[StudyRoom] Todo 토픽 구독:', `/topic/studyroom.${studyRoomId}.todo`);
 
                     // 리액션 토픽 구독
                     const reactionSubId = `sub-reaction-${studyRoomId}-${Date.now()}`;
@@ -252,7 +250,17 @@ destination:/topic/studyroom.${studyRoomId}.reaction
 \0`;
                     ws.send(reactionSubscribeFrame);
                     subscriptionIdsRef.current.push(reactionSubId);
-                    console.log('[StudyRoom] 리액션 토픽 구독:', `/topic/studyroom.${studyRoomId}.reaction`);
+
+                    // Presence 토픽 구독 (참여자 입장/퇴장)
+                    const presenceSubId = `sub-presence-${studyRoomId}-${Date.now()}`;
+                    const presenceSubscribeFrame = `SUBSCRIBE
+id:${presenceSubId}
+destination:/topic/studyroom.${studyRoomId}.presence
+
+\0`;
+                    ws.send(presenceSubscribeFrame);
+                    subscriptionIdsRef.current.push(presenceSubId);
+                    console.log('[StudyRoom] Presence 토픽 구독:', `/topic/studyroom.${studyRoomId}.presence`);
 
                     setTimeout(() => {
                         console.log('[StudyRoom] 구독 완료');
@@ -300,7 +308,7 @@ destination:/topic/studyroom.${studyRoomId}.reaction
                 }
                 // 하트비트
                 else if (event.data === '\n') {
-                    console.log('[StudyRoom] Heartbeat received');
+
                 }
             };
 
