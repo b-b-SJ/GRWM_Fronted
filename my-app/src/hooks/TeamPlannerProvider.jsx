@@ -491,7 +491,7 @@ export const TeamPlannerProvider = ({ children }) => {
       setError(null);
       try {
         const response = await fetch(
-          `/api/team-planner/${plannerId}/schedule/${scheduleId}/delete`,
+          `http://localhost:8080/api/team-planner/${plannerId}/schedule/${scheduleId}/delete`,
           {
             method: "DELETE",
             headers: {
@@ -502,7 +502,9 @@ export const TeamPlannerProvider = ({ children }) => {
         );
 
         if (!response.ok) {
-          throw new Error("일정 삭제에 실패했습니다.");
+          const errorText = await response.text(); // 또는 response.json()
+          console.error("삭제 실패 상세:", response.status, errorText);
+          throw new Error(`일정 삭제 실패 (${response.status}): ${errorText}`);
         }
 
         setSchedules((prev) => prev.filter((s) => s.scheduleId !== scheduleId));

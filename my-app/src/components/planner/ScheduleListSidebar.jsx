@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Clock, MapPin } from "lucide-react";
+import { Clock, MapPin, Trash } from "lucide-react";
+import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
+import { useParams } from "react-router-dom";
 const ScheduleListSidebar = ({
   className = "",
   openScModal,
@@ -10,6 +12,9 @@ const ScheduleListSidebar = ({
 }) => {
   //const todaySc = filtering.scTodayFiltered;
 
+  const { deleteSchedule } = useTeamPlanner();
+  const { plannerId } = useParams();
+  const nowPlanner = Number(plannerId);
   //null값-> 일정 없는 경우.에 대해서도 코딩 필요함
 
   //1. 사이드바
@@ -65,12 +70,13 @@ const ScheduleListSidebar = ({
           todayScheSideTime.map((schedule) => (
             <div
               key={schedule.scheduleId}
-              className="p-3 grid-rows-2  bg-rose-300 rounded-xl"
-              onClick={() => {
-                setOpenScModal(true);
-                setSelectedSc(schedule.scheduleId);
-              }}
+              className="p-3 grid-rows-2  bg-gray-100 rounded-xl"
+              // onClick={() => {
+              // setOpenScModal(true);
+              //  setSelectedSc(schedule.scheduleId);
+              // }}
             >
+              {console.log(schedule.scheduleId)}
               <h3 className="text-md font-medium  mb-2">{schedule.title}</h3>
               <h3 className="flex text-xs text-gray-900 gap-2">
                 <div className="flex gap-1">
@@ -82,6 +88,13 @@ const ScheduleListSidebar = ({
                   {schedule.location}
                 </div>
               </h3>
+
+              <button
+                className="p-3 text-red-300 hover:bg-red-100"
+                onClick={() => deleteSchedule(nowPlanner, schedule.scheduleId)}
+              >
+                <Trash />
+              </button>
             </div>
           ))
         ) : (

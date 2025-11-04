@@ -331,7 +331,7 @@ const ScheduleFormModal = ({
 
             {/* 시작 날짜/시간 */}
             <div>
-              <label className="block text-sm font-medium mb-2 flex items-center gap-2">
+              <label className="text-sm font-medium mb-2 flex items-center gap-2">
                 <Clock size={16} />
                 시작 시간 <span className="text-red-500">*</span>
               </label>
@@ -340,7 +340,7 @@ const ScheduleFormModal = ({
                 name="startDateTime"
                 value={formData.startDateTime}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-3 border rounded-lg  focus:ring-2 focus:ring-blue-500 ${
                   errors.startDateTime ? "border-red-500" : "border-gray-300"
                 }`}
               />
@@ -353,7 +353,7 @@ const ScheduleFormModal = ({
 
             {/* 종료 날짜/시간 */}
             <div>
-              <label className="block text-sm font-medium mb-2 flex items-center gap-2">
+              <label className="text-sm font-medium mb-2 flex items-center gap-2">
                 <Clock size={16} />
                 종료 시간 <span className="text-red-500">*</span>
               </label>
@@ -412,7 +412,7 @@ const ScheduleFormModal = ({
               )}
             </div>
 
-            {/* 수정 권한 범위 설정 */}
+            {/* 수정 권한 범위 설정 
             <div>
               <label className="block text-sm font-medium mb-2 flex items-center gap-2">
                 <Users size={16} />
@@ -434,6 +434,8 @@ const ScheduleFormModal = ({
                 이 일정을 누가 수정할 수 있는지 설정합니다
               </p>
             </div>
+            
+            */}
           </div>
 
           {/* ==================== 하단 버튼 ==================== */}
