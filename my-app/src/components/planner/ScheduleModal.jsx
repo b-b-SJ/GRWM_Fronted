@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useScheduleGrouping } from "../../hooks/useScheduleFilter";
+import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
 import ScheduleFormModal from "./ScheduleFormModal";
 
 import {
@@ -11,27 +12,50 @@ import {
   Clock,
   Clock2,
 } from "lucide-react";
+import { useParams } from "react-router-dom";
 
 const ScheduleModal = ({
   openScModal,
   setOpenScModal,
   selectedSc,
   setSelectedSc,
-  scFilter,
-  nowPlanner, // 플래너 ID 추가
+
+  // nowPlanner, // 플래너 ID 추가
   plannerType = "personal", // "personal" 또는 "shared"
 }) => {
   //일정 추가든, 일정 상세 조회든 모달 구조를 정확히 파악하고 어케 잘 이해하고 있어야 구현 진행이 가능함(에휴)
 
   // ==================== 일정 수정 모달 관리 ====================
   const [openEditModal, setOpenEditModal] = useState(false);
+  const [todaySchedules, setTodaySchedules] = useState(null);
+  const { fetchDailySchedules } = useTeamPlanner();
+  const { plannerId } = useParams();
+  const nowPlanner = Number(plannerId);
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
+  console.log("뭐가 선택?", nowPlanner, selectedSc, todaySchedules);
+
+  const scFilter = useScheduleGrouping();
+  useEffect(() => {
+    const loadTodaySchedules = async () => {
+      console.log("지금 계속 앞에서 걸리는 거?");
+      const schedules = await fetchDailySchedules(
+        nowPlanner,
+        year,
+        month + 1,
+        today.getDate()
+      );
+
+      setTodaySchedules(schedules);
+    };
+
+    loadTodaySchedules();
+  }, [nowPlanner, fetchDailySchedules]);
 
   if (!openScModal) return null;
 
-  const sSchedule = scFilter.getselectedSchedule(
-    selectedSc,
-    scFilter.scPlannerFiltered
-  ); //잘 작동함.->
+  const sSchedule = scFilter.getselectedSchedule(selectedSc, todaySchedules); //잘 작동함.->
 
   const backDropClickscm = (e) => {
     if (e.target === e.currentTarget) {

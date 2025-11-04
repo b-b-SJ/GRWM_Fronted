@@ -180,7 +180,7 @@ const PlannerSidebar = ({
                 selectedSc={selectedSc}
                 setSelectedSc={setSelectedSc}
                 currentDate={currentDate}
-                scToday={todaySchedules}
+                todaySc={todaySchedules}
               />
               <button
                 className="text-sm text-left"

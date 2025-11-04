@@ -33,8 +33,18 @@ export function useScheduleGrouping() {
         ),
       }));
   };
+  const getselectedSchedule = (id, sc) => {
+    //이 아이를 결코 지워선 안돼.......얘는 모달을 위해 필요해요
 
+    for (let i = 0; i < sc.length; i++) {
+      if (sc[i].id === id) {
+        console.log("이걸 돌려줄게여", sc[i]);
+        return sc[i];
+      }
+    }
+  };
   return {
     groupbyDate,
+    getselectedSchedule,
   };
 }
