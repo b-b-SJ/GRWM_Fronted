@@ -118,9 +118,3 @@ const ScheduleListSidebar = ({
 };
 
 export default ScheduleListSidebar;
-{
-  /**
-  
-   
-    */
-}

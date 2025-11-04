@@ -3,7 +3,7 @@ import { useTeamPlanner } from "../../../hooks/TeamPlannerProvider";
 import { X, Search } from "lucide-react";
 
 const AddMemberModal = ({ plannerId, onClose }) => {
-  const { addMember } = useTeamPlanner();
+  const { addMember, findUserIdByLoginId } = useTeamPlanner();
 
   const [memberId, setMemberId] = useState("");
   const [role, setRole] = useState("member");
@@ -20,7 +20,8 @@ const AddMemberModal = ({ plannerId, onClose }) => {
     setIsSubmitting(true);
 
     try {
-      await addMember(plannerId, Number(memberId), role);
+      const memberUserId = await findUserIdByLoginId(memberId);
+      await addMember(plannerId, Number(memberUserId), role);
       alert("팀원이 추가되었습니다!");
       onClose();
     } catch (error) {
