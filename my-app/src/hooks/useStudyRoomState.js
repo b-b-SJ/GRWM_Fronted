@@ -81,27 +81,28 @@ export const useStudyRoomState = () => {
             switch (event.type) {
                 case 'TODO_CREATED':
                     setTodos(prev => {
-                        // 중복 체크
-                        if (prev.some(todo => todo.todoId === event.data.todoId)) {
+                        // event.todoId 사용
+                        if (prev.some(todo => todo?.todoId === event.todoId)) {
                             return prev;
                         }
-                        return [...prev, event.data];
+                        // event.data 대신 event를 추가 (event는 이미 백엔드 DTO입니다.)
+                        return [...prev, event];
                     });
                     break;
 
                 case 'TODO_UPDATED':
                     setTodos(prev => prev.map(todo =>
-                        todo.todoId === event.data.todoId ? event.data : todo
+                        todo.todoId === event.data.todoId ? event : todo
                     ));
                     break;
 
                 case 'TODO_DELETED':
-                    setTodos(prev => prev.filter(todo => todo.todoId !== event.data.todoId));
+                    setTodos(prev => prev.filter(todo => todo.todoId !== event.todoId));
                     break;
 
                 case 'TODO_COMPLETED':
                     setTodos(prev => prev.map(todo =>
-                        todo.todoId === event.data.todoId ? event.data : todo
+                        todo.todoId === event.todoId ? event : todo
                     ));
                     break;
             }
@@ -412,7 +413,7 @@ export const useStudyRoomState = () => {
                     todoId: todo.todoId,
                     userId: todo.creatorId,
                     content: todo.content,
-                    isCompleted: todo.isCompleted,
+                    completed: todo.completed,
                     reactions: todo.reactions || [],
                     type: todo.type
                 }));
@@ -462,7 +463,7 @@ export const useStudyRoomState = () => {
                 todoId: todo.todoId,
                 userId: todo.creatorId,
                 content: todo.content,
-                isCompleted: todo.isCompleted,
+                completed: todo.completed,
                 reactions: todo.reactions || [],
                 type: todo.type
             }));
@@ -676,10 +677,10 @@ export const useStudyRoomState = () => {
         setError(null);
 
         try {
-            // isCompleted를 포함한 업데이트 요청
+            // completed를 포함한 업데이트 요청
             const requestBody = {
                 content: todoData.content || todoData.title,
-                isCompleted: todoData.isCompleted
+                completed: todoData.completed
             };
 
             console.log('[useStudyRoomState] Todo 수정 요청:', requestBody);

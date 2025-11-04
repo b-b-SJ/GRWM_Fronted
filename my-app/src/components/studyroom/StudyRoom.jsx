@@ -259,13 +259,18 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
 
         // To-Do를 사용자별로 그룹화
         todos?.forEach(todo => {
-            if (!todo.userId) {
-                console.warn('[StudyRoom] Todo에 userId가 없음:', todo);
+            if (!todo) {
+                console.warn('[StudyRoom] todos 배열에 유효하지 않은 (null/undefined) todo 객체가 있음');
                 return;
             }
 
-            if (userTodoMap[todo.userId]) {
-                userTodoMap[todo.userId].todos.push(todo);
+            if (!todo.creatorId) {
+                console.warn('[StudyRoom] Todo에 creatorId가 없음:', todo);
+                return;
+            }
+
+            if (userTodoMap[todo.creatorId]) {
+                userTodoMap[todo.creatorId].todos.push(todo);
             }
         });
 
@@ -289,30 +294,22 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
         if (result) {
             setNewTodo('');
             setIsAddingTodo(false);
-            // WebSocket 이벤트가 없으므로 수동으로 목록 새로고침
-            await fetchTodos(studyRoomId);
         }
     };
 
 // To-Do 완료/미완료 토글
     const handleToggleTodo = async (todoId, currentCompleted) => {
         if (currentCompleted) {
-            await updateTodo(studyRoomId, todoId, { isCompleted: false });
+            await updateTodo(studyRoomId, todoId, { completed: false });
         } else {
             await completeTodo(studyRoomId, todoId);
         }
-        // 수동으로 목록 새로고침
-        await fetchTodos(studyRoomId);
     };
 
 // To-Do 삭제
     const handleDeleteTodo = async (todoId) => {
         if (window.confirm('이 To-Do를 삭제하시겠습니까?')) {
             const success = await deleteTodo(studyRoomId, todoId);
-            if (success) {
-                // 수동으로 목록 새로고침
-                await fetchTodos(studyRoomId);
-            }
         }
     };
 
@@ -324,10 +321,6 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
         }
 
         const reactionId = await addTodoReaction(studyRoomId, todoId);
-        if (reactionId) {
-            // 수동으로 목록 새로고침
-            await fetchTodos(studyRoomId);
-        }
     };
 
     // 연장 투표
@@ -397,7 +390,7 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                         )}
                     </div>
                     <p className="text-sm text-white/90 mt-1 font-medium">
-                        {participant.todos.filter(t => t.isCompleted).length}/{participant.todos.length} 완료
+                        {participant.todos.filter(t => t.completed).length}/{participant.todos.length} 완료
                     </p>
                 </div>
             </div>
@@ -462,7 +455,7 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                             <div
                                 key={todo.todoId}
                                 className={`p-2.5 rounded-lg border transition-all ${
-                                    todo.isCompleted
+                                    todo.completed
                                         ? 'bg-green-50 border-green-200'
                                         : 'bg-white border-gray-200'
                                 }`}
@@ -471,11 +464,11 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                                     <div className="flex items-start space-x-2 flex-1 min-w-0">
                                         {isCurrentUser ? (
                                             <button
-                                                onClick={() => handleToggleTodo(todo.todoId, todo.isCompleted)}
+                                                onClick={() => handleToggleTodo(todo.todoId, todo.completed)}
                                                 className="flex-shrink-0 mt-0.5"
                                                 disabled={loading || connectionStatus !== 'connected'}
                                             >
-                                                {todo.isCompleted ? (
+                                                {todo.completed ? (
                                                     <CheckCircle2 size={18} className="text-green-600" />
                                                 ) : (
                                                     <Circle size={18} className="text-gray-400 hover:text-blue-500" />
@@ -483,7 +476,7 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                                             </button>
                                         ) : (
                                             <div className="flex-shrink-0 mt-0.5">
-                                                {todo.isCompleted ? (
+                                                {todo.completed ? (
                                                     <CheckCircle2 size={18} className="text-green-600" />
                                                 ) : (
                                                     <Circle size={18} className="text-gray-400" />
@@ -491,13 +484,13 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                                             </div>
                                         )}
                                         <span className={`text-sm flex-1 break-words ${
-                                            todo.isCompleted ? 'line-through text-gray-500' : 'text-gray-800'
+                                            todo.completed ? 'line-through text-gray-500' : 'text-gray-800'
                                         }`}>
                                             {todo.content}
                                         </span>
                                     </div>
                                     <div className="flex items-center space-x-1 ml-2">
-                                        {!isCurrentUser && todo.isCompleted && (
+                                        {!isCurrentUser && todo.completed && (
                                             <button
                                                 onClick={() => handleLikeTodo(participant.userId, todo.todoId)}
                                                 className="flex items-center space-x-1 px-1.5 py-1 text-blue-600 hover:bg-blue-100 rounded transition-colors"
