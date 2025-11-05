@@ -75,7 +75,7 @@ const AuthPage = () => {
 
         const result = await signup(formData);
         if (result.success) {
-            alert(`회원가입 성공! (사용자 ID: ${result.userId}) 로그인 페이지로 이동합니다.`);
+            alert(`회원가입 성공! 로그인 페이지로 이동합니다.`);
             setCurrentPage('login');
             setFormData({
                 email: formData.email,
