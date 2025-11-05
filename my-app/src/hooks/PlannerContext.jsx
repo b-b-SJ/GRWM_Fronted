@@ -10,51 +10,37 @@ export const PlannerProvider = ({ children, plannerType = "personal" }) => {
   const [openScModal, setOpenScModal] = useState(false);
   const [selectedSc, setSelectedSc] = useState(null);
 
-  //아래는 localStorage연관있어서 임시 주석 처리
-
-  {
-    /*
   // localStorage 키 생성
-const STORAGE_KEY = `lastPlanner_${plannerType}`;
-    // 초기값 설정
-  const [nowPlanner, setNowPlanner] = useState(
-
-   
-    () => {
+  const STORAGE_KEY = `lastPlanner_${plannerType}`;
+  // 초기값 설정
+  const [nowPlanner, setNowPlanner] = useState(() => {
     // localStorage에서 가져오기
     const lastPlanner = localStorage.getItem(STORAGE_KEY);
-    
+
     if (lastPlanner) {
       return Number(lastPlanner);
     }
-    
+
     // localStorage에 없으면 기본값
     // shared는 null (아직 선택 안 함), personal은 2001 (기본 개인 플래너)
-    return plannerType === 'shared' ? null : 2001;
-  }
-    
-  );
+    return plannerType === "shared" ? null : 2001;
+  });
 
   // nowPlanner가 바뀔 때마다 localStorage 저장
 
-  /*
-
-    useEffect(() => {
+  useEffect(() => {
     if (nowPlanner !== null) {
       localStorage.setItem(STORAGE_KEY, nowPlanner);
       console.log(`${plannerType} 플래너 저장:`, nowPlanner);
     }
   }, [nowPlanner, STORAGE_KEY, plannerType]);
 
-
-
   // 플래너 변경 함수
   const handleSetNowPlanner = (plannerId) => {
     setNowPlanner(plannerId);
     // useEffect에서 자동 저장되니까 여기선 안 해도 됨
   };
-  */
-  }
+
   return (
     <PlannerContext.Provider
       value={{
@@ -84,13 +70,8 @@ const STORAGE_KEY = `lastPlanner_${plannerType}`;
         setViewMode,
 
         // 현재 플래너
-        /*
-        로컬스토리지 사용시작하면 주석 처리 풀 예정
-
         nowPlanner,
         setNowPlanner: handleSetNowPlanner,
-
-        */
 
         // 모달
         openScModal,

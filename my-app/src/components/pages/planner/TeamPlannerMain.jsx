@@ -11,43 +11,49 @@ import { usePlannerContext } from "../../../hooks/PlannerContext";
 
 const TeamPlannerMain = ({ sidebarOpen }) => {
   const navigate = useNavigate();
-  const { openScModal } = usePlannerContext();
+  const { openScModal, nowPlanner, setNowPlanner } = usePlannerContext();
   const { currentPlanner, setCurrentPlanner, planners, fetchPlanners } =
     useTeamPlanner();
   const { plannerId } = useParams();
 
-  //임시였슨, 로컬 스토리지 사용할 예정<< 로컬 스토리지 관리는 plannerPage해서 해야할 것 같긴합니다
-  const [nowPlanner, setNowPlanner] = useState(Number(plannerId));
+  // URL의 plannerId를 Context에 반영
   useEffect(() => {
     const loadPlanner = async () => {
-      if (plannerId) {
-        // 플래너 정보 로드
-        const existing = planners.find(
-          (p) => p.plannerId === Number(plannerId)
-        );
+      if (!plannerId) return;
 
-        if (existing) {
-          setCurrentPlanner(existing);
+      const plannerIdNum = Number(plannerId);
+
+      // Context의 nowPlanner 업데이트 (localStorage 자동 저장됨!)
+      setNowPlanner(plannerIdNum);
+
+      // TeamPlanner의 currentPlanner 설정
+      const existing = planners.find((p) => p.plannerId === plannerIdNum);
+
+      if (existing) {
+        setCurrentPlanner(existing);
+      } else {
+        // 플래너 목록 새로 불러오기
+        await fetchPlanners();
+        const planner = planners.find((p) => p.plannerId === plannerIdNum);
+        if (planner) {
+          setCurrentPlanner(planner);
         } else {
-          await fetchPlanners();
-          const planner = planners.find(
-            (p) => p.plannerId === Number(plannerId)
-          );
-          if (planner) {
-            setCurrentPlanner(planner);
-          }
+          // 플래너를 못 찾으면 목록 페이지로
+          console.error("플래너를 찾을 수 없습니다:", plannerIdNum);
+          navigate("/planner/list/shared");
         }
-
-        // localStorage에 저장
-        localStorage.setItem("lastPlannerType", "shared");
-        localStorage.setItem("lastSharedPlannerId", plannerId);
-
-        console.log("공유 플래너 저장:", plannerId);
       }
     };
 
     loadPlanner();
-  }, [plannerId]);
+  }, [
+    plannerId,
+    planners,
+    setNowPlanner,
+    setCurrentPlanner,
+    fetchPlanners,
+    navigate,
+  ]);
 
   /*
   const scheduleFilter = useScheduleGrouping({
@@ -69,7 +75,7 @@ const TeamPlannerMain = ({ sidebarOpen }) => {
 
       {/* 메인 플래너 영역 */}
       <div className="flex-1 flex flex-col">
-        <PlannerHeaderWM nowPlanner={nowPlanner} plannerType="shared" />
+        <PlannerHeaderWM />
       </div>
       <TeamMemberSidebar plannerId={nowPlanner} />
 

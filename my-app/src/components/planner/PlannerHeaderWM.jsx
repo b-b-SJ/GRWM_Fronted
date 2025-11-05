@@ -10,7 +10,7 @@ import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
 import { usePlannerContext } from "../../hooks/PlannerContext";
 import MonthlyGrid from "./MonthlyGrid";
 
-const PlannerHeaderWM = ({ nowPlanner }) => {
+const PlannerHeaderWM = ({}) => {
   const { planners } = useTeamPlanner();
   const {
     viewMode,
@@ -21,6 +21,8 @@ const PlannerHeaderWM = ({ nowPlanner }) => {
     currentMonthName,
     currentWeekNum,
     year,
+    nowPlanner,
+    plannerType,
   } = usePlannerContext();
   const findNowPlannerInfo = () => {
     return planners.find((planner) => planner.plannerId === nowPlanner);
@@ -31,8 +33,8 @@ const PlannerHeaderWM = ({ nowPlanner }) => {
   const location = useLocation();
 
   // 현재 경로에서 shared인지 personal인지 판단
-  const isShared = location.pathname.includes("/shared");
-  const plannerType = isShared ? "shared" : "personal";
+  //const isShared = location.pathname.includes("/shared");
+  //const plannerType = isShared ? "shared" : "personal";
 
   const handleGoToList = () => {
     navigate(`/planner/list/${plannerType}`);

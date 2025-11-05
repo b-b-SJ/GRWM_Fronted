@@ -14,11 +14,7 @@ import ScheduleFormModal from "../planner/ScheduleFormModal";
 
 import { usePlannerContext } from "../../hooks/PlannerContext";
 
-const PlannerSidebar = ({
-  nowPlanner,
-  sidebarClassName,
-  plannerType = "shared", //<- 플래너 타입 추후 context로 추가
-}) => {
+const PlannerSidebar = ({ sidebarClassName }) => {
   const {
     currentDate,
     setCurrentDate,
@@ -27,6 +23,7 @@ const PlannerSidebar = ({
     setOpenScModal,
     selectedSc,
     setSelectedSc,
+    nowPlanner,
   } = usePlannerContext();
 
   const [scheduleOpen, setScheduleOpen] = useState(true);
@@ -243,7 +240,6 @@ const PlannerSidebar = ({
         isOpen={openAddModal}
         onClose={() => setOpenAddModal(false)}
         mode="create"
-        plannerType={plannerType}
         selectedDate={selectedDateForAdd}
         onSuccess={handleScheduleCreated} // ✅ 생성 성공 시 새로고침
       />

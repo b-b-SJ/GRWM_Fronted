@@ -3,17 +3,19 @@ import React, { useState, useEffect } from "react";
 import { X, Calendar, Clock, MapPin, FileText, Users } from "lucide-react";
 import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
 import { useParams } from "react-router-dom";
+import { usePlannerContext } from "../../hooks/PlannerContext";
 const ScheduleFormModal = ({
   isOpen,
   onClose,
   mode = "create", // 'create' | 'edit'
   //plannerId,
-  plannerType = "shared", // 'personal' | 'shared'
   scheduleId = null, // edit 모드일 때 필요
   initialData = null, // edit 모드일 때 필요
   selectedDate = null, // 날짜 클릭해서 열었을 때 자동 입력
   onSuccess = null, // 성공 후 콜백
 }) => {
+  const { plannerType } = usePlannerContext();
+
   const {
     createSchedule,
     updateSchedule,
