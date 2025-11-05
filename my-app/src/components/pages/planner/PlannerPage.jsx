@@ -2,7 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Routes, Route, useNavigate, Navigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { useAuth } from "../../../hooks/AuthContext";
-import { usePlannerContext } from "../../../hooks/PlannerContext";
+import {
+  PlannerProvider,
+  usePlannerContext,
+} from "../../../hooks/PlannerContext";
 
 //공통
 import PlannerListPage from "./PlannerListPage";
@@ -129,28 +132,30 @@ const PlannerPage = () => {
         {/* 메인 콘텐츠 - 라우팅 */}
         <div className="flex-1 min-w-0">
           <Routes>
-            {/* 기본 경로 - 리다이렉트 */}
-            <Route path="/" element={<DefaultPlannerRedirect />} />
-            <Route path="/personal" element={<PersonalPlannerRedirect />} />
-            <Route path="/shared" element={<SharedPlannerRedirect />} />
+            <PlannerProvider>
+              {/* 기본 경로 - 리다이렉트 */}
+              <Route path="/" element={<DefaultPlannerRedirect />} />
+              <Route path="/personal" element={<PersonalPlannerRedirect />} />
+              <Route path="/shared" element={<SharedPlannerRedirect />} />
 
-            {/* 플래너 목록 */}
-            <Route path="/list/:type" element={<PlannerListPage />} />
+              {/* 플래너 목록 */}
+              <Route path="/list/:type" element={<PlannerListPage />} />
 
-            {/* 개인 플래너 상세 */}
-            <Route
-              path="/personal/:plannerId"
-              element={<PersonalPlannerMain sidebarOpen={sidebarOpen} />}
-            />
+              {/* 개인 플래너 상세 */}
+              <Route
+                path="/personal/:plannerId"
+                element={<PersonalPlannerMain sidebarOpen={sidebarOpen} />}
+              />
 
-            {/* 공유 플래너 상세 */}
-            <Route
-              path="/shared/:plannerId"
-              element={<TeamPlannerMain sidebarOpen={sidebarOpen} />}
-            />
+              {/* 공유 플래너 상세 */}
+              <Route
+                path="/shared/:plannerId"
+                element={<TeamPlannerMain sidebarOpen={sidebarOpen} />}
+              />
 
-            {/* 잘못된 경로 */}
-            <Route path="*" element={<Navigate to="/planner" replace />} />
+              {/* 잘못된 경로 */}
+              <Route path="*" element={<Navigate to="/planner" replace />} />
+            </PlannerProvider>
           </Routes>
         </div>
       </div>

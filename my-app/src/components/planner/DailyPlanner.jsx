@@ -2,16 +2,17 @@ import React from "react";
 //import { useCalendar } from "../../hooks/useCalendar";
 import { useScheduleGrouping } from "../../hooks/useScheduleFilter";
 
+//좀 많이 고쳐야되는데 일단 가만히 두겟슨
 const DailyPlanner = ({
   openScheduleModal,
   setOpenScheduleModal,
   currentDate,
-  scFilter,
 }) => {
   //시간을 격자로 나타냄.-> 걍 시간을 다 네머네모로 하기.
   //설정된 start 시간을 가져옴. -> start시간 부터 끝까지.
   //14일 7시 시작이면 날의 끝은 15일 6시 -> 이런 식으로
   //currentDate에 해당되는 일정을 보여줌
+  const scFilter = useScheduleGrouping();
 
   const getLabelnStyleStartEnd = (dayObj) => {
     return {

@@ -1,6 +1,6 @@
 import React from "react";
 import { useCalendar } from "../../hooks/useCalendar";
-//import { useScheduleGrouping } from "../../hooks/useScheduleFilter";
+import { useScheduleGrouping } from "../../hooks/useScheduleFilter";
 import { Clock, MapPin } from "lucide-react";
 import { usePlannerContext } from "../../hooks/PlannerContext";
 const WeeklyPlanner = ({
@@ -19,6 +19,7 @@ const WeeklyPlanner = ({
   } = usePlannerContext();
 
   const thisweeks = weeks[weekFound];
+  const scFilter = usePlannerContext();
 
   //시작 시간, 끝나는 시간 필요
   //

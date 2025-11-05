@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import MonthlyPlanner from "./MonthlyPlanner";
+
 import WeeklyPlanner from "./WeeklyPlanner";
 //<UserRoundPlus />; //유저 아이콘임
 import { ChevronLeft, ChevronRight, Users } from "lucide-react";
@@ -8,10 +8,9 @@ import DailyPlanner from "./DailyPlanner";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
 import { usePlannerContext } from "../../hooks/PlannerContext";
-const PlannerHeaderWM = ({
-  nowPlanner,
-  plannerType = "shared", //localStorage 추가하면 이 둘도 삭제예정
-}) => {
+import MonthlyGrid from "./MonthlyGrid";
+
+const PlannerHeaderWM = ({ nowPlanner }) => {
   const { planners } = useTeamPlanner();
   const {
     viewMode,
@@ -177,7 +176,7 @@ const PlannerHeaderWM = ({
           />
         )}
 
-        {viewMode === "daily" && <DailyPlanner scFilter={scFilter} />}
+        {viewMode === "daily" && <DailyPlanner />}
       </div>
     </div>
   );
