@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Routes, Route, useNavigate, Navigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { useAuth } from "../../../hooks/AuthContext";
+import { usePlannerContext } from "../../../hooks/PlannerContext";
+
 //공통
 import PlannerListPage from "./PlannerListPage";
 

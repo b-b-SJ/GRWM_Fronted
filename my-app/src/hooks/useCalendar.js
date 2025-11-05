@@ -161,5 +161,6 @@ export function useCalendar() {
     weekFound,
     weekNames,
     timeTable,
+    groupDatesByWeek, //사이드바에서 씀
   };
 }

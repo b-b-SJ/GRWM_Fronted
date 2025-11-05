@@ -9,25 +9,26 @@ import {
 } from "lucide-react";
 import MonthlyGrid from "../planner/MonthlyGrid";
 import { useCalendar } from "../../hooks/useCalendar";
-//import { useScheduleFilter } from "../../hooks/useScheduleFilter";
 import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
 import ScheduleFormModal from "../planner/ScheduleFormModal";
 
+import { usePlannerContext } from "../../hooks/PlannerContext";
+
 const PlannerSidebar = ({
-  sidebarClassName,
-  viewMode,
-  currentDate,
-  setCurrentDate,
-  weeks,
-  setViewMode,
-  weekNames,
   nowPlanner,
-  openScModal,
-  setOpenScModal,
-  selectedSc,
-  setSelectedSc,
-  plannerType = "shared",
+  sidebarClassName,
+  plannerType = "shared", //<- 플래너 타입 추후 context로 추가
 }) => {
+  const {
+    currentDate,
+    setCurrentDate,
+    viewMode,
+    openScModal,
+    setOpenScModal,
+    selectedSc,
+    setSelectedSc,
+  } = usePlannerContext();
+
   const [scheduleOpen, setScheduleOpen] = useState(true);
   const [todoOpen, setTodoOpen] = useState(true);
   const [tempDate, setTempDate] = useState(currentDate);
@@ -42,7 +43,7 @@ const PlannerSidebar = ({
   const { fetchMonthlySchedules, fetchDailySchedules, fetchWeeklySchedules } =
     useTeamPlanner();
 
-  // ✅ 오늘 일정을 불러오는 함수 분리
+  // 오늘 일정을 불러오는 함수 분리
   const loadTodaySchedules = async () => {
     if (!nowPlanner) return;
 
@@ -131,7 +132,6 @@ const PlannerSidebar = ({
   };
 
   const sideWeeks = calendar.groupDatesByWeek(startDay, endDay);
-
   useEffect(() => {
     setTempDate(currentDate);
   }, [currentDate]);
@@ -139,8 +139,41 @@ const PlannerSidebar = ({
   return (
     <div className={`${sidebarClassName}`}>
       <div className="w-80 bg-white border-r flex flex-col h-auto">
-        {/* ... 월간 캘린더 부분 ... */}
-
+        <div>
+          {(viewMode === "daily" || viewMode === "weekly") && (
+            <div className="p-4 shadow-sm shadow-gray-200">
+              {/**왔다갔다만 하고 선택전까지는 날짜 안바뀜 */}
+              <div className="flex justify-center mb-2">
+                {/**이 위에서 정렬관리*/}
+                <button onClick={() => goPrev()}>
+                  <ChevronLeft className="hover:bg-gray-200 rounded-md" />
+                </button>
+                <h1 className="mx-4 text-xl font-semibold">
+                  {sideDate.getFullYear()}. {sideDate.getMonth() + 1}
+                </h1>
+                <button onClick={() => goNext()}>
+                  <ChevronRight className="hover:bg-gray-200 rounded-md" />
+                </button>
+              </div>
+              <MonthlyGrid
+                weeks={sideWeeks}
+                month={tempDate.getMonth()}
+                totalDateStyle={
+                  "p-2 hover:rounded-full focus:outline-rose-200 text-center hover:bg-gray-100"
+                }
+                currentMonthStyle={"text-gray-800"}
+                ncMonthStyle={
+                  "text-gray-300"
+                  //지금 월아닐때
+                }
+                onDateClick={(day) => {
+                  setCurrentDate(day);
+                }}
+              />
+            </div>
+          )}
+        </div>
+        {/* 일정 + 투두 */}
         <div className="flex flex-col flex-none text-left">
           <button
             onClick={() => setScheduleOpen(!scheduleOpen)}
@@ -163,11 +196,6 @@ const PlannerSidebar = ({
               <ScheduleListSidebar
                 key={todaySchedules?.length || 0} // 일정 개수가 바뀌면 리렌더링
                 className="max-h-60 min-h-60"
-                openScModal={openScModal}
-                setOpenScModal={setOpenScModal}
-                selectedSc={selectedSc}
-                setSelectedSc={setSelectedSc}
-                currentDate={currentDate}
                 todaySc={todaySchedules}
                 onScheduleDeleted={handleScheduleDeleted} // ✅ 삭제 콜백 전달
                 nowPlanner={nowPlanner} // ✅ nowPlanner 전달
