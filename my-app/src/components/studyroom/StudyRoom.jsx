@@ -87,8 +87,10 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
             console.log('[StudyRoom] 스터디룸 이벤트 수신:', event);
 
             if (event.type === 'USER_JOINED' || event.type === 'USER_LEFT') {
-                // 참여자 변경 시 스터디룸 정보 새로고침
+                // 참여자 변경 시 스터디룸 정보와 투두 목록 모두 새로고침
+                console.log('[StudyRoom] 참여자 변경 감지 - 전체 정보 새로고침');
                 fetchStudyRoomDetail(studyRoomId);
+                fetchTodos(studyRoomId);  // 이 줄 추가!
             } else if (event.type === 'ROOM_CLOSED') {
                 alert('스터디룸이 종료되었습니다.');
                 leaveStudyRoom(studyRoomId);
@@ -242,7 +244,8 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
         // 현재 사용자를 먼저 추가
         userTodoMap[user.communityId] = {
             userId: user.communityId,
-            username: user.communityNickname,
+            creatorId : user.communityId,
+            nickname: user.communityNickname,
             todos: []
         };
 
@@ -251,7 +254,8 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
             if (!userTodoMap[roomUser.communityId]) {
                 userTodoMap[roomUser.communityId] = {
                     userId: roomUser.communityId,
-                    username: roomUser.communityNickname,
+                    creatorId : user.communityId,
+                    nickname: roomUser.nickname,
                     todos: []
                 };
             }
@@ -311,6 +315,7 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
         if (window.confirm('이 To-Do를 삭제하시겠습니까?')) {
             const success = await deleteTodo(studyRoomId, todoId);
         }
+        await fetchTodos(studyRoomId);
     };
 
 // 리액션 추가
@@ -379,12 +384,12 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                     : 'bg-gradient-to-br from-indigo-500 to-purple-600'
             }`}>
                 <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl font-bold text-white border-2 border-white/30">
-                    {participant.username.charAt(0).toUpperCase()}
+                    {participant.nickname.charAt(0).toUpperCase()}
                 </div>
 
                 <div className="flex-1">
                     <div className="flex items-center space-x-2">
-                        <h3 className="font-bold text-white text-lg">{participant.username}</h3>
+                        <h3 className="font-bold text-white text-lg">{participant.nickname}</h3>
                         {isCurrentUser && (
                             <span className="text-xs bg-white/30 text-white px-2 py-0.5 rounded-full font-medium backdrop-blur-sm">나</span>
                         )}

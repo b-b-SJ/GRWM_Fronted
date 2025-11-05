@@ -92,7 +92,7 @@ export const useStudyRoomState = () => {
 
                 case 'TODO_UPDATED':
                     setTodos(prev => prev.map(todo =>
-                        todo.todoId === event.data.todoId ? event : todo
+                        todo.todoId === event.todoId ? event : todo
                     ));
                     break;
 
@@ -115,10 +115,10 @@ export const useStudyRoomState = () => {
             switch (event.type) {
                 case 'REACTION_ADDED':
                     setTodos(prev => prev.map(todo => {
-                        if (todo.todoId === event.data.todoId) {
+                        if (todo.todoId === event.todoId) {
                             return {
                                 ...todo,
-                                reactions: [...(todo.reactions || []), event.data.reaction]
+                                reactions: [...(todo.reactions || []), event.reaction]
                             };
                         }
                         return todo;
@@ -127,11 +127,11 @@ export const useStudyRoomState = () => {
 
                 case 'REACTION_DELETED':
                     setTodos(prev => prev.map(todo => {
-                        if (todo.todoId === event.data.todoId) {
+                        if (todo.todoId === event.todoId) {
                             return {
                                 ...todo,
                                 reactions: (todo.reactions || []).filter(
-                                    r => r.reactionId !== event.data.reactionId
+                                    r => r.reactionId !== event.reactionId
                                 )
                             };
                         }
@@ -148,15 +148,15 @@ export const useStudyRoomState = () => {
             switch (event.type) {
                 case 'VOTE_UPDATED':
                     // 투표 현황 UI 업데이트 (필요시 별도 상태로 관리)
-                    console.log('투표 현황:', event.data);
+                    console.log('투표 현황:', event);
                     break;
 
                 case 'ROOM_EXTENDED':
                     if (currentStudyRoom) {
                         setCurrentStudyRoom(prev => ({
                             ...prev,
-                            extensionCount: event.data.extendedCount,
-                            endTime: event.data.newEndTime
+                            extensionCount: event.extendedCount,
+                            endTime: event.newEndTime
                         }));
                     }
                     break;
@@ -172,11 +172,11 @@ export const useStudyRoomState = () => {
                     if (currentStudyRoom) {
                         setCurrentStudyRoom(prev => ({
                             ...prev,
-                            users: [...(prev.users || []), event.data.user],
+                            users: [...(prev.users || []), event.user],
                             currentMembers: (prev.currentMembers || 0) + 1
                         }));
                     }
-                    console.log('사용자 입장:', event.data.user);
+                    console.log('사용자 입장:', event.user);
                     break;
 
                 case 'USER_LEFT':
@@ -184,12 +184,12 @@ export const useStudyRoomState = () => {
                         setCurrentStudyRoom(prev => ({
                             ...prev,
                             users: (prev.users || []).filter(
-                                user => user.communityId !== event.data.userId
+                                user => user.communityId !== event.userId
                             ),
                             currentMembers: Math.max((prev.currentMembers || 1) - 1, 0)
                         }));
                     }
-                    console.log('사용자 퇴장:', event.data.userId);
+                    console.log('사용자 퇴장:', event.userId);
                     break;
 
                 case 'ROOM_CLOSED':
@@ -411,7 +411,7 @@ export const useStudyRoomState = () => {
             if (mappedRoom.todoList.length > 0) {
                 const mappedTodos = mappedRoom.todoList.map(todo => ({
                     todoId: todo.todoId,
-                    userId: todo.creatorId,
+                    creatorId: todo.creatorId,
                     content: todo.content,
                     completed: todo.completed,
                     reactions: todo.reactions || [],
@@ -461,7 +461,7 @@ export const useStudyRoomState = () => {
             console.log('Todo 목록 조회 성공:', data);
             const mappedTodos = (data.todos || []).map(todo => ({
                 todoId: todo.todoId,
-                userId: todo.creatorId,
+                creatorId: todo.creatorId,
                 content: todo.content,
                 completed: todo.completed,
                 reactions: todo.reactions || [],

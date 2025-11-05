@@ -439,6 +439,7 @@ const WorkspacePage = () => {
 
         try {
             if (isStudyRoom) {
+                // 사이드바에서 선택한 방은 이미 참여한 방이므로 API 호출 없이 바로 전환
                 setSelectedStudyRoom(roomId);
                 setSelectedChatRoom(null);
                 setCurrentView('study');
@@ -477,11 +478,26 @@ const WorkspacePage = () => {
         }
     };
 
-    // WorkspacePage.js의 handleJoinStudyRoomFromExplorer 수정
+    // 탐색 페이지에서 스터디룸 참여
     const handleJoinStudyRoomFromExplorer = async (studyRoomId, isPrivate = false, password = null) => {
         console.log('[WorkspacePage] 스터디룸 참여 from explorer:', studyRoomId);
 
         try {
+            // 이미 참여한 스터디룸인지 확인
+            const alreadyJoined = joinedStudyRoom && joinedStudyRoom.studyRoomId === studyRoomId;
+
+            if (alreadyJoined) {
+                console.log('[WorkspacePage] 이미 참여한 스터디룸입니다. 바로 입장합니다.');
+                // API 호출 없이 바로 화면 전환
+                setTimeout(() => {
+                    setSelectedStudyRoom(studyRoomId);
+                    setSelectedChatRoom(null);
+                    setCurrentView('study');
+                }, 100);
+                return;
+            }
+
+            // 새로운 스터디룸에 참여하는 경우에만 joinStudyRoom 호출
             const success = await joinStudyRoom(studyRoomId);
 
             if (!success) {
