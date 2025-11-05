@@ -63,77 +63,18 @@ const TeamPlannerMain = ({ sidebarOpen }) => {
       {sidebarOpen && (
         <PlannerSidebar
           sidebarClassName="md:block hidden"
-          /*
-viewMode={viewMode}
-setViewMode={setViewMode}
-
-*/
-
           nowPlanner={nowPlanner}
-          //  currentDate={calendar.currentDate}
-          //  setCurrentDate={calendar.setCurrentDate}
-          // weeks={calendar.weeks}
-          //   weekNames={calendar.weekNames}
-
-          /*
-          openScModal={openScModal}
-          setOpenScModal={setOpenScModal}
-          selectedSc={selectedSc}
-          setSelectedSc={setSelectedSc}
-          */
         />
       )}
 
       {/* 메인 플래너 영역 */}
       <div className="flex-1 flex flex-col">
-        <PlannerHeaderWM
-          nowPlanner={nowPlanner}
-          //캘린더 관련
-
-          /*currentDate={calendar.currentDate}
-          setCurrentDate={calendar.setCurrentDate}
-          STEP={calendar.STEP}
-          weeks={calendar.weeks}
-          currentMonthName={calendar.currentMonthName}
-          currentWeekNum={calendar.currentWeekNum}
-          year={calendar.year}
-          weekFound={calendar.weekFound}
-          month={calendar.month}*/
-
-          //모달 계패관련
-          /*
- openScModal={openScModal}
-          setOpenScModal={setOpenScModal}
-          selectedSc={selectedSc}
-          setSelectedSc={setSelectedSc}
-*/
-
-          //현재 플래너 상태 관련
-          /* 
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-
-nowPlanner={nowPlanner}
-          setNowPlanner={setNowPlanner}
-          */
-
-          plannerType="shared"
-        />
+        <PlannerHeaderWM nowPlanner={nowPlanner} plannerType="shared" />
       </div>
       <TeamMemberSidebar plannerId={nowPlanner} />
 
       {/* 일정 모달 */}
-      {openScModal && (
-        <ScheduleModal
-        /*
-        openScModal={openScModal}
-          setOpenScModal={setOpenScModal}
-          setSelectedSc={setSelectedSc}
-          selectedSc={selectedSc}
-          scFilter={scheduleFilter}
-        */
-        />
-      )}
+      {openScModal && <ScheduleModal />}
     </div>
   );
 };

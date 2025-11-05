@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useScheduleGrouping } from "../../hooks/useScheduleFilter";
 import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
 import ScheduleFormModal from "./ScheduleFormModal";
-
+import { usePlannerContext } from "../../hooks/PlannerContext";
 import {
   MapPin,
   Pencil,
@@ -15,15 +15,13 @@ import {
 import { useParams } from "react-router-dom";
 
 const ScheduleModal = ({
-  openScModal,
-  setOpenScModal,
-  selectedSc,
-  setSelectedSc,
-
   // nowPlanner, // 플래너 ID 추가
   plannerType = "personal", // "personal" 또는 "shared"
 }) => {
   //일정 추가든, 일정 상세 조회든 모달 구조를 정확히 파악하고 어케 잘 이해하고 있어야 구현 진행이 가능함(에휴)
+
+  const { openScModal, setOpenScModal, selectedSc, setSelectedSc } =
+    usePlannerContext();
 
   // ==================== 일정 수정 모달 관리 ====================
   const [openEditModal, setOpenEditModal] = useState(false);
