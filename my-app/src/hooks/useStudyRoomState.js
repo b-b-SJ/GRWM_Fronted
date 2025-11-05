@@ -85,7 +85,6 @@ export const useStudyRoomState = () => {
                         if (prev.some(todo => todo?.todoId === event.todoId)) {
                             return prev;
                         }
-                        // event.data 대신 event를 추가 (event는 이미 백엔드 DTO입니다.)
                         return [...prev, event];
                     });
                     break;
@@ -118,7 +117,7 @@ export const useStudyRoomState = () => {
                         if (todo.todoId === event.todoId) {
                             return {
                                 ...todo,
-                                reactions: [...(todo.reactions || []), event.reaction]
+                                reactions: [...(todo.reactions || []), event.reactions]
                             };
                         }
                         return todo;
@@ -594,6 +593,9 @@ export const useStudyRoomState = () => {
                 // 상태 초기화
                 setCurrentStudyRoom(null);
                 setTodos([]);
+                setJoinedStudyRoom(null);
+
+                await fetchStudyRooms(0, 10);
             }
 
             return success;
@@ -603,7 +605,7 @@ export const useStudyRoomState = () => {
         } finally {
             setLoading(false);
         }
-    }, [isAuthenticated, getAuthHeaders, handleApiError, disconnectWebSocket]);
+    }, [isAuthenticated, getAuthHeaders, handleApiError, disconnectWebSocket, fetchStudyRooms]);
 
     // ========== To-do API  (fetch 제외) ==========
 

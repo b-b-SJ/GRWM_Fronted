@@ -346,7 +346,7 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
     // 스터디룸 퇴장
     const handleLeaveRoom = async () => {
         if (window.confirm('스터디룸에서 나가시겠습니까?')) {
-            disconnect();
+            // disconnect(); useStudyRoomState 내부에서 처리
             const success = await leaveStudyRoom(studyRoomId);
             if (success) {
                 onBack();

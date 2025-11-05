@@ -546,6 +546,7 @@ const WorkspacePage = () => {
         setSelectedChatRoom(null);
         setSelectedStudyRoom(null);
         setCurrentView('rooms');
+        handleRefreshRooms(); // 방 목록 새로고침
     };
 
     // 모드 전환 핸들러
