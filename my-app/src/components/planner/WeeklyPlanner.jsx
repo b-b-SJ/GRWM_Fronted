@@ -1,23 +1,24 @@
 import React from "react";
 import { useCalendar } from "../../hooks/useCalendar";
-import { useScheduleGrouping } from "../../hooks/useScheduleFilter";
+//import { useScheduleGrouping } from "../../hooks/useScheduleFilter";
 import { Clock, MapPin } from "lucide-react";
-
+import { usePlannerContext } from "../../hooks/PlannerContext";
 const WeeklyPlanner = ({
-  weeks,
-  weekFound,
-  setViewMode,
   onDateClick,
-  openScModal,
-  setOpenScModal,
-  setSelectedSc,
-  selectedSc,
-  scFilter,
+  //scFilter,
 }) => {
   // 주간 날짜 배열 확인
+  const {
+    weeks,
+    weekFound,
+    weekNames,
+    openScModal,
+    setOpenScModal,
+    setSelectedSc,
+    selectedSc,
+  } = usePlannerContext();
 
   const thisweeks = weeks[weekFound];
-  const calendar = useCalendar();
 
   //시작 시간, 끝나는 시간 필요
   //
@@ -56,7 +57,7 @@ const WeeklyPlanner = ({
     <div className="mt-4 mx-8">
       {/* 전체에 대한 거 - 공백 만들기 */}
       <div className=" grid-cols-7 grid p-2 ">
-        {calendar.weekNames.map((wn, k) => (
+        {weekNames.map((wn, k) => (
           <div key={k} className=" text-gray-900 font-semibold text-center">
             {/* 스타일 필요 -> 요일 이름들 나오는 거 */}
             {wn}

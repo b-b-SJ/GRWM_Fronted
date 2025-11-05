@@ -4,34 +4,25 @@ import WeeklyPlanner from "./WeeklyPlanner";
 //<UserRoundPlus />; //유저 아이콘임
 import { ChevronLeft, ChevronRight, Users } from "lucide-react";
 import DailyPlanner from "./DailyPlanner";
-import { useScheduleGrouping } from "../../hooks/useScheduleFilter";
+//import { useScheduleGrouping } from "../../hooks/useScheduleFilter";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
-
+import { usePlannerContext } from "../../hooks/PlannerContext";
 const PlannerHeaderWM = ({
-  year,
-  month,
-  // getDate,
-  //  weekNum,
-  // weekdays,
-  viewMode,
-  setViewMode,
-  STEP,
-  currentDate,
-  setCurrentDate,
-  weeks,
-  currentMonthName,
-  currentWeekNum,
-  weekFound,
-  openScModal,
-  setOpenScModal,
-  setSelectedSc,
-  selectedSc,
   nowPlanner,
-  setNowPlanner,
+  plannerType = "shared", //localStorage 추가하면 이 둘도 삭제예정
 }) => {
   const { planners } = useTeamPlanner();
-
+  const {
+    viewMode,
+    setViewMode,
+    STEP,
+    currentDate,
+    setCurrentDate,
+    currentMonthName,
+    currentWeekNum,
+    year,
+  } = usePlannerContext();
   const findNowPlannerInfo = () => {
     return planners.find((planner) => planner.plannerId === nowPlanner);
   };
@@ -49,7 +40,7 @@ const PlannerHeaderWM = ({
   };
 
   const [viewDate, setViewDate] = useState(new Date());
-  const scFilter = useScheduleGrouping({ nowPlanner, currentDate });
+  //const scFilter = useScheduleGrouping({ nowPlanner, currentDate });
 
   const goPrev = () => setCurrentDate((prev) => STEP[viewMode].prev(prev));
   const goNext = () => setCurrentDate((prev) => STEP[viewMode].next(prev));
@@ -154,29 +145,31 @@ const PlannerHeaderWM = ({
       <div>
         {/*화면 전환 -> 밑에 있어야됨요*/}
         {viewMode === "monthly" && (
-          <MonthlyPlanner
-            weeks={weeks}
-            month={month}
-            setViewMode={setViewMode}
-            viewMode={viewMode}
-            setCurrentDate={setCurrentDate}
-            currentDate={currentDate}
-            year={year}
-            scFilter={scFilter}
-          />
+          <div className="mt-4 mx-8">
+            <MonthlyGrid
+              totalDateStyle={`
+    relative p-4 border border-gray-100 min-h-[120px] 
+    hover:bg-gray-100
+    bg-white shadow-sm
+  `}
+              onDateClick={(day) => {
+                setViewMode("daily");
+                setCurrentDate(day);
+              }}
+              currentMonthStyle={`text-gray-900 bg-white`}
+              ncMonthStyle={`
+    text-gray-400 bg-gray-50 
+    hover:bg-gray-100 
+    opacity-70
+  `}
+
+              //  previewMap={scFilter.groupedDate} 일정 관련 << 백에서 불러오면 됨
+            />
+          </div>
         )}
         {viewMode === "weekly" && (
           <WeeklyPlanner
-            weeks={weeks}
-            weekFound={weekFound}
-            setViewMode={setViewMode}
-            viewMode={viewMode}
-            setCurrentDate={setCurrentDate}
-            openScModal={openScModal}
-            setOpenScModal={setOpenScModal}
-            setSelectedSc={setSelectedSc}
-            selectedSc={selectedSc}
-            scFilter={scFilter}
+            //    scFilter={scFilter}
             onDateClick={(day) => {
               setViewMode("daily");
               setCurrentDate(day);
@@ -184,14 +177,7 @@ const PlannerHeaderWM = ({
           />
         )}
 
-        {viewMode === "daily" && (
-          <DailyPlanner
-            openScModal={openScModal}
-            setOpenScModal={setOpenScModal}
-            currentDate={new Date(currentDate)}
-            scFilter={scFilter}
-          />
-        )}
+        {viewMode === "daily" && <DailyPlanner scFilter={scFilter} />}
       </div>
     </div>
   );

@@ -1,21 +1,19 @@
 import react from "react";
 //import DailyPlanner from "./DailyPlanner";
+import { usePlannerContext } from "../../hooks/PlannerContext";
 
 const MonthlyGrid = ({
-  weeks,
-  month,
   totalDateStyle,
-  setViewMode,
-  // roleofClick,
-  setCurrentDate,
   onDateClick,
   currentMonthStyle,
   ncMonthStyle,
-  weekNames,
-  previewMap,
+
+  previewMap, //오류 생길 가능성 다분 - 지금 스케쥴 관한 거를 받고 있는 게 따로 없어서..
+  //근데 또 전에 유효성 검사한 거 때문에 또 ㄱㅊ을 지도
 }) => {
   const today = new Date();
-
+  const { weeks, month, weekNames, setViewMode, setCurrentDate } =
+    usePlannerContext();
   return (
     <div>
       {/**요일 배열 */}
