@@ -303,11 +303,7 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
 
 // To-Do 완료/미완료 토글
     const handleToggleTodo = async (todoId, currentCompleted) => {
-        if (currentCompleted) {
-            await updateTodo(studyRoomId, todoId, { completed: false });
-        } else {
-            await completeTodo(studyRoomId, todoId);
-        }
+        await completeTodo(studyRoomId, todoId);
     };
 
 // To-Do 삭제
