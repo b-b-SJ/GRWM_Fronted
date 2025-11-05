@@ -420,6 +420,7 @@ const WorkspacePage = () => {
         console.log('[WorkspacePage] 스터디룸 생성 완료:', studyRoomId);
 
         try {
+            handleRefreshRooms();
             // joinStudyRoom에서 이미 모든 처리를 했으므로 바로 화면 전환
             setTimeout(() => {
                 setSelectedStudyRoom(studyRoomId);
