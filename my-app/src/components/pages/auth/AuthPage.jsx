@@ -23,7 +23,7 @@ const AuthPage = () => {
     });
 
     // Hooks
-    const { login, signup, isLoading, error, clearError, user } = useAuth();
+    const { login, signup, isLoading, error, clearError } = useAuth();
     const {
         checkLoginId,
         isChecking: loginIdChecking,
