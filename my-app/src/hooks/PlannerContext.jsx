@@ -22,8 +22,8 @@ export const PlannerProvider = ({ children, plannerType = "personal" }) => {
     }
 
     // localStorage에 없으면 기본값
-    // shared는 null (아직 선택 안 함), personal은 2001 (기본 개인 플래너)
-    return plannerType === "shared" ? null : 2001;
+    // shared는 null (아직 선택 안 함), personal은 1 (기본 개인 플래너)
+    return plannerType === "shared" ? null : 1;
   });
 
   // nowPlanner가 바뀔 때마다 localStorage 저장

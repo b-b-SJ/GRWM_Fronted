@@ -44,7 +44,7 @@ const TeamPlannerMain = ({ sidebarOpen }) => {
         }
       }
     };
-
+    console.log("너는 이름이 머니?", currentPlanner);
     loadPlanner();
   }, [
     plannerId,
