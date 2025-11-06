@@ -66,12 +66,7 @@ const TeamPlannerMain = ({ sidebarOpen }) => {
   return (
     <div className="flex flex-1">
       {/* 개인 플래너 사이드바 */}
-      {sidebarOpen && (
-        <PlannerSidebar
-          sidebarClassName="md:block hidden"
-          nowPlanner={nowPlanner}
-        />
-      )}
+      {sidebarOpen && <PlannerSidebar sidebarClassName="md:block hidden" />}
 
       {/* 메인 플래너 영역 */}
       <div className="flex-1 flex flex-col">

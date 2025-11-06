@@ -14,7 +14,7 @@ const ScheduleFormModal = ({
   selectedDate = null, // 날짜 클릭해서 열었을 때 자동 입력
   onSuccess = null, // 성공 후 콜백
 }) => {
-  const { plannerType } = usePlannerContext();
+  const { plannerType, nowPlanner } = usePlannerContext();
 
   const {
     createSchedule,
@@ -25,9 +25,6 @@ const ScheduleFormModal = ({
   } = useTeamPlanner();
 
   // ==================== State 관리 ====================
-  const { plannerId } = useParams();
-
-  const nowPlannerId = Number(plannerId);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -51,9 +48,9 @@ const ScheduleFormModal = ({
    * 3. edit 모드면 기존 데이터 로드
    */
   useEffect(() => {
-    if (isOpen && nowPlannerId) {
+    if (isOpen && nowPlanner) {
       // 카테고리 목록 불러오기
-      fetchCategories(nowPlannerId);
+      fetchCategories(nowPlanner);
 
       // create 모드 + 날짜가 선택되어 있으면
       if (mode === "create" && selectedDate) {
@@ -78,7 +75,7 @@ const ScheduleFormModal = ({
         });
       }
     }
-  }, [isOpen, nowPlannerId, mode, selectedDate, initialData, fetchCategories]);
+  }, [isOpen, nowPlanner, mode, selectedDate, initialData, fetchCategories]);
 
   // ==================== 헬퍼 함수 ====================
 
@@ -166,7 +163,7 @@ const ScheduleFormModal = ({
       if (mode === "create") {
         // ===== 일정 생성 =====
         const scheduleData = {
-          plannerId: nowPlannerId,
+          plannerId: nowPlanner,
           categoryId: formData.categoryId || null, // Optional<Long>
           title: formData.title,
           startDateTime: formData.startDateTime,
@@ -177,7 +174,7 @@ const ScheduleFormModal = ({
         };
 
         console.log("일정 생성 요청:", scheduleData);
-        const scheduleId = await createSchedule(nowPlannerId, scheduleData);
+        const scheduleId = await createSchedule(nowPlanner, scheduleData);
 
         if (scheduleId) {
           alert("일정이 생성되었습니다!");
@@ -207,7 +204,7 @@ const ScheduleFormModal = ({
 
         console.log("일정 수정 요청:", updateData);
         const updatedSchedule = await updateSchedule(
-          nowPlannerId,
+          nowPlanner,
           scheduleId,
           updateData
         );

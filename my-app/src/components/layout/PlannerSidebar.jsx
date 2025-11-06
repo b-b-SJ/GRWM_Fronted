@@ -195,7 +195,6 @@ const PlannerSidebar = ({ sidebarClassName }) => {
                 className="max-h-60 min-h-60"
                 todaySc={todaySchedules}
                 onScheduleDeleted={handleScheduleDeleted} // ✅ 삭제 콜백 전달
-                nowPlanner={nowPlanner} // ✅ nowPlanner 전달
               />
               <button
                 className="text-sm text-left p-2 hover:bg-gray-100"

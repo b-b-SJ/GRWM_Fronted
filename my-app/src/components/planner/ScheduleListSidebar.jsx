@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Clock, MapPin, Trash } from "lucide-react";
 import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
-
+import { usePlannerContext } from "../../hooks/PlannerContext";
 const ScheduleListSidebar = ({
   className = "",
   openScModal,
@@ -10,11 +10,10 @@ const ScheduleListSidebar = ({
   setSelectedSc,
   todaySc,
   onScheduleDeleted, // ✅ 삭제 후 콜백
-  nowPlanner, // ✅ plannerId 받기
 }) => {
   const { deleteSchedule } = useTeamPlanner();
   const [deletingId, setDeletingId] = useState(null); // 삭제 중인 일정 ID
-
+  const { nowPlanner } = usePlannerContext();
   console.log("ScheduleListSidebar 렌더링, todaySc:", todaySc);
 
   // ✅ 시간 라벨 생성 함수
