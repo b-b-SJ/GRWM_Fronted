@@ -7,11 +7,8 @@ import { PlannerProvider } from "../../../hooks/PlannerContext";
 //공통
 import PlannerListPage from "./PlannerListPage";
 
-// 개인 플래너 관련
-import PersonalPlannerMain from "./PersonalPlannerMain";
-
-// 공유 플래너 관련
-import TeamPlannerMain from "./TeamPlannerMain";
+// 개인+공유
+import PlannerMain from "./PlannerMain";
 
 const PlannerPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -63,7 +60,7 @@ const PlannerPage = () => {
               path="/personal/:plannerId"
               element={
                 <PlannerProvider plannerType="personal">
-                  <PersonalPlannerMain sidebarOpen={sidebarOpen} />
+                  <PlannerMain sidebarOpen={sidebarOpen} />
                 </PlannerProvider>
               }
             />
@@ -74,15 +71,12 @@ const PlannerPage = () => {
               path="/shared/:plannerId"
               element={
                 <PlannerProvider plannerType="shared">
-                  <TeamPlannerMain sidebarOpen={sidebarOpen} />
+                  <PlannerMain sidebarOpen={sidebarOpen} />
                 </PlannerProvider>
               }
             />
 
-            {/*  플래너 목록 - Provider 필요 없음 */}
             <Route path="/list/:type" element={<PlannerListPage />} />
-
-            {/* 잘못된 경로일 경우 */}
             <Route path="*" element={<Navigate to="/planner" replace />} />
           </Routes>
         </div>

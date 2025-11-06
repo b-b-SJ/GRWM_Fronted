@@ -9,7 +9,7 @@ import { useTeamPlanner } from "../../../hooks/TeamPlannerProvider";
 import TeamMemberSidebar from "../../planner/teamPlanner/TeamMemberSidebar";
 import { usePlannerContext } from "../../../hooks/PlannerContext";
 
-const TeamPlannerMain = ({ sidebarOpen }) => {
+const PlannerMain = ({ sidebarOpen }) => {
   const navigate = useNavigate();
   const { openScModal, nowPlanner, setNowPlanner } = usePlannerContext();
   const { currentPlanner, setCurrentPlanner, planners, fetchPlanners } =
@@ -80,4 +80,4 @@ const TeamPlannerMain = ({ sidebarOpen }) => {
   );
 };
 
-export default TeamPlannerMain;
+export default PlannerMain;
