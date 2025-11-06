@@ -12,6 +12,7 @@ import AuthPage from "./components/pages/auth/AuthPage";
 import { AuthProvider } from "./hooks/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { TeamPlannerProvider } from "./hooks/TeamPlannerProvider";
+import PersonalPlannerProvider from "./hooks/PersonalPlannerProvider";
 //import TeamPlannerPage from "./components/pages/planner/TeamPlannerPage";
 
 const App = () => {
@@ -20,29 +21,31 @@ const App = () => {
       <BrowserRouter>
         <WebSocketProvider>
           <ChatStateProvider>
-            <TeamPlannerProvider>
-              <Routes>
-                <Route path="auth" element={<AuthPage />} />
-                <Route path="/" element={<Navigate to="/auth" replace />} />
+            <PersonalPlannerProvider>
+              <TeamPlannerProvider>
+                <Routes>
+                  <Route path="auth" element={<AuthPage />} />
+                  <Route path="/" element={<Navigate to="/auth" replace />} />
 
-                <Route
-                  element={
-                    <ProtectedRoute>
-                      <AppLayout />
-                    </ProtectedRoute>
-                  }
-                >
-                  <Route path="main" element={<MainPage />} />
-                  <Route path="planner/*" element={<PlannerPage />} />
-                  {/*<Route path="planner/shared" element={<TeamPlannerPage />} />*/}
-                  <Route path="tracker" element={<TrackerPage />} />
-                  <Route path="workspace/*" element={<WorkspacePage />} />
-                  <Route path="community/*" element={<CommunityPage />} />
-                </Route>
+                  <Route
+                    element={
+                      <ProtectedRoute>
+                        <AppLayout />
+                      </ProtectedRoute>
+                    }
+                  >
+                    <Route path="main" element={<MainPage />} />
+                    <Route path="planner/*" element={<PlannerPage />} />
+                    {/*<Route path="planner/shared" element={<TeamPlannerPage />} />*/}
+                    <Route path="tracker" element={<TrackerPage />} />
+                    <Route path="workspace/*" element={<WorkspacePage />} />
+                    <Route path="community/*" element={<CommunityPage />} />
+                  </Route>
 
-                <Route path="*" element={<Navigate to="/auth" replace />} />
-              </Routes>
-            </TeamPlannerProvider>
+                  <Route path="*" element={<Navigate to="/auth" replace />} />
+                </Routes>
+              </TeamPlannerProvider>
+            </PersonalPlannerProvider>
           </ChatStateProvider>
         </WebSocketProvider>
       </BrowserRouter>

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTeamPlanner } from "../../../hooks/TeamPlannerProvider";
+import { usePersonalPlanner } from "../../../hooks/PersonalPlannerProvider";
 import { Plus, Users, User, ArrowLeft, Settings } from "lucide-react";
 import CreatePlannerModal from "../../planner/plannerBasicCRUD/CreatePlannerModal";
 import EditPlannerModal from "../../planner/plannerBasicCRUD/EditPlannerModal";
@@ -9,12 +10,27 @@ import EditPlannerModal from "../../planner/plannerBasicCRUD/EditPlannerModal";
 const PlannerListPage = () => {
   const { type } = useParams(); // "shared" 또는 "personal"
   const navigate = useNavigate();
-  const { planners, fetchPlanners, loading } = useTeamPlanner();
+
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
   const [selectedPlanner, setSelectedPlanner] = useState(null);
 
+  const teamData = useTeamPlanner();
+  const personalData = usePersonalPlanner();
+
   const isShared = type === "shared";
+
+  const currentData = isShared ? teamData : personalData;
+
+  const {
+    planners,
+    fetchPlanners,
+    createPlanner,
+    deletePlanner,
+    updatePlanner,
+    loading,
+    error,
+  } = currentData;
 
   // 공유 플래너 목록 불러오기
   useEffect(() => {
