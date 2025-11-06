@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-//import { useCalendar } from "../../../hooks/useCalendar";
-import { useScheduleGrouping } from "../../../hooks/useScheduleFilter"; //일정 보여주기 전에 그룹핑할 때 사용했엇슨
 import PlannerSidebar from "../../layout/PlannerSidebar";
 import PlannerHeaderWM from "../../planner/PlannerHeaderWM";
 import ScheduleModal from "../../planner/ScheduleModal";
@@ -11,70 +9,104 @@ import { usePlannerContext } from "../../../hooks/PlannerContext";
 
 const PlannerMain = ({ sidebarOpen }) => {
   const navigate = useNavigate();
-  const { openScModal, nowPlanner, setNowPlanner } = usePlannerContext();
+
+  // Context에서 필요한 것들 가져오기
+  const {
+    openScModal,
+    nowPlanner,
+    setNowPlanner,
+    plannerType,
+    isShared,
+    isPersonal,
+  } = usePlannerContext();
+
+  //항상 호출!
   const { currentPlanner, setCurrentPlanner, planners, fetchPlanners } =
     useTeamPlanner();
+
+  // URL에서 플래너 ID 가져오기
   const { plannerId } = useParams();
 
-  // URL의 plannerId를 Context에 반영
+  // URL의 plannerId를 Context에 동기화
   useEffect(() => {
-    const loadPlanner = async () => {
-      if (!plannerId) return;
+    if (!plannerId) return;
 
+    const plannerIdNum = Number(plannerId);
+    setNowPlanner(plannerIdNum);
+
+    console.log(` ${plannerType} 플래너 설정:`, plannerIdNum);
+  }, [plannerId, setNowPlanner, plannerType]);
+
+  // Shared 플래너일 때만 TeamPlanner 데이터 로드
+  useEffect(() => {
+    // Personal이면 실행 안 함
+    //-> 훅 생성하면 추가!
+    if (!isShared || !plannerId) return;
+
+    const loadTeamPlanner = async () => {
       const plannerIdNum = Number(plannerId);
 
-      // Context의 nowPlanner 업데이트 (localStorage 자동 저장됨!)
-      setNowPlanner(plannerIdNum);
+      console.log(" 팀 플래너 로딩:", plannerIdNum);
 
-      // TeamPlanner의 currentPlanner 설정
-      const existing = planners.find((p) => p.plannerId === plannerIdNum);
+      // 이미 로드된 플래너인지 확인
+      const existing = planners?.find((p) => p.plannerId === plannerIdNum);
 
       if (existing) {
+        console.log("캐시된 플래너 사용:", existing.title);
         setCurrentPlanner(existing);
       } else {
-        // 플래너 목록 새로 불러오기
+        console.log("플래너 목록 새로 불러오기...");
         await fetchPlanners();
-        const planner = planners.find((p) => p.plannerId === plannerIdNum);
+
+        // 다시 찾기 (fetchPlanners 후 planners 업데이트됨)
+        const planner = planners?.find((p) => p.plannerId === plannerIdNum);
+
         if (planner) {
+          console.log(" 플래너 로드 성공:", planner.title);
           setCurrentPlanner(planner);
         } else {
-          // 플래너를 못 찾으면 목록 페이지로
           console.error("플래너를 찾을 수 없습니다:", plannerIdNum);
-          navigate("/planner/list/shared");
+          navigate(`/planner/list/${plannerType}`);
         }
       }
     };
-    console.log("너는 이름이 머니?", currentPlanner);
-    loadPlanner();
+
+    loadTeamPlanner();
   }, [
+    isShared,
     plannerId,
     planners,
-    setNowPlanner,
     setCurrentPlanner,
     fetchPlanners,
     navigate,
+    plannerType,
   ]);
 
-  /*
-  const scheduleFilter = useScheduleGrouping({
-    nowPlanner,
-    currentDate: calendar.currentDate,
-  });
-
-   */
+  // 디버깅용 로그
+  useEffect(() => {
+    console.log(" 현재 상태:", {
+      plannerType,
+      isShared,
+      isPersonal,
+      nowPlanner,
+      currentPlanner: currentPlanner?.title || "없음",
+    });
+  }, [plannerType, isShared, isPersonal, nowPlanner, currentPlanner]);
 
   return (
     <div className="flex flex-1">
-      {/* 개인 플래너 사이드바 */}
+      {/* 왼쪽 사이드바 (공통) */}
       {sidebarOpen && <PlannerSidebar sidebarClassName="md:block hidden" />}
 
-      {/* 메인 플래너 영역 */}
+      {/* 메인 플래너 영역 (공통) */}
       <div className="flex-1 flex flex-col">
         <PlannerHeaderWM />
       </div>
-      <TeamMemberSidebar plannerId={nowPlanner} />
 
-      {/* 일정 모달 */}
+      {/* 오른쪽 사이드바 - 공유 플래너일 때만 표시 */}
+      {isShared && <TeamMemberSidebar plannerId={nowPlanner} />}
+
+      {/* 일정 모달 (공통) */}
       {openScModal && <ScheduleModal />}
     </div>
   );
