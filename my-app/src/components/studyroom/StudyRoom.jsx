@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Clock, Users, CheckCircle2, Circle, ThumbsUp, Plus, X, ChevronLeft, AlertCircle, Wifi, WifiOff } from 'lucide-react';
 import { useStudyRoomState } from '../../hooks/useStudyRoomState';
 import { useStudyRoomWebSocket } from '../../hooks/StudyRoomWebSocketContext';
@@ -42,9 +42,10 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
         addRoomHandler
     } = useStudyRoomWebSocket();
 
-    const [newTodo, setNewTodo] = useState('');
     const [isAddingTodo, setIsAddingTodo] = useState(false);
     const [remainingTime, setRemainingTime] = useState(0);
+    const todoInputRef = useRef(null);
+
     const [showVoteAlert, setShowVoteAlert] = useState(false);
     const [voteStatus, setVoteStatus] = useState({
         isVoting: false,
@@ -288,25 +289,29 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
     }, [currentStudyRoom, todos, user]);
 
     // To-Do 추가
-    const handleAddTodo = async () => {
-        if (!newTodo.trim()) return;
+    const handleAddTodo = async (e) => {
+        if (e) e.preventDefault();
+        const content = todoInputRef.current?.value.trim();
+        if (!content) return;
 
         const result = await createTodo(studyRoomId, {
-            content: newTodo.trim()
+            content: content
         });
 
         if (result) {
-            setNewTodo('');
+            if (todoInputRef.current) {
+                todoInputRef.current.value = '';
+            }
             setIsAddingTodo(false);
         }
     };
 
-// To-Do 완료/미완료 토글
+    // To-Do 완료/미완료 토글
     const handleToggleTodo = async (todoId, currentCompleted) => {
         await completeTodo(studyRoomId, todoId);
     };
 
-// To-Do 삭제
+    // To-Do 삭제
     const handleDeleteTodo = async (todoId) => {
         if (window.confirm('이 To-Do를 삭제하시겠습니까?')) {
             const success = await deleteTodo(studyRoomId, todoId);
@@ -314,7 +319,7 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
         await fetchTodos(studyRoomId);
     };
 
-// 리액션 추가
+    // 리액션 추가
     const handleLikeTodo = async (todoUserId, todoId) => {
         if (todoUserId === user?.communityId) {
             alert('자신의 To-Do에는 리액션을 추가할 수 없습니다.');
@@ -411,12 +416,10 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
 
                 {/* To-Do 입력 폼 */}
                 {isCurrentUser && isAddingTodo && (
-                    <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <form onSubmit={handleAddTodo} className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                         <input
+                            ref={todoInputRef}
                             type="text"
-                            value={newTodo}
-                            onChange={(e) => setNewTodo(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleAddTodo()}
                             placeholder="오늘의 목표는?"
                             className="w-full px-3 py-2 bg-white border border-blue-300 rounded text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-2 text-sm"
                             autoFocus
@@ -424,23 +427,26 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                         />
                         <div className="flex justify-end space-x-2">
                             <button
+                                type="button"
                                 onClick={() => {
                                     setIsAddingTodo(false);
-                                    setNewTodo('');
+                                    if (todoInputRef.current) {
+                                        todoInputRef.current.value = '';
+                                    }
                                 }}
                                 className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
                             >
                                 취소
                             </button>
                             <button
-                                onClick={handleAddTodo}
-                                disabled={!newTodo.trim() || loading || connectionStatus !== 'connected'}
+                                type="submit"
+                                disabled={loading || connectionStatus !== 'connected'}
                                 className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500"
                             >
                                 추가
                             </button>
                         </div>
-                    </div>
+                    </form>
                 )}
 
                 {/* To-Do 목록 */}
@@ -463,7 +469,7 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                             >
                                 <div className="flex items-start justify-between">
                                     <div className="flex items-start space-x-2 flex-1 min-w-0">
-                                        {isCurrentUser ? (
+                                    {isCurrentUser ? (
                                             <button
                                                 onClick={() => handleToggleTodo(todo.todoId, todo.completed)}
                                                 className="flex-shrink-0 mt-0.5"
