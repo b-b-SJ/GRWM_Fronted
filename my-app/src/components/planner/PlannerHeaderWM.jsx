@@ -1,17 +1,16 @@
 import React, { useState } from "react";
-
 import WeeklyPlanner from "./WeeklyPlanner";
 //<UserRoundPlus />; //유저 아이콘임
 import { ChevronLeft, ChevronRight, Users } from "lucide-react";
 import DailyPlanner from "./DailyPlanner";
 //import { useScheduleGrouping } from "../../hooks/useScheduleFilter";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useCurrentPlanner } from "../../hooks/useCurrentPlanner";
 import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
 import { usePlannerContext } from "../../hooks/PlannerContext";
 import MonthlyGrid from "./MonthlyGrid";
 
 const PlannerHeaderWM = ({}) => {
-  const { planners } = useTeamPlanner();
   const {
     viewMode,
     setViewMode,
@@ -24,6 +23,7 @@ const PlannerHeaderWM = ({}) => {
     nowPlanner,
     plannerType,
   } = usePlannerContext();
+  const { planners } = useCurrentPlanner(plannerType);
   const findNowPlannerInfo = () => {
     return planners.find((planner) => planner.plannerId === nowPlanner);
   };

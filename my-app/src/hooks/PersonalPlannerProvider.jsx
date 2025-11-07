@@ -62,18 +62,18 @@ export const PersonalPlannerProvider = ({ children }) => {
         });
 
         if (!response.ok) {
-          throw new Error("플래너 생성에 실패했습니다.");
+          throw new Error("개인 플래너 생성에 실패했습니다.");
         }
 
         const plannerId = await response.json();
-        console.log("생성된 플래너 ID:", plannerId);
+        console.log("생성된 개인플래너 ID:", plannerId);
 
         // 플래너 목록 다시 불러오기
         await fetchPlanners();
 
         return plannerId;
       } catch (error) {
-        handleError(error, "플래너 생성 중 오류가 발생했습니다.");
+        handleError(error, "개인 플래너 생성 중 오류가 발생했습니다.");
       } finally {
         setLoading(false);
       }
@@ -86,14 +86,18 @@ export const PersonalPlannerProvider = ({ children }) => {
     checkAuth();
     setLoading(true);
     setError(null);
+    console.log("목록불러오기전", user, user.userId);
     try {
-      const response = await fetch(`/api/personal-planner/list`, {
-        method: "GET",
-        headers: {
-          ...getAuthHeaders(),
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `/api/personal-planner/list/${user.userId}`,
+        {
+          method: "GET",
+          headers: {
+            ...getAuthHeaders(),
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error("플래너 목록을 불러오는데 실패했습니다.");
@@ -122,7 +126,7 @@ export const PersonalPlannerProvider = ({ children }) => {
       setError(null);
       try {
         const response = await fetch(
-          `/api/personal-planner/${plannerId}/update`,
+          `/api/personal-planner/list/${plannerId}/update`,
           {
             method: "PUT",
             headers: {
@@ -166,7 +170,7 @@ export const PersonalPlannerProvider = ({ children }) => {
       setError(null);
       try {
         const response = await fetch(
-          `/api/personal-planner/${plannerId}/delete`,
+          `/api/personal-planner/list/${plannerId}/delete`,
           {
             method: "DELETE",
             headers: {

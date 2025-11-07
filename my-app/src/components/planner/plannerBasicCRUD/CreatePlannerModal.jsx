@@ -1,12 +1,17 @@
-// src/components/planner/groupPlanner/CreatePlannerModal.jsx
 import React, { useState } from "react";
 import { X, Users, Upload, Images } from "lucide-react";
 import { useTeamPlanner } from "../../../hooks/TeamPlannerProvider";
 import { useImgConverter } from "../../../hooks/useImgConverter";
 import { useAuth } from "../../../hooks/AuthContext";
-
+import { usePersonalPlanner } from "../../../hooks/PersonalPlannerProvider";
+import { useCurrentPlanner } from "../../../hooks/useCurrentPlanner";
+import { useParams } from "react-router-dom";
 const CreatePlannerModal = ({ isOpen, onClose, onSuccess }) => {
-  const { createPlanner, addMember, loading } = useTeamPlanner();
+  const { type } = useParams();
+
+  const isShared = type === "shared";
+
+  const { createPlanner, addMember, loading } = useCurrentPlanner(type);
   const { getImageUrl, isUploading } = useImgConverter();
   const { user } = useAuth();
   const [formData, setFormData] = useState({
@@ -47,16 +52,31 @@ const CreatePlannerModal = ({ isOpen, onClose, onSuccess }) => {
     }
 
     try {
-      const plannerId = await createPlanner(formData);
-      console.log("2단계: 생성자를 관리자로 추가 중...");
-      await addMember(plannerId, user.userId, "manager");
-      console.log("관리자로 추가 완료!");
+      if (isShared) {
+        // 공유 플래너 -생성 + 멤버 추가
+        console.log("1단계: 공유 플래너 생성 중...");
+        const plannerId = await createPlanner(formData);
 
-      alert("플래너가 생성되었습니다!");
-      onSuccess(plannerId);
+        console.log("2단계: 생성자를 관리자로 추가 중...");
+        await addMember(plannerId, user.userId, "manager");
+        console.log("✅ 공유 플래너 생성 완료!");
+
+        alert("플래너가 생성되었습니다!");
+        onSuccess(plannerId);
+      } else {
+        // 개인 플래너 -생성만
+        console.log("개인 플래너 생성 중...");
+        const plannerId = await createPlanner(formData);
+        console.log("✅ 개인 플래너 생성 완료!");
+
+        alert("플래너가 생성되었습니다!");
+        onSuccess(plannerId);
+      }
+
       onClose();
       setFormData({ title: "", description: "", profileImage: "" });
     } catch (error) {
+      console.error("플래너 생성 실패:", error);
       alert("플래너 생성 실패: " + error.message);
     }
   };
@@ -71,7 +91,11 @@ const CreatePlannerModal = ({ isOpen, onClose, onSuccess }) => {
       >
         {/* 헤더 */}
         <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold">새 공유 플래너 생성</h2>
+          {isShared ? (
+            <h2 className="text-xl font-bold">새 공유 플래너 생성</h2>
+          ) : (
+            <h2 className="text-xl font-bold">새 개인 플래너 생성</h2>
+          )}
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full"

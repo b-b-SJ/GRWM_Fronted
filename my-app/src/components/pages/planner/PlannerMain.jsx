@@ -6,6 +6,7 @@ import ScheduleModal from "../../planner/ScheduleModal";
 import { useTeamPlanner } from "../../../hooks/TeamPlannerProvider";
 import TeamMemberSidebar from "../../planner/teamPlanner/TeamMemberSidebar";
 import { usePlannerContext } from "../../../hooks/PlannerContext";
+import { usePersonalPlanner } from "../../../hooks/PersonalPlannerProvider";
 
 const PlannerMain = ({ sidebarOpen }) => {
   const navigate = useNavigate();
@@ -19,10 +20,13 @@ const PlannerMain = ({ sidebarOpen }) => {
     isShared,
     isPersonal,
   } = usePlannerContext();
+  const teamData = useTeamPlanner();
+  const personalData = usePersonalPlanner();
 
+  const currentData = isShared ? teamData : personalData;
   //항상 호출!
   const { currentPlanner, setCurrentPlanner, planners, fetchPlanners } =
-    useTeamPlanner();
+    currentData;
 
   // URL에서 플래너 ID 가져오기
   const { plannerId } = useParams();

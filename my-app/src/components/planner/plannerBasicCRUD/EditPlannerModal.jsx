@@ -2,12 +2,14 @@
 import React, { useState, useEffect } from "react";
 import { X, Users, Upload, Images, Trash2 } from "lucide-react";
 import { useTeamPlanner } from "../../../hooks/TeamPlannerProvider";
+import { useCurrentPlanner } from "../../../hooks/useCurrentPlanner";
 import { useImgConverter } from "../../../hooks/useImgConverter";
-
+import { useParams } from "react-router-dom";
 const EditPlannerModal = ({ isOpen, onClose, planner, onSuccess }) => {
-  const { updatePlanner, deletePlanner, loading } = useTeamPlanner();
+  const { type } = useParams();
+  const { updatePlanner, deletePlanner, loading } = useCurrentPlanner(type);
   const { getImageUrl, isUploading } = useImgConverter();
-
+  console.log("plannerId 확인", planner);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
