@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Clock, MapPin, Trash } from "lucide-react";
-import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
+import { Clock, MapPin, Trash, Loader2 } from "lucide-react";
+import { useCurrentPlanner } from "../../hooks/useCurrentPlanner";
 import { usePlannerContext } from "../../hooks/PlannerContext";
 const ScheduleListSidebar = ({
   className = "",
@@ -8,10 +8,16 @@ const ScheduleListSidebar = ({
   todaySc,
   onScheduleDeleted, // ✅ 삭제 후 콜백
 }) => {
-  const { deleteSchedule } = useTeamPlanner();
   const [deletingId, setDeletingId] = useState(null); // 삭제 중인 일정 ID
-  const { nowPlanner, openScModal, setOpenScModal, selectedSc, setSelectedSc } =
-    usePlannerContext();
+  const {
+    nowPlanner,
+    openScModal,
+    setOpenScModal,
+    selectedSc,
+    setSelectedSc,
+    plannerType,
+  } = usePlannerContext();
+  const { deleteSchedule, loading } = useCurrentPlanner(plannerType);
   console.log("ScheduleListSidebar 렌더링, todaySc:", todaySc);
 
   // ✅ 시간 라벨 생성 함수
@@ -81,8 +87,15 @@ const ScheduleListSidebar = ({
 
   return (
     <div className="rounded-2xl">
+      {/* 일정 영역 */}
       <div className={`p-3 overflow-y-auto ${className} space-y-3`}>
-        {todayScheSideTime && todayScheSideTime.length > 0 ? (
+        {/*일정 로딩 */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+            <Loader2 className="w-8 h-8 animate-spin mb-2" />
+            <p className="text-sm">일정 불러오는 중...</p>
+          </div>
+        ) : todayScheSideTime && todayScheSideTime.length > 0 ? (
           todayScheSideTime.map((schedule) => (
             <div
               key={schedule.scheduleId}

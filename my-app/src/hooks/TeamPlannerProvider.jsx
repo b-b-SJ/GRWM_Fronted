@@ -378,6 +378,7 @@ export const TeamPlannerProvider = ({ children }) => {
       checkAuth();
       setLoading(true);
       setError(null);
+      console.log("ㅎㅇ 공유 플래너 스케쥴 생성 ㄱ할게");
       try {
         const response = await fetch(
           `http://localhost:8080/api/team-planner/${plannerId}/schedule/create`,
@@ -422,6 +423,7 @@ export const TeamPlannerProvider = ({ children }) => {
       checkAuth();
       setLoading(true);
       setError(null);
+
       try {
         const response = await fetch(
           `/api/team-planner/${plannerId}/schedule/${scheduleId}`,

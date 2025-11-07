@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import MonthlyGrid from "../planner/MonthlyGrid";
 import { useCalendar } from "../../hooks/useCalendar";
-import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
+import { useCurrentPlanner } from "../../hooks/useCurrentPlanner";
 import ScheduleFormModal from "../planner/ScheduleFormModal";
 
 import { usePlannerContext } from "../../hooks/PlannerContext";
@@ -24,6 +24,7 @@ const PlannerSidebar = ({ sidebarClassName }) => {
     selectedSc,
     setSelectedSc,
     nowPlanner,
+    plannerType,
   } = usePlannerContext();
 
   const [scheduleOpen, setScheduleOpen] = useState(true);
@@ -38,7 +39,7 @@ const PlannerSidebar = ({ sidebarClassName }) => {
   const month = today.getMonth();
 
   const { fetchMonthlySchedules, fetchDailySchedules, fetchWeeklySchedules } =
-    useTeamPlanner();
+    useCurrentPlanner(plannerType);
 
   // 오늘 일정을 불러오는 함수 분리
   const loadTodaySchedules = async () => {

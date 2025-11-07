@@ -1,7 +1,8 @@
 // src/components/planner/schedule/ScheduleFormModal.jsx
 import React, { useState, useEffect } from "react";
 import { X, Calendar, Clock, MapPin, FileText, Users } from "lucide-react";
-import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
+import { useCurrentPlanner } from "../../hooks/useCurrentPlanner";
+
 import { useParams } from "react-router-dom";
 import { usePlannerContext } from "../../hooks/PlannerContext";
 const ScheduleFormModal = ({
@@ -22,7 +23,7 @@ const ScheduleFormModal = ({
     fetchCategories,
     categories,
     loading,
-  } = useTeamPlanner();
+  } = useCurrentPlanner(plannerType);
 
   // ==================== State 관리 ====================
 

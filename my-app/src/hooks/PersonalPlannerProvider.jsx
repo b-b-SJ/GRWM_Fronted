@@ -212,6 +212,7 @@ export const PersonalPlannerProvider = ({ children }) => {
       checkAuth();
       setLoading(true);
       setError(null);
+      console.log("안녕, 개인 플래너 스케쥴 생성 시작할게요");
       try {
         const response = await fetch(
           `http://localhost:8080/api/personal-planner/${plannerId}/schedule/create`,
@@ -390,7 +391,7 @@ export const PersonalPlannerProvider = ({ children }) => {
       setError(null);
       try {
         const response = await fetch(
-          `/api/personal-planner/${plannerId}/schedule/monthly/${year}/${month}`,
+          `/api/personal-planner/${plannerId}/${year}/${month}/monthly`,
           {
             method: "GET",
             headers: {
@@ -424,7 +425,7 @@ export const PersonalPlannerProvider = ({ children }) => {
       setError(null);
       try {
         const response = await fetch(
-          `/api/personal-planner/${plannerId}/schedule/weekly/${year}/${weekNumber}`,
+          `/api/personal-planner/${plannerId}/${year}/${weekNumber}/weekly`,
           {
             method: "GET",
             headers: {
@@ -458,7 +459,7 @@ export const PersonalPlannerProvider = ({ children }) => {
       setError(null);
       try {
         const response = await fetch(
-          `/api/personal-planner/${plannerId}/schedule/daily/${year}/${month}/${day}`,
+          `/api/personal-planner/${plannerId}/${year}/${month}/${day}/daily`,
           {
             method: "GET",
             headers: {
