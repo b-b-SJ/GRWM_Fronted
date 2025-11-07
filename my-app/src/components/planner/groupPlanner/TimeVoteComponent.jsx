@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTeamPlanner } from '../../../hooks/TeamPlannerProvider';
 import { Calendar, Clock, Users, X, Check } from 'lucide-react';
 
+// 공유 플래너의 시간 투표 컴포넌트. 임시이며 초안이므로 api 연결이 이런저런 수정이 필요할 확률이 높습니다. 파이띵.
 const TimeVoteComponent = ({ plannerId, voteId, onClose }) => {
     const {
         user,
