@@ -118,6 +118,7 @@ const PlannerSidebar = ({ sidebarClassName }) => {
                 currentMonthStyle="text-gray-800"
                 ncMonthStyle="text-gray-300"
                 onDateClick={(day) => setCurrentDate(day)}
+                showSchedules={false}
               />
             </div>
           )}
