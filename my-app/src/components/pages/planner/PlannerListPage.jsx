@@ -18,7 +18,6 @@ const PlannerListPage = () => {
   const {
     planners,
     fetchPlanners,
-    createPlanner,
     deletePlanner,
     updatePlanner,
     loading,
@@ -34,7 +33,7 @@ const PlannerListPage = () => {
 
   // 플래너 생성 성공 시
   const handleCreateSuccess = (plannerId) => {
-    // 🔥 localStorage에 수동 저장 (PlannerMain에서도 저장되지만, 즉시 반영)
+    // localStorage에 저장
     localStorage.setItem(`planner_last_${type}_id`, String(plannerId));
     localStorage.setItem("lastPlannerType", type);
 

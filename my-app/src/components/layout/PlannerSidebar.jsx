@@ -33,14 +33,14 @@ const PlannerSidebar = ({ sidebarClassName }) => {
     if (!nowPlanner) {
       return;
     }
-    console.log(`📅 [${plannerType}] 일정 로딩 (URL plannerId: ${nowPlanner})`);
+    console.log(` [${plannerType}] 일정 로딩 (URL plannerId: ${nowPlanner})`);
 
     fetchDailySchedules(nowPlanner, year, month + 1, today.getDate());
   }, [plannerId, plannerType]); //  plannerId 의존!
 
   // 일정 생성 성공 후 - 함수 재호출!
   const handleScheduleCreated = async () => {
-    console.log("✅ 일정 생성 성공! 새로고침");
+    console.log(" 일정 생성 성공! 새로고침");
 
     if (!nowPlanner) return;
 
@@ -49,9 +49,9 @@ const PlannerSidebar = ({ sidebarClassName }) => {
     await fetchMonthlySchedules(nowPlanner, year, month + 1);
   };
 
-  // 🔥 일정 삭제 성공 후 - 함수 재호출!
+  //  일정 삭제 성공 후 - 함수 재호출!
   const handleScheduleDeleted = async () => {
-    console.log("✅ 일정 삭제 성공! 새로고침");
+    console.log(" 일정 삭제 성공! 새로고침");
 
     if (!nowPlanner) return;
 
@@ -143,7 +143,7 @@ const PlannerSidebar = ({ sidebarClassName }) => {
 
           {scheduleOpen && (
             <>
-              {/* 🔥 Provider의 schedules와 loading 사용! */}
+              {/*  Provider의 schedules와 loading 사용! */}
               <ScheduleListSidebar
                 className="max-h-60 min-h-60"
                 todaySc={schedules}
