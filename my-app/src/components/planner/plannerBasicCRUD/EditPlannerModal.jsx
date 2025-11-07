@@ -9,7 +9,7 @@ const EditPlannerModal = ({ isOpen, onClose, planner, onSuccess }) => {
   const { type } = useParams();
   const { updatePlanner, deletePlanner, loading } = useCurrentPlanner(type);
   const { getImageUrl, isUploading } = useImgConverter();
-  console.log("plannerId 확인", planner);
+  console.log("plannerId 확인", planner, type);
   const [formData, setFormData] = useState({
     title: "",
     description: "",

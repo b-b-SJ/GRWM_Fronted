@@ -3,7 +3,6 @@ import WeeklyPlanner from "./WeeklyPlanner";
 //<UserRoundPlus />; //유저 아이콘임
 import { ChevronLeft, ChevronRight, Users } from "lucide-react";
 import DailyPlanner from "./DailyPlanner";
-//import { useScheduleGrouping } from "../../hooks/useScheduleFilter";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useCurrentPlanner } from "../../hooks/useCurrentPlanner";
 import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
@@ -41,7 +40,6 @@ const PlannerHeaderWM = ({}) => {
   };
 
   const [viewDate, setViewDate] = useState(new Date());
-  //const scFilter = useScheduleGrouping({ nowPlanner, currentDate });
 
   const goPrev = () => setCurrentDate((prev) => STEP[viewMode].prev(prev));
   const goNext = () => setCurrentDate((prev) => STEP[viewMode].next(prev));

@@ -124,16 +124,20 @@ export const PersonalPlannerProvider = ({ children }) => {
       checkAuth();
       setLoading(true);
       setError(null);
+      console.log(
+        "자 이제 개인 플래너 업데이트를 드가를 드가겠슨니다",
+        updateData
+      );
       try {
         const response = await fetch(
-          `/api/personal-planner/list/${plannerId}/update`,
+          `/api/personal-planner/list/${plannerId}/edit`,
           {
             method: "PUT",
             headers: {
               ...getAuthHeaders(),
               "Content-Type": "application/json",
             },
-            body: JSON.stringify(updateData),
+            body: JSON.stringify(plannerId, ...updateData),
           }
         );
 

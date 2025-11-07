@@ -76,7 +76,14 @@ const PlannerPage = () => {
               }
             />
 
-            <Route path="/list/:type" element={<PlannerListPage />} />
+            <Route
+              path="/list/:type"
+              element={
+                <PlannerProvider>
+                  <PlannerListPage />{" "}
+                </PlannerProvider>
+              }
+            />
             <Route path="*" element={<Navigate to="/planner" replace />} />
           </Routes>
         </div>
