@@ -37,14 +37,14 @@ const TrackerSidebar = ({
 
     // To-do 모드의 메뉴 항목들
     const todoMenuItems = [
-        { id: 'statistics', label: '통계', icon: BarChart3, view: 'todo-statistics' },
+        // { id: 'statistics', label: '통계', icon: BarChart3, view: 'todo-statistics' },
         { id: 'routine', label: '반복 루틴 관리', icon: RotateCcw, view: 'todo-routine' }
     ];
 
     // 회고일기 모드의 메뉴 항목들
     const diaryMenuItems = [
         { id: 'message', label: '내일의 나에게', icon: MessageCircle, view: 'diary-message' },
-        { id: 'hashtag', label: '해시태그', icon: Hash, view: 'diary-hashtag' }
+        // { id: 'hashtag', label: '해시태그', icon: Hash, view: 'diary-hashtag' }
     ];
 
     // URL 기반 모드 변경 함수
