@@ -18,7 +18,6 @@ const ScheduleListSidebar = ({
     plannerType,
   } = usePlannerContext();
   const { deleteSchedule, loading } = useCurrentPlanner(plannerType);
-  console.log("ScheduleListSidebar 렌더링, todaySc:", todaySc);
 
   // ✅ 시간 라벨 생성 함수
   const getLabelStartEnd = (sc) => {
@@ -83,7 +82,6 @@ const ScheduleListSidebar = ({
   };
 
   const todayScheSideTime = getLabelStartEnd(todaySc);
-  console.log("가공된 일정 데이터:", todayScheSideTime);
 
   return (
     <div className="rounded-2xl">

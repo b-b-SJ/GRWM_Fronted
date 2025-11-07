@@ -1,135 +1,94 @@
+// src/components/layout/PlannerSidebar.jsx
 import React, { useState, useEffect } from "react";
 import TodoList from "../planner/TodoList";
 import ScheduleListSidebar from "../planner/ScheduleListSidebar";
-import {
-  ChevronDown,
-  ChevronUp,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import MonthlyGrid from "../planner/MonthlyGrid";
 import { useCalendar } from "../../hooks/useCalendar";
 import { useCurrentPlanner } from "../../hooks/useCurrentPlanner";
 import ScheduleFormModal from "../planner/ScheduleFormModal";
-
 import { usePlannerContext } from "../../hooks/PlannerContext";
-
+import { useParams } from "react-router-dom";
 const PlannerSidebar = ({ sidebarClassName }) => {
-  const {
-    currentDate,
-    setCurrentDate,
-    viewMode,
-    openScModal,
-    setOpenScModal,
-    selectedSc,
-    setSelectedSc,
-    nowPlanner,
-    plannerType,
-  } = usePlannerContext();
+  const { currentDate, setCurrentDate, viewMode, plannerType } =
+    usePlannerContext();
+
+  const { plannerId } = useParams();
+  const nowPlanner = Number(plannerId);
+  const { schedules, loading, fetchDailySchedules, fetchMonthlySchedules } =
+    useCurrentPlanner(plannerType);
 
   const [scheduleOpen, setScheduleOpen] = useState(true);
   const [todoOpen, setTodoOpen] = useState(true);
   const [tempDate, setTempDate] = useState(currentDate);
-  const [todaySchedules, setTodaySchedules] = useState(null);
   const [openAddModal, setOpenAddModal] = useState(false);
-  const [selectedDateForAdd, setSelectedDateForAdd] = useState(null);
 
   const today = new Date();
   const year = today.getFullYear();
   const month = today.getMonth();
+  const calendar = useCalendar();
 
-  const { fetchMonthlySchedules, fetchDailySchedules, fetchWeeklySchedules } =
-    useCurrentPlanner(plannerType);
-
-  // 오늘 일정을 불러오는 함수 분리
-  const loadTodaySchedules = async () => {
-    if (!nowPlanner) return;
-
-    try {
-      console.log("오늘 일정 불러오기 시작...");
-      const schedules = await fetchDailySchedules(
-        nowPlanner,
-        year,
-        month + 1,
-        today.getDate()
-      );
-
-      console.log("불러온 오늘 일정:", schedules);
-      setTodaySchedules(schedules);
-    } catch (error) {
-      console.error("오늘 일정 불러오기 실패:", error);
-    }
-  };
-
-  // ✅ 초기 로드
+  //  URL의 plannerId로 일정 로드
   useEffect(() => {
-    loadTodaySchedules();
-  }, [nowPlanner]); // nowPlanner가 변경될 때만 실행
-
-  // ✅ 일정 생성 성공 후 호출되는 함수
-  const handleScheduleCreated = async () => {
-    console.log("일정 생성 성공! 목록 새로고침 시작");
-
     if (!nowPlanner) {
-      console.error("nowPlanner가 없습니다");
       return;
     }
+    console.log(`📅 [${plannerType}] 일정 로딩 (URL plannerId: ${nowPlanner})`);
 
-    try {
-      // 1. 오늘 일정 다시 불러오기
-      await loadTodaySchedules();
+    fetchDailySchedules(nowPlanner, year, month + 1, today.getDate());
+  }, [plannerId, plannerType]); //  plannerId 의존!
 
-      // 2. 월간/주간 일정도 필요하면 갱신
-      await fetchMonthlySchedules(nowPlanner, year, month + 1);
+  // 일정 생성 성공 후 - 함수 재호출!
+  const handleScheduleCreated = async () => {
+    console.log("✅ 일정 생성 성공! 새로고침");
 
-      console.log("모든 일정 새로고침 완료!");
-    } catch (error) {
-      console.error("일정 새로고침 실패:", error);
-    }
+    if (!nowPlanner) return;
+
+    // 그냥 함수 호출만 하면 Provider가 알아서 schedules 업데이트!
+    await fetchDailySchedules(nowPlanner, year, month + 1, today.getDate());
+    await fetchMonthlySchedules(nowPlanner, year, month + 1);
   };
 
-  // ✅ 일정 삭제 성공 후 호출되는 함수 추가
-  const handleScheduleDeleted = async (scheduleId) => {
-    console.log(`일정 ${scheduleId} 삭제 성공! 목록 새로고침`);
-    await loadTodaySchedules();
+  // 🔥 일정 삭제 성공 후 - 함수 재호출!
+  const handleScheduleDeleted = async () => {
+    console.log("✅ 일정 삭제 성공! 새로고침");
+
+    if (!nowPlanner) return;
+
+    await fetchDailySchedules(nowPlanner, year, month + 1, today.getDate());
   };
 
-  const calendar = useCalendar();
+  // 캘린더 날짜 계산
   const sideDate = new Date(tempDate);
-
-  // ... 나머지 코드 (날짜 계산 로직 등)
-
   const firstDayOfMonth = new Date(
     tempDate.getFullYear(),
     tempDate.getMonth(),
     1
   );
-
   const lastDayOfMonth = new Date(
     tempDate.getFullYear(),
     tempDate.getMonth() + 1,
     0
   );
-
   const setMonday = (firstDayOfMonth.getDay() + 6) % 7;
   const startDay = new Date(firstDayOfMonth);
   startDay.setDate(1 - setMonday);
-
   const endDay = new Date(lastDayOfMonth);
   const remaining = 6 - ((lastDayOfMonth.getDay() + 6) % 7);
   endDay.setDate(endDay.getDate() + remaining);
 
   const goPrev = () => {
     sideDate.setMonth(sideDate.getMonth() - 1);
-    setTempDate(sideDate);
+    setTempDate(new Date(sideDate));
   };
 
   const goNext = () => {
     sideDate.setMonth(sideDate.getMonth() + 1);
-    setTempDate(sideDate);
+    setTempDate(new Date(sideDate));
   };
 
   const sideWeeks = calendar.groupDatesByWeek(startDay, endDay);
+
   useEffect(() => {
     setTempDate(currentDate);
   }, [currentDate]);
@@ -137,42 +96,36 @@ const PlannerSidebar = ({ sidebarClassName }) => {
   return (
     <div className={`${sidebarClassName}`}>
       <div className="w-80 bg-white border-r flex flex-col h-auto">
+        {/* 캘린더 부분 */}
         <div>
           {(viewMode === "daily" || viewMode === "weekly") && (
             <div className="p-4 shadow-sm shadow-gray-200">
-              {/**왔다갔다만 하고 선택전까지는 날짜 안바뀜 */}
               <div className="flex justify-center mb-2">
-                {/**이 위에서 정렬관리*/}
-                <button onClick={() => goPrev()}>
+                <button onClick={goPrev}>
                   <ChevronLeft className="hover:bg-gray-200 rounded-md" />
                 </button>
                 <h1 className="mx-4 text-xl font-semibold">
                   {sideDate.getFullYear()}. {sideDate.getMonth() + 1}
                 </h1>
-                <button onClick={() => goNext()}>
+                <button onClick={goNext}>
                   <ChevronRight className="hover:bg-gray-200 rounded-md" />
                 </button>
               </div>
               <MonthlyGrid
                 weeks={sideWeeks}
                 month={tempDate.getMonth()}
-                totalDateStyle={
-                  "p-2 hover:rounded-full focus:outline-rose-200 text-center hover:bg-gray-100"
-                }
-                currentMonthStyle={"text-gray-800"}
-                ncMonthStyle={
-                  "text-gray-300"
-                  //지금 월아닐때
-                }
-                onDateClick={(day) => {
-                  setCurrentDate(day);
-                }}
+                totalDateStyle="p-2 hover:rounded-full text-center hover:bg-gray-100"
+                currentMonthStyle="text-gray-800"
+                ncMonthStyle="text-gray-300"
+                onDateClick={(day) => setCurrentDate(day)}
               />
             </div>
           )}
         </div>
+
         {/* 일정 + 투두 */}
         <div className="flex flex-col flex-none text-left">
+          {/* 일정 섹션 */}
           <button
             onClick={() => setScheduleOpen(!scheduleOpen)}
             className={`py-2.5 p-2 text-md text-left font-bold flex shadow-sm shadow-gray-200 ${
@@ -188,14 +141,14 @@ const PlannerSidebar = ({ sidebarClassName }) => {
             />
           </button>
 
-          {scheduleOpen === true && (
+          {scheduleOpen && (
             <>
-              {/* ✅ key prop 추가로 강제 리렌더링 */}
+              {/* 🔥 Provider의 schedules와 loading 사용! */}
               <ScheduleListSidebar
-                key={todaySchedules?.length || 0} // 일정 개수가 바뀌면 리렌더링
                 className="max-h-60 min-h-60"
-                todaySc={todaySchedules}
-                onScheduleDeleted={handleScheduleDeleted} // ✅ 삭제 콜백 전달
+                todaySc={schedules}
+                isLoading={loading}
+                onScheduleDeleted={handleScheduleDeleted}
               />
               <button
                 className="text-sm text-left p-2 hover:bg-gray-100"
@@ -206,7 +159,7 @@ const PlannerSidebar = ({ sidebarClassName }) => {
             </>
           )}
 
-          {/* Todo 부분 */}
+          {/* Todo 섹션 */}
           <button
             onClick={() => setTodoOpen(!todoOpen)}
             className={`py-2.5 p-2 text-md text-left font-bold flex shadow-sm shadow-gray-200 ${
@@ -222,26 +175,23 @@ const PlannerSidebar = ({ sidebarClassName }) => {
             />
           </button>
 
-          <div>
-            {todoOpen === true && (
-              <>
-                <TodoList className="max-h-60 min-h-60" />
-                <button className="text-sm text-left p-2 hover:bg-gray-100">
-                  + 할일 추가하기
-                </button>
-              </>
-            )}
-          </div>
+          {todoOpen && (
+            <>
+              <TodoList className="max-h-60 min-h-60" />
+              <button className="text-sm text-left p-2 hover:bg-gray-100">
+                + 할일 추가하기
+              </button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* ✅ 일정 생성 모달 */}
+      {/* 일정 생성 모달 */}
       <ScheduleFormModal
         isOpen={openAddModal}
         onClose={() => setOpenAddModal(false)}
         mode="create"
-        selectedDate={selectedDateForAdd}
-        onSuccess={handleScheduleCreated} // ✅ 생성 성공 시 새로고침
+        onSuccess={handleScheduleCreated}
       />
     </div>
   );

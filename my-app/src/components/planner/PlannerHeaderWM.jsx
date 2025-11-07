@@ -5,7 +5,6 @@ import { ChevronLeft, ChevronRight, Users } from "lucide-react";
 import DailyPlanner from "./DailyPlanner";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useCurrentPlanner } from "../../hooks/useCurrentPlanner";
-import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
 import { usePlannerContext } from "../../hooks/PlannerContext";
 import MonthlyGrid from "./MonthlyGrid";
 

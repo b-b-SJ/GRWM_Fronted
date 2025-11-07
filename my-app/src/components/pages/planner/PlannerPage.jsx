@@ -98,8 +98,8 @@ const DefaultPlannerRedirect = () => {
 
   useEffect(() => {
     const lastType = localStorage.getItem("lastPlannerType");
-    const lastSharedId = localStorage.getItem("lastPlanner_shared");
-    const lastPersonalId = localStorage.getItem("lastPlanner_personal");
+    const lastSharedId = localStorage.getItem("planner_last_shared_id");
+    const lastPersonalId = localStorage.getItem("planner_last_personal_id");
 
     console.log(" DefaultRedirect 체크:", {
       lastType,
@@ -132,7 +132,7 @@ const PersonalPlannerRedirect = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const lastPersonalId = localStorage.getItem("lastPlanner_personal");
+    const lastPersonalId = localStorage.getItem("planner_last_personal_id");
 
     console.log(" PersonalRedirect:", lastPersonalId);
 
@@ -154,7 +154,7 @@ const SharedPlannerRedirect = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const lastSharedId = localStorage.getItem("lastPlanner_shared");
+    const lastSharedId = localStorage.getItem("planner_last_shared_id");
 
     console.log(" SharedRedirect:", lastSharedId);
 

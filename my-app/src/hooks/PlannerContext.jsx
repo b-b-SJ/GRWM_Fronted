@@ -1,4 +1,4 @@
-// localStorage 관련은 아직 도입X
+// src/hooks/PlannerContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
 import { useCalendar } from "./useCalendar";
 
@@ -10,41 +10,33 @@ export const PlannerProvider = ({ children, plannerType = "personal" }) => {
   const [openScModal, setOpenScModal] = useState(false);
   const [selectedSc, setSelectedSc] = useState(null);
 
-  // localStorage 키 생성
-  const STORAGE_KEY = `lastPlanner_${plannerType}`;
-  // 초기값 설정
+  const STORAGE_KEY = `planner_last_${plannerType}_id`;
+
   const [nowPlanner, setNowPlanner] = useState(() => {
-    // localStorage에서 가져오기
-    const lastPlanner = localStorage.getItem(STORAGE_KEY);
-
-    if (lastPlanner) {
-      return Number(lastPlanner);
-    }
-
-    // localStorage에 없으면 기본값
-    // shared는 null (아직 선택 안 함), personal은 1 (기본 개인 플래너)
-    return plannerType === "shared" ? null : 1;
+    console.log("플래너 저장가야지");
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? Number(stored) : null;
   });
 
-  // nowPlanner가 바뀔 때마다 localStorage 저장
-
+  // 🔥 nowPlanner 변경 시 localStorage 저장
   useEffect(() => {
     if (nowPlanner !== null) {
-      localStorage.setItem(STORAGE_KEY, nowPlanner);
-      console.log(`${plannerType} 플래너 저장:`, nowPlanner);
+      localStorage.setItem(STORAGE_KEY, String(nowPlanner));
+
+      // 🔥 plannerType도 함께 저장!
+      localStorage.setItem("lastPlannerType", plannerType);
+
+      console.log(`💾 [${plannerType}] localStorage 저장:`, {
+        plannerId: nowPlanner,
+        plannerType: plannerType,
+      });
     }
   }, [nowPlanner, STORAGE_KEY, plannerType]);
-
-  // 플래너 변경 함수
-  const handleSetNowPlanner = (plannerId) => {
-    setNowPlanner(plannerId);
-    // useEffect에서 자동 저장되니까 여기선 안 해도 됨
-  };
 
   return (
     <PlannerContext.Provider
       value={{
-        // 캘린더 (useCalendar에서 온 모든 것)
+        // 캘린더
         currentDate: calendar.currentDate,
         setCurrentDate: calendar.setCurrentDate,
         year: calendar.year,
@@ -57,8 +49,7 @@ export const PlannerProvider = ({ children, plannerType = "personal" }) => {
         weekNames: calendar.weekNames,
         STEP: calendar.STEP,
         timeTable: calendar.timeTable,
-        findWeek: calendar.findWeek, //혹시 몰라서 일단 살려둠
-        //groupDatesByWeek는 사이드바에서만 직접 호출할 예정이라 따로 context화X
+        findWeek: calendar.findWeek,
 
         // 플래너 타입
         plannerType,
@@ -71,7 +62,7 @@ export const PlannerProvider = ({ children, plannerType = "personal" }) => {
 
         // 현재 플래너
         nowPlanner,
-        setNowPlanner: handleSetNowPlanner,
+        setNowPlanner,
 
         // 모달
         openScModal,

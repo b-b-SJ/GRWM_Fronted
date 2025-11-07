@@ -28,12 +28,17 @@ const PlannerListPage = () => {
   // 공유 플래너 목록 불러오기
   useEffect(() => {
     console.log(`플래너 목록 로딩 시작 (type: ${type})`);
+    console.log("뭐 저장?", localStorage);
     fetchPlanners();
   }, [type, fetchPlanners]);
 
   // 플래너 생성 성공 시
   const handleCreateSuccess = (plannerId) => {
-    fetchPlanners(); // 목록 새로고침
+    // 🔥 localStorage에 수동 저장 (PlannerMain에서도 저장되지만, 즉시 반영)
+    localStorage.setItem(`planner_last_${type}_id`, String(plannerId));
+    localStorage.setItem("lastPlannerType", type);
+
+    fetchPlanners();
     navigate(`/planner/${type}/${plannerId}`); // 생성된 플래너로 이동
   };
 
