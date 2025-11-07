@@ -112,10 +112,8 @@ const ScheduleFormModal = ({
     }
   };
 
-  /**
-   * 유효성 검사
-   * @returns {boolean} 유효하면 true
-   */
+  // 유효성 검사
+
   const validate = () => {
     const newErrors = {};
 
@@ -260,10 +258,7 @@ const ScheduleFormModal = ({
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      onClick={handleClose}
-    >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div
         className="bg-white rounded-lg w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()} // 모달 내부 클릭 시 닫히지 않게

@@ -290,9 +290,10 @@ export const PersonalPlannerProvider = ({ children }) => {
       checkAuth();
       setLoading(true);
       setError(null);
+
       try {
         const response = await fetch(
-          `/api/personal-planner/${plannerId}/schedule/${scheduleId}/edit`,
+          `/api/personal-planner/${plannerId}/schedule/${scheduleId}`,
           {
             method: "PUT",
             headers: {
@@ -307,17 +308,23 @@ export const PersonalPlannerProvider = ({ children }) => {
           throw new Error("일정 수정에 실패했습니다.");
         }
 
-        const updatedSchedule = await response.json();
+        // ✅ 응답이 비어있을 수 있으므로 체크
+        const text = await response.text();
+        const updatedSchedule = text ? JSON.parse(text) : updateData;
+
+        console.log("✅ 일정 수정 성공:", updatedSchedule);
         return updatedSchedule;
       } catch (error) {
-        handleError(error, "일정 수정 중 오류가 발생했습니다.");
+        // ✅ handleError 대신 직접 처리
+        console.error("일정 수정 중 오류가 발생했습니다.", error);
+        setError(error.message);
+        return null; // ⬅️ null 반환 (에러를 던지지 않음)
       } finally {
         setLoading(false);
       }
     },
     [isAuthenticated, getAuthHeaders]
   );
-
   // 일정 삭제
   const deleteSchedule = useCallback(
     async (plannerId, scheduleId) => {
@@ -360,7 +367,7 @@ export const PersonalPlannerProvider = ({ children }) => {
       setError(null);
       try {
         const response = await fetch(
-          `/api/personal-planner/${plannerId}/schedule/${scheduleId}/drag-drop`,
+          `/api/personal-planner/${plannerId}/schedule/${scheduleId}/move`,
           {
             method: "PUT",
             headers: {

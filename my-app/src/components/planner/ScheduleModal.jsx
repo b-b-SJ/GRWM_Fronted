@@ -38,23 +38,23 @@ const ScheduleModal = () => {
       setError(null);
 
       try {
-        console.log("📋 일정 상세 로딩:", {
+        console.log(" 일정 상세 로딩:", {
           plannerId: nowPlanner,
           scheduleId: selectedSc,
           plannerType,
         });
 
-        // 🔥 일정 상세 조회
+        //  일정 상세 조회
         const detail = await fetchScheduleDetail(nowPlanner, selectedSc);
 
         if (detail) {
-          console.log("✅ 일정 상세 로드 성공:", detail);
+          console.log(" 일정 상세 로드 성공:", detail);
           setScheduleDetail(detail);
         } else {
           throw new Error("일정을 찾을 수 없습니다.");
         }
       } catch (err) {
-        console.error("❌ 일정 상세 로드 실패:", err);
+        console.error("일정 상세 로드 실패:", err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -79,14 +79,14 @@ const ScheduleModal = () => {
   };
 
   const handleEditClick = () => {
-    setOpenScModal(false);
     setOpenEditModal(true);
+    // setOpenScModal(false);
   };
 
   const handleScheduleUpdated = async () => {
-    console.log("✅ 일정 수정 성공!");
+    console.log(" 일정 수정 성공!");
 
-    // 🔥 일정 다시 불러오기
+    //  일정 다시 불러오기
     if (selectedSc && nowPlanner) {
       const detail = await fetchScheduleDetail(nowPlanner, selectedSc);
       setScheduleDetail(detail);
