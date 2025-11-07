@@ -108,7 +108,7 @@ export const useStudyRoomState = () => {
         });
 
         // 리액션 이벤트 핸들러
-        const removeReactionHandler = addReactionHandler((event) => {
+        const removeReactionHandler = addReactionHandler(async(event) => {
             console.log('리액션 이벤트 수신:', event);
 
             switch (event.type) {
@@ -117,7 +117,13 @@ export const useStudyRoomState = () => {
                         if (todo.todoId === event.todoId) {
                             return {
                                 ...todo,
-                                reactions: [...(todo.reactions || []), event.reactions]
+                                reactions: [
+                                    ...(todo.reactions || []),
+                                    {
+                                        reactionId: event.reactionId,
+                                        creatorId: event.creatorId
+                                    }
+                                ]
                             };
                         }
                         return todo;
@@ -413,12 +419,14 @@ export const useStudyRoomState = () => {
                     creatorId: todo.creatorId,
                     content: todo.content,
                     completed: todo.completed,
-                    reactions: todo.reactions || [],
+                    reactions: (todo.reactions || []).map((_, index) => ({
+                        reactionId: `temp-${todo.todoId}-${index}`,
+                        creatorId: null
+                    })),
                     type: todo.type
                 }));
 
                 console.log('[useStudyRoomState] 매핑된 todoList:', mappedTodos);
-                setTodos(mappedTodos);
             }
 
             setCurrentStudyRoom(mappedRoom);
@@ -458,12 +466,16 @@ export const useStudyRoomState = () => {
 
             const data = await response.json();
             console.log('Todo 목록 조회 성공:', data);
-            const mappedTodos = (data.todos || []).map(todo => ({
+            const todosArray = Array.isArray(data) ? data : (data.todos || []);
+            const mappedTodos = todosArray.map(todo => ({
                 todoId: todo.todoId,
                 creatorId: todo.creatorId,
                 content: todo.content,
                 completed: todo.completed,
-                reactions: todo.reactions || [],
+                reactions: (todo.reactions || []).map((_, index) => ({
+                    reactionId: `temp-${todo.todoId}-${index}`,
+                    creatorId: null
+                })),
                 type: todo.type
             }));
 

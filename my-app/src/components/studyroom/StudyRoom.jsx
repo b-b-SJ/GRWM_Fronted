@@ -122,11 +122,11 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                 if (!currentStudyRoom || currentStudyRoom.studyRoomId !== studyRoomId) {
                     console.log('[StudyRoom] 스터디룸 상세 정보 로드');
                     await fetchStudyRoomDetail(studyRoomId);
-                    await fetchTodos(studyRoomId);
                 } else {
                     console.log('[StudyRoom] 스터디룸 정보 이미 로드됨');
                 }
-
+                console.log('[StudyRoom] Todo 목록 새로고침');
+                await fetchTodos(studyRoomId);
                 // WebSocket 연결 (약간의 지연 후)
                 setTimeout(() => {
                     console.log('[StudyRoom] WebSocket 연결 시작');
@@ -274,9 +274,18 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                 return;
             }
 
-            if (userTodoMap[todo.creatorId]) {
-                userTodoMap[todo.creatorId].todos.push(todo);
+            // creatorId에 해당하는 사용자가 없으면 추가 (퇴장한 사용자의 To-Do 처리)
+            if (!userTodoMap[todo.creatorId]) {
+                console.log('[StudyRoom] To-Do 작성자를 userTodoMap에 추가:', todo.creatorId);
+                userTodoMap[todo.creatorId] = {
+                    userId: todo.creatorId,
+                    creatorId: todo.creatorId,
+                    nickname: '이전 참여자',
+                    todos: []
+                };
             }
+
+            userTodoMap[todo.creatorId].todos.push(todo);
         });
 
         // 현재 사용자를 맨 앞에 배치
@@ -313,10 +322,14 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
 
     // To-Do 삭제
     const handleDeleteTodo = async (todoId) => {
+        console.log('[handleDeleteTodo] 삭제 시작:', todoId);
         if (window.confirm('이 To-Do를 삭제하시겠습니까?')) {
             const success = await deleteTodo(studyRoomId, todoId);
+            console.log('[handleDeleteTodo] 삭제 결과:', success);
         }
+        console.log('[handleDeleteTodo] fetchTodos 호출 전');
         await fetchTodos(studyRoomId);
+        console.log('[handleDeleteTodo] fetchTodos 호출 후');
     };
 
     // 리액션 추가
@@ -497,25 +510,36 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                                         </span>
                                     </div>
                                     <div className="flex items-center space-x-1 ml-2">
+                                        {/* 다른 사람의 To-Do: 클릭 가능한 리액션 버튼 */}
                                         {!isCurrentUser && todo.completed && (
                                             <button
                                                 onClick={() => handleLikeTodo(participant.userId, todo.todoId)}
                                                 className="flex items-center space-x-1 px-1.5 py-1 text-blue-600 hover:bg-blue-100 rounded transition-colors"
                                                 disabled={loading || connectionStatus !== 'connected'}
                                             >
-                                                <ThumbsUp size={14} />
+                                                <ThumbsUp size={14}/>
                                                 {todo.reactions && todo.reactions.length > 0 && (
                                                     <span className="text-xs font-medium">{todo.reactions.length}</span>
                                                 )}
                                             </button>
                                         )}
-                                        {isCurrentUser && (
+
+                                        {/* 본인 To-Do: 읽기 전용 리액션 표시 추가 */}
+                                        {isCurrentUser && todo.completed && todo.reactions && todo.reactions.length > 0 && (
+                                            <div className="flex items-center space-x-1 px-1.5 py-1 text-blue-600">
+                                                <ThumbsUp size={14} fill="currentColor"/>
+                                                <span className="text-xs font-medium">{todo.reactions.length}</span>
+                                            </div>
+                                        )}
+
+                                        {/* 본인 To-Do: 삭제 버튼 */}
+                                        {isCurrentUser && !todo.completed && (
                                             <button
                                                 onClick={() => handleDeleteTodo(todo.todoId)}
                                                 className="p-1 text-gray-400 hover:text-red-500 transition-colors"
                                                 disabled={loading || connectionStatus !== 'connected'}
                                             >
-                                                <X size={14} />
+                                                <X size={14}/>
                                             </button>
                                         )}
                                     </div>
@@ -545,7 +569,7 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
         return (
             <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
                 <div className="text-center">
-                    <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
+                    <AlertCircle size={48} className="text-red-500 mx-auto mb-4"/>
                     <p className="text-gray-800 font-semibold mb-2">스터디룸을 불러올 수 없습니다</p>
                     <p className="text-gray-600 text-sm mb-4">{error}</p>
                     <div className="flex space-x-2 justify-center">
