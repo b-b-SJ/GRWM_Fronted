@@ -1,8 +1,10 @@
 // TodoView.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Grid, List } from 'lucide-react';
 import TodoWeekView from './TodoWeekView';
 import TodoDayView from './TodoDayView';
+import useTodoApi from "../../hooks/useTodoApi";
+import { useAuth } from "../../hooks/AuthContext";
 
 // 날짜 유틸리티
 export function getDateString(daysOffset) {
@@ -114,57 +116,28 @@ export const TodoModal = ({ todo, onSave, onCancel, weekDates = null }) => {
 
 // 메인 컴포넌트
 const TodoView = ({ showHeader = true, selectedDateProp = null }) => {
+    // 1. AuthContext에서 인증 정보 가져오기
+    const { user, isAuthenticated, getAuthHeaders } = useAuth();
+
+    // 2. useTodoApi 훅에 인증 정보 전달
+    const {
+        loading,
+        error,
+        getTodos,
+        createTodo,
+        updateTodo,
+        deleteTodo,
+        completeTodo,
+    } = useTodoApi(user, isAuthenticated, getAuthHeaders);
+
+    // 3. 사용자 ID 확인 (비로그인 시 API 호출 방지)
+    const currentUserId = user?.userId;
+
     const [selectedDate, setSelectedDate] = useState(
         selectedDateProp ? new Date(selectedDateProp) : new Date()
     );
     const [viewMode, setViewMode] = useState('week');
-    const [todos, setTodos] = useState([
-        {
-            id: '1',
-            title: '프로젝트 계획 생각',
-            description: '생각생각생각생각 신한카드~',
-            completed: true,
-            postponed: false,
-            date: new Date().toISOString().split('T')[0],
-            createdAt: new Date().toISOString()
-        },
-        {
-            id: '2',
-            title: '고양이 보기',
-            description: '야옹이가 세상을 구한다',
-            completed: true,
-            postponed: false,
-            date: new Date().toISOString().split('T')[0],
-            createdAt: new Date().toISOString()
-        },
-        {
-            id: '3',
-            title: '중간고사 공부',
-            description: '블록체인이란 무엇일까...',
-            completed: false,
-            postponed: false,
-            date: new Date().toISOString().split('T')[0],
-            createdAt: new Date().toISOString()
-        },
-        {
-            id: '4',
-            title: '잠을 20시간 자기',
-            description: '그러고 싶다',
-            completed: false,
-            postponed: false,
-            date: new Date().toISOString().split('T')[0],
-            createdAt: new Date().toISOString()
-        },
-        {
-            id: '5',
-            title: '팀 미팅',
-            description: '팀원분들과의 만남!',
-            completed: false,
-            postponed: false,
-            date: getDateString(1),
-            createdAt: new Date().toISOString()
-        },
-    ]);
+    const [todos, setTodos] = useState([]);
 
     const [modalState, setModalState] = useState({ isOpen: false, todo: null, weekDates: null });
     const [postponingTodo, setPostponingTodo] = useState(null);
@@ -172,12 +145,53 @@ const TodoView = ({ showHeader = true, selectedDateProp = null }) => {
     const todayString = new Date().toISOString().split('T')[0];
     const currentDateString = selectedDate.toISOString().split('T')[0];
 
+    // to-do 목록 조회 함수
+    const fetchTodos = useCallback(async (date) => {
+        if (!currentUserId) {
+            setTodos([]);
+            return;
+        }
+
+        try {
+            const dateString = date ? date.toISOString().split('T')[0] : null;
+            if (!dateString) {
+                console.error("조회 대상 날짜가 설정되지 않았습니다.");
+                return;
+            }
+
+            const fetchedTodos = await getTodos(currentUserId, {
+                date: dateString,
+            });
+
+            if (fetchedTodos) {
+                const normalizedTodos = Array.isArray(fetchedTodos) ? fetchedTodos.map(todo => ({
+                    ...todo,
+                    id: todo.todoId,
+                    date: new Date(todo.date).toISOString().split('T')[0]
+                })) : [];
+
+                setTodos(normalizedTodos);
+            }
+        } catch (e) {
+            console.error("To-Do 목록 로드 실패:", e);
+        }
+    }, [currentUserId, getTodos]);
+
+
+    // 선택된 날짜나 사용자 ID가 변경될 때마다 To-Do 목록을 다시 불러옴 (Read)
+    useEffect(() => {
+        fetchTodos(selectedDate);
+    }, [selectedDate, currentUserId, fetchTodos]); // fetchTodos를 종속성 배열에 추가
+
+
+    // ... (rest of useEffects)
     useEffect(() => {
         if (selectedDateProp) {
             setSelectedDate(new Date(selectedDateProp));
         }
     }, [selectedDateProp]);
 
+    // ... (modal open/close functions)
     const openAddModal = (weekDates = null) => {
         setModalState({ isOpen: true, todo: null, weekDates });
     };
@@ -190,62 +204,113 @@ const TodoView = ({ showHeader = true, selectedDateProp = null }) => {
         setModalState({ isOpen: false, todo: null, weekDates: null });
     };
 
-    const handleSaveTodo = (formData) => {
-        if (!formData.title.trim()) return;
+    // To-Do 저장/수정 핸들러 (Create/Update)
+    const handleSaveTodo = async (formData) => {
+        if (!formData.title.trim() || !currentUserId) return;
 
-        if (modalState.todo?.id) {
-            // 수정
-            setTodos(todos.map(todo =>
-                todo.id === modalState.todo.id ? { ...modalState.todo, ...formData } : todo
-            ));
-        } else {
-            // 추가
-            const newTodo = {
-                id: Date.now().toString(),
-                title: formData.title,
-                description: formData.description,
-                completed: false,
-                postponed: false,
-                date: formData.date || currentDateString,
-                createdAt: new Date().toISOString()
-            };
-            setTodos([...todos, newTodo]);
+        try {
+            if (modalState.todo?.id) {
+                // 수정
+                await updateTodo(currentUserId, modalState.todo.id, formData);
+            } else {
+                const todayDate = new Date().toISOString().split('T')[0];
+                // 추가
+                const newTodoData = {
+                    title: formData.title,
+                    description: formData.description || '',
+                    date: formData.date || todayDate,
+                };
+                await createTodo(currentUserId, newTodoData);
+            }
+
+            closeModal();
+            // 성공 후 목록 새로고침 (Read)
+            await fetchTodos(selectedDate);
+
+        } catch (e) {
+            // useTodoApi에서 에러를 state에 설정하므로 사용자에게 표시 가능
+            console.error("To-Do 저장/수정 실패:", e);
         }
-        closeModal();
     };
 
-    const handleToggleComplete = (todoId) => {
-        setTodos(todos.map(todo =>
-            todo.id === todoId ? { ...todo, completed: !todo.completed } : todo
-        ));
+    // To-Do 완료 처리 핸들러 (Complete)
+    const handleToggleComplete = async (todoId) => {
+        if (!currentUserId) return;
+
+        try {
+            const todo = todos.find(t => t.id === todoId);
+            if (!todo) return;
+
+            if (!todo.completed) {
+                // 완료 처리
+                await completeTodo(currentUserId, todoId);
+            } else {
+                // 완료 해제 - 전체 데이터 전달
+                await updateTodo(currentUserId, todoId, {
+                    title: todo.title,
+                    description: todo.description,
+                    date: todo.date,
+                    completed: false,
+                    postponed: todo.postponed,
+                });
+            }
+
+            // 성공 후 목록 새로고침 (Read)
+            await fetchTodos(selectedDate);
+        } catch (e) {
+            console.error("To-Do 완료 처리 실패:", e);
+        }
     };
 
-    const handleDeleteTodo = (todoId) => {
-        setTodos(todos.filter(todo => todo.id !== todoId));
+    // To-Do 삭제 핸들러 (Delete)
+    const handleDeleteTodo = async (todoId) => {
+        if (!currentUserId) return;
+
+        try {
+            // **삭제 (Delete)**
+            await deleteTodo(currentUserId, todoId);
+
+            // 성공 후 목록 새로고침 (Read)
+            await fetchTodos(selectedDate);
+        } catch (e) {
+            console.error("To-Do 삭제 실패:", e);
+        }
     };
 
-    const handlePostponeTodo = (todoId, days) => {
-        const todo = todos.find(t => t.id === todoId);
-        if (todo) {
+    // To-Do 미루기 핸들러
+    const handlePostponeTodo = async (todoId, days) => {
+        if (!currentUserId) return;
+
+        try {
+            const todo = todos.find(t => t.id === todoId);
+            if (!todo) return;
+
             const newDate = new Date(todo.date);
             newDate.setDate(newDate.getDate() + days);
             const newDateString = newDate.toISOString().split('T')[0];
 
-            const updatedTodos = todos.map(t =>
-                t.id === todoId ? { ...t, postponed: true } : t
-            );
+            // 1. 기존 todo를 postponed=true로 업데이트
+            await updateTodo(currentUserId, todoId, {
+                title: todo.title,
+                description: todo.description,
+                date: todo.date,
+                completed: todo.completed,
+                postponed: true, // 서버에 저장
+            });
 
-            const newTodo = {
-                ...todo,
-                id: Date.now().toString(),
+            // 2. 새 날짜에 새 to-do 생성
+            await createTodo(currentUserId, {
+                title: todo.title,
+                description: todo.description,
                 date: newDateString,
-                completed: false,
-                postponed: false,
-                createdAt: new Date().toISOString()
-            };
+            });
 
-            setTodos([...updatedTodos, newTodo]);
+            // 3. 목록 새로고침
             setPostponingTodo(null);
+            await fetchTodos(selectedDate);
+
+        } catch (e) {
+            console.error("To-Do 미루기 실패:", e);
         }
     };
 
@@ -266,6 +331,7 @@ const TodoView = ({ showHeader = true, selectedDateProp = null }) => {
         };
     }, [postponingTodo]);
 
+    // 날짜 이동 함수 (기존 내용 유지)
     const goToPreviousWeek = () => {
         const newDate = new Date(selectedDate);
         newDate.setDate(newDate.getDate() - 7);
@@ -283,7 +349,9 @@ const TodoView = ({ showHeader = true, selectedDateProp = null }) => {
             {showHeader && (
                 <div className="mb-6">
                     <h1 className="text-2xl font-bold text-gray-800 mb-2">To-Do</h1>
-                    <p className="text-gray-600">오늘 할 일을 관리하세요</p>
+                    <p className="text-gray-600">
+                        {isAuthenticated ? `${user.username}님의 ` : ''}오늘 할 일을 관리하세요
+                    </p>
                 </div>
             )}
 
@@ -315,35 +383,52 @@ const TodoView = ({ showHeader = true, selectedDateProp = null }) => {
                 </div>
             </div>
 
-            {/* 선택된 뷰 렌더링 */}
-            {viewMode === 'week' ? (
-                <TodoWeekView
-                    selectedDate={selectedDate}
-                    todos={todos}
-                    todayString={todayString}
-                    onOpenAddModal={openAddModal}
-                    onToggleComplete={handleToggleComplete}
-                    onEditTodo={openEditModal}
-                    onDeleteTodo={handleDeleteTodo}
-                    onPostponeTodo={handlePostponeTodo}
-                    postponingTodo={postponingTodo}
-                    setPostponingTodo={setPostponingTodo}
-                    onPreviousWeek={goToPreviousWeek}
-                    onNextWeek={goToNextWeek}
-                />
+            {/* 로딩/에러/비로그인 상태 표시 */}
+            {!isAuthenticated ? (
+                <div className="text-center py-10 text-gray-500 font-medium border rounded-lg bg-gray-50">
+                    <p>로그인 후 To-Do 기능을 사용할 수 있습니다.</p>
+                </div>
+            ) : loading ? (
+                <div className="text-center py-10 text-blue-600 font-medium border rounded-lg bg-blue-50">
+                    <p>To-Do 목록을 불러오는 중입니다...</p>
+                </div>
+            ) : error ? (
+                <div className="text-center py-10 text-red-600 font-medium border rounded-lg bg-red-50">
+                    <p>[Tracker] 오류 발생: {error}</p>
+                </div>
             ) : (
-                <TodoDayView
-                    selectedDate={selectedDate}
-                    todos={todos}
-                    todayString={todayString}
-                    onOpenAddModal={openAddModal}
-                    onToggleComplete={handleToggleComplete}
-                    onEditTodo={openEditModal}
-                    onDeleteTodo={handleDeleteTodo}
-                    onPostponeTodo={handlePostponeTodo}
-                    postponingTodo={postponingTodo}
-                    setPostponingTodo={setPostponingTodo}
-                />
+                // 선택된 뷰 렌더링
+                <>
+                    {viewMode === 'week' ? (
+                        <TodoWeekView
+                            selectedDate={selectedDate}
+                            todos={todos}
+                            todayString={todayString}
+                            onOpenAddModal={openAddModal}
+                            onToggleComplete={handleToggleComplete}
+                            onEditTodo={openEditModal}
+                            onDeleteTodo={handleDeleteTodo}
+                            onPostponeTodo={handlePostponeTodo}
+                            postponingTodo={postponingTodo}
+                            setPostponingTodo={setPostponingTodo}
+                            onPreviousWeek={goToPreviousWeek}
+                            onNextWeek={goToNextWeek}
+                        />
+                    ) : (
+                        <TodoDayView
+                            selectedDate={selectedDate}
+                            todos={todos}
+                            todayString={todayString}
+                            onOpenAddModal={openAddModal}
+                            onToggleComplete={handleToggleComplete}
+                            onEditTodo={openEditModal}
+                            onDeleteTodo={handleDeleteTodo}
+                            onPostponeTodo={handlePostponeTodo}
+                            postponingTodo={postponingTodo}
+                            setPostponingTodo={setPostponingTodo}
+                        />
+                    )}
+                </>
             )}
 
             {/* 통합 모달 */}
