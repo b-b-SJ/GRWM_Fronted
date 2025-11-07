@@ -36,7 +36,7 @@ const MainAuthPage = ({ setCurrentPage }) => {
         }, 2500);
         // 컴포넌트 언마운트 시 인터벌 정리
         return () => clearInterval(interval);
-    }, []);
+    }, [features.length]);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-sky-50 to-indigo-100 flex items-center justify-center p-4 relative overflow-hidden">
@@ -67,9 +67,9 @@ const MainAuthPage = ({ setCurrentPage }) => {
                         className="text-3xl mb-8 whitespace-nowrap"
                         style={{fontFamily: "'RomanticGumi', sans-serif", fontWeight: 100}}
                     >
-                        {/* 메인 앱 이름 (GRWM) - 각 글자 둥둥 */}
+                        {/* 메인 앱 이름 (모두잉) - 각 글자 둥둥 */}
                         <span className="text-5xl inline-flex space-x-0">
-                        {"GRWM".split("").map((char, idx) => (
+                        {"모두잉".split("").map((char, idx) => (
                             <span
                                 key={idx}
                                 className="animate-float inline-block bg-gradient-to-r from-blue-600 to-sky-600 bg-clip-text text-transparent"
@@ -101,7 +101,7 @@ const MainAuthPage = ({ setCurrentPage }) => {
                     </div>
 
                     {/* 앱 설명 텍스트 */}
-                    <p className="text-gray-600">나만의 성장 여정을 시작해보세요</p>
+                    <p className="text-gray-600">협업부터 일상까지, 계획부터 기록까지</p>
                 </div>
 
                 {/* 기능별 진행률 표시 인디케이터 */}

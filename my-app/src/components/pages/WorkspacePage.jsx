@@ -12,15 +12,14 @@ import { useAuth } from '../../hooks/AuthContext';
 import { MessageCircle, BookOpen, Eye, EyeOff, Key } from 'lucide-react';
 
 /**
- * WorkspacePage UI 및 기능
- * - useChatState 연동 개선
- * - useChatState의 새로운 인터페이스에 맞게 업데이트
- * - 채팅방 생성, 참여, 관리 기능 연동
- * - 에러 처리 및 로딩 상태 개선
- * - useStudyRoomState 연동 (1016~)
+ * WorkspacePage - 모드 구분 개선
+ * 주요 변경사항:
+ * 1. selectedChatRoom과 selectedStudyRoom을 분리하여 타입 안전성 확보
+ * 2. 모드 전환 시 선택 상태 자동 초기화
+ * 3. 사이드바와의 상호작용 개선
  */
 
-// 채팅방 생성 컴포넌트 - useChatState 연동 개선
+// 채팅방 생성 컴포넌트
 const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
     const { user } = useAuth();
     const { createAndJoinRoom, CATEGORY_MAP } = useChatState();
@@ -44,13 +43,11 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
         e.preventDefault();
         setError('');
 
-        // 로그인 체크
         if (!user || !user.userId) {
             setError('로그인이 필요합니다.');
             return;
         }
 
-        // 유효성 검사
         if (!formData.roomName.trim()) {
             setError('채팅방 이름을 입력해주세요.');
             return;
@@ -84,12 +81,9 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
             // createAndJoinRoom 사용 (생성 + 참여 + 목록 갱신까지 처리)
             const result = await createAndJoinRoom(formData);
 
-            console.log('Chat room creation and join successful, result:', result);
-            console.log('result.chatRoomId:', result.chatRoomId);
-
+            console.log('Chat room creation successful, chatRoomId:', result.chatRoomId);
             setLoadingMessage('채팅방 입장 중...');
 
-            // 폼 초기화
             setFormData({
                 roomName: '',
                 category: '일반',
@@ -103,12 +97,10 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
 
             if (onRoomCreated && result.chatRoomId) {
                 onRoomCreated(result.chatRoomId);
-            } else {
-                console.error('onRoomCreated 호출 실패: chatRoomId가 없습니다');
             }
 
         } catch (error) {
-            console.error('Chat room creation and join error:', error);
+            console.error('Chat room creation error:', error);
             setError(error.message || '채팅방 생성 및 입장 중 오류가 발생했습니다.');
         } finally {
             setIsLoading(false);
@@ -215,7 +207,6 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
                         </p>
                     </div>
 
-                    {/* 공개/비공개 설정 */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-3">
                             공개 설정 *
@@ -286,7 +277,6 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
                         </div>
                     )}
 
-                    {/* 생성 버튼 */}
                     <div className="pt-4 flex space-x-3">
                         {onCancel && (
                             <button
@@ -325,7 +315,7 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
     );
 };
 
-// 메인 WorkspacePage 컴포넌트 - useStudyRoomState 연동
+// 메인 WorkspacePage 컴포넌트
 const WorkspacePage = () => {
     const location = useLocation();
     const [searchParams] = useSearchParams();
@@ -339,7 +329,10 @@ const WorkspacePage = () => {
 
     const [currentView, setCurrentView] = useState('rooms');
 
-    // useChatState 훅 사용
+    // 채팅방과 스터디룸 ID를 분리하여 관리
+    const [selectedChatRoom, setSelectedChatRoom] = useState(null);
+    const [selectedStudyRoom, setSelectedStudyRoom] = useState(null);
+
     const {
         chatRooms,
         isLoadingRooms,
@@ -347,30 +340,38 @@ const WorkspacePage = () => {
         joinRoom,
         joinChatRoom,
         verifyRoomPassword,
-        unreadCounts // 베타
+        unreadCounts
     } = useChatState();
 
-    // useStudyRoomState 훅 사용
     const {
         studyRooms,
+        joinedStudyRoom,
         loading: isLoadingStudyRooms,
         fetchStudyRooms,
+        fetchJoinedStudyRoom,
         joinStudyRoom,
-        // 추후 필요하면 함수 추가
     } = useStudyRoomState();
 
-    // 선택된 방 상태
-    const [selectedRoom, setSelectedRoom] = useState(null);
+    // joinedStudyRoom 상태 변경 감지
+    useEffect(() => {
+        console.log('[WorkspacePage] joinedStudyRoom 상태 변경:', joinedStudyRoom);
+    }, [joinedStudyRoom]);
 
     const isStudyRoom = workspaceMode === '스터디룸';
 
     // URL 파라미터 변경 감지하여 모드 업데이트
     useEffect(() => {
         const modeParam = searchParams.get('mode');
-        if (modeParam === 'study') {
-            setWorkspaceMode('스터디룸');
-        } else {
-            setWorkspaceMode('채팅방');
+        const newMode = modeParam === 'study' ? '스터디룸' : '채팅방';
+
+        if (newMode !== workspaceMode) {
+            console.log('[WorkspacePage] 모드 전환:', workspaceMode, '->', newMode);
+            setWorkspaceMode(newMode);
+
+            // 모드 전환 시 선택 상태 초기화
+            setSelectedChatRoom(null);
+            setSelectedStudyRoom(null);
+            setCurrentView('rooms');
         }
     }, [searchParams]);
 
@@ -389,127 +390,151 @@ const WorkspacePage = () => {
 
     // 초기 데이터 로드
     useEffect(() => {
+        console.log('[WorkspacePage] 데이터 로드 - 모드:', workspaceMode);
         if (isStudyRoom) {
-            fetchStudyRooms(0, 10);
+            fetchJoinedStudyRoom();
         } else {
             fetchChatRooms();
         }
     }, [isStudyRoom]);
 
-    // 채팅방 생성 성공 시 처리 - createAndJoinRoom이 모든 것을 처리하므로 단순화
+    // 채팅방 생성 성공 시 처리
     const handleChatRoomCreated = (chatRoomId) => {
-        console.log('채팅방 생성 완료, room id:', chatRoomId);
+        console.log('[WorkspacePage] 채팅방 생성 완료:', chatRoomId);
 
-        // WebSocket 연결만 수행
         try {
             joinRoom(chatRoomId);
-            setSelectedRoom(chatRoomId);
+            setSelectedChatRoom(chatRoomId);
+            setSelectedStudyRoom(null); // 다른 모드 ID 클리어
             setCurrentView('chat');
-            console.log('Successfully entered created room:', chatRoomId);
         } catch (error) {
-            console.error('Failed to enter created room:', error);
+            console.error('[WorkspacePage] 채팅방 입장 실패:', error);
             alert(`채팅방 입장 실패: ${error.message}`);
             setCurrentView('rooms');
         }
     };
 
-    // 스터디룸 생성 성공 시 처리
+
+// 스터디룸 생성 성공 시 처리
     const handleStudyRoomCreated = async (studyRoomId) => {
-        console.log('스터디룸 생성 완료, room id:', studyRoomId);
+        console.log('[WorkspacePage] 스터디룸 생성 완료:', studyRoomId);
 
         try {
-            // 스터디룸 참여 API 호출
-            await joinStudyRoom(studyRoomId);
-
-            // 목록 새로고침
-            await fetchStudyRooms(0, 10);
-
-            setSelectedRoom(studyRoomId);
-            setCurrentView('study');
-            console.log('Successfully entered created study room:', studyRoomId);
+            handleRefreshRooms();
+            // joinStudyRoom에서 이미 모든 처리를 했으므로 바로 화면 전환
+            setTimeout(() => {
+                setSelectedStudyRoom(studyRoomId);
+                setSelectedChatRoom(null);
+                setCurrentView('study');
+            }, 300);
         } catch (error) {
-            console.error('Failed to enter created study room:', error);
+            console.error('[WorkspacePage] 스터디룸 입장 실패:', error);
             alert(`스터디룸 입장 실패: ${error.message}`);
             setCurrentView('rooms');
         }
     };
 
-    // 사이드바에서 방 선택 시 처리
+    // 사이드바에서 방 선택 시 처리 (모드별로 분리)
     const handleSelectRoom = (roomId) => {
-        console.log('Selecting room from sidebar:', roomId);
+        console.log('[WorkspacePage] 방 선택 - 모드:', workspaceMode, 'ID:', roomId);
 
         try {
-            setSelectedRoom(roomId);
-            setCurrentView(isStudyRoom ? 'study' : 'chat');
+            if (isStudyRoom) {
+                // 사이드바에서 선택한 방은 이미 참여한 방이므로 API 호출 없이 바로 전환
+                setSelectedStudyRoom(roomId);
+                setSelectedChatRoom(null);
+                setCurrentView('study');
+            } else {
+                setSelectedChatRoom(roomId);
+                setSelectedStudyRoom(null);
+                setCurrentView('chat');
+            }
         } catch (error) {
-            console.error('Room selection error:', error);
+            console.error('[WorkspacePage] 방 선택 실패:', error);
             alert(`방 입장 실패: ${error.message}`);
         }
     };
 
-    // 탐색 페이지에서 채팅방 참여 처리
+    // 탐색 페이지에서 채팅방 참여
     const handleJoinChatRoomFromExplorer = async (chatRoomId, isPrivate = false, password = null) => {
-        console.log('Joining room from explorer:', chatRoomId, { isPrivate, hasPassword: !!password });
+        console.log('[WorkspacePage] 채팅방 참여 from explorer:', chatRoomId);
 
         try {
-            // 1. 비공개 채팅방인 경우 비밀번호 검증
             if (isPrivate && password) {
-                console.log('Verifying password for private room');
                 await verifyRoomPassword(chatRoomId, password);
-                console.log('Password verification successful');
             }
 
-            // 2. 채팅방 참여 API 호출
-            console.log('Calling JOIN API...');
             await joinChatRoom(chatRoomId);
-            console.log('JOIN API successful');
 
-            // 3. WebSocket 연결 및 화면 전환
             setTimeout(() => {
+                setSelectedChatRoom(chatRoomId);
                 joinRoom(chatRoomId);
-                setSelectedRoom(chatRoomId);
+                setSelectedStudyRoom(null);
                 setCurrentView('chat');
-                console.log('Successfully joined room from explorer:', chatRoomId);
-            }, 500);
+            }, 300);
 
         } catch (error) {
-            console.error('Failed to join room from explorer:', error);
-            throw error; // ChatRoomExplorer에서 에러 처리
-        }
-    };
-
-    // 탐색 페이지에서 스터디룸 참여 처리
-    const handleJoinStudyRoomFromExplorer = async (studyRoomId, isPrivate = false, password = null) => {
-        console.log('Joining study room from explorer:', studyRoomId, { isPrivate, hasPassword: !!password });
-
-        try {
-            // 스터디룸 참여 API 호출
-            await joinStudyRoom(studyRoomId);
-
-            // 목록 새로고침
-            await fetchStudyRooms(0, 10);
-
-            setTimeout(() => {
-                setSelectedRoom(studyRoomId);
-                setCurrentView('study');
-                console.log('Successfully joined study room from explorer:', studyRoomId);
-            }, 500);
-
-        } catch (error) {
-            console.error('Failed to join study room from explorer:', error);
+            console.error('[WorkspacePage] 채팅방 참여 실패:', error);
             throw error;
         }
     };
 
-    // 채팅방 생성 취소
+    // 탐색 페이지에서 스터디룸 참여
+    const handleJoinStudyRoomFromExplorer = async (studyRoomId, isPrivate = false, password = null) => {
+        console.log('[WorkspacePage] 스터디룸 참여 from explorer:', studyRoomId);
+
+        try {
+            // 이미 참여한 스터디룸인지 확인
+            const alreadyJoined = joinedStudyRoom && joinedStudyRoom.studyRoomId === studyRoomId;
+
+            if (alreadyJoined) {
+                console.log('[WorkspacePage] 이미 참여한 스터디룸입니다. 바로 입장합니다.');
+                // API 호출 없이 바로 화면 전환
+                setTimeout(() => {
+                    setSelectedStudyRoom(studyRoomId);
+                    setSelectedChatRoom(null);
+                    setCurrentView('study');
+                }, 100);
+                return;
+            }
+
+            // 새로운 스터디룸에 참여하는 경우에만 joinStudyRoom 호출
+            const success = await joinStudyRoom(studyRoomId);
+
+            if (!success) {
+                throw new Error('스터디룸 참여에 실패했습니다.');
+            }
+
+            console.log('[WorkspacePage] 스터디룸 참여 성공, 목록 갱신');
+
+            // 참여 중인 스터디룸 목록 새로고침
+            const updatedRooms = await fetchJoinedStudyRoom();
+            console.log('[WorkspacePage] 갱신된 스터디룸 목록:', updatedRooms);
+
+            // 약간 더 긴 지연으로 상태 전파 보장
+            setTimeout(() => {
+                setSelectedStudyRoom(studyRoomId);
+                setSelectedChatRoom(null);
+                setCurrentView('study');
+            }, 300);
+
+        } catch (error) {
+            console.error('[WorkspacePage] 스터디룸 참여 실패:', error);
+            alert(`스터디룸 참여 실패: ${error.message}`);
+            throw error;
+        }
+    };
+
+    // 생성 취소
     const handleCreateCancel = () => {
         setCurrentView('rooms');
     };
 
     // 목록 새로고침
     const handleRefreshRooms = () => {
+        console.log('[WorkspacePage] 목록 새로고침 - 모드:', workspaceMode);
         if (isStudyRoom) {
-            fetchStudyRooms(0, 10);
+            fetchJoinedStudyRoom();
         } else {
             fetchChatRooms();
         }
@@ -517,13 +542,31 @@ const WorkspacePage = () => {
 
     // 방에서 뒤로가기
     const handleBackFromRoom = () => {
-        setSelectedRoom(null);
+        console.log('[WorkspacePage] 방에서 뒤로가기');
+        setSelectedChatRoom(null);
+        setSelectedStudyRoom(null);
         setCurrentView('rooms');
+        handleRefreshRooms(); // 방 목록 새로고침
+    };
+
+    // 모드 전환 핸들러
+    const handleModeChange = (newMode) => {
+        console.log('[WorkspacePage] 모드 수동 전환:', workspaceMode, '->', newMode);
+
+        setWorkspaceMode(newMode);
+        setCurrentView('rooms');
+
+        // 선택 상태 초기화
+        setSelectedChatRoom(null);
+        setSelectedStudyRoom(null);
     };
 
     // 현재 모드에 따른 방 목록
-    const currentRooms = isStudyRoom ? studyRooms : chatRooms;
+    const currentRooms = isStudyRoom
+        ? (joinedStudyRoom ? [joinedStudyRoom] : [])
+        : chatRooms;
     const currentIsLoading = isStudyRoom ? isLoadingStudyRooms : isLoadingRooms;
+    const currentSelectedRoom = isStudyRoom ? selectedStudyRoom : selectedChatRoom;
 
     return (
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -533,11 +576,11 @@ const WorkspacePage = () => {
                     sidebarOpen={workspaceSidebarOpen}
                     toggleSidebar={toggleWorkspaceSidebar}
                     chatRooms={chatRooms}
-                    studyRooms={studyRooms}
-                    selectedRoom={selectedRoom}
+                    joinedStudyRoom={joinedStudyRoom ? [joinedStudyRoom] : []}
+                    selectedRoom={currentSelectedRoom}
                     setSelectedRoom={handleSelectRoom}
                     workspaceMode={workspaceMode}
-                    setWorkspaceMode={setWorkspaceMode}
+                    setWorkspaceMode={handleModeChange}
                     currentView={currentView}
                     setCurrentView={setCurrentView}
                     isLoadingRooms={currentIsLoading}
@@ -573,7 +616,7 @@ const WorkspacePage = () => {
                         isStudyRoom ? (
                             <StudyRoomExplorer
                                 onJoinRoom={handleJoinStudyRoomFromExplorer}
-                                joinedRoomIds={studyRooms.map(room => room.studyRoomId)}
+                                joinedRoomIds={joinedStudyRoom ? [joinedStudyRoom.studyRoomId] : []}
                             />
                         ) : (
                             <ChatRoomExplorer
@@ -582,15 +625,15 @@ const WorkspacePage = () => {
                                 joinedRoomIds={chatRooms.map(room => room.chatRoomId)}
                             />
                         )
-                    ) : currentView === 'chat' && selectedRoom ? (
+                    ) : currentView === 'chat' && selectedChatRoom ? (
                         <ChatRoom
-                            chatRoomId={selectedRoom}
+                            chatRoomId={selectedChatRoom}
                             chatRooms={chatRooms}
                             onBack={handleBackFromRoom}
                         />
-                    ) : currentView === 'study' && selectedRoom ? (
+                    ) : currentView === 'study' && selectedStudyRoom ? (
                         <StudyRoom
-                            studyRoomId={selectedRoom}
+                            studyRoomId={selectedStudyRoom}
                             onBack={handleBackFromRoom}
                         />
                     ) : (
@@ -614,8 +657,7 @@ const WorkspacePage = () => {
 
                                 {currentIsLoading && (
                                     <div className="flex items-center justify-center space-x-2 text-blue-600">
-                                        <div
-                                            className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                        <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                                         <span className="text-sm">
                                             {isStudyRoom ? '스터디룸' : '채팅방'} 목록 로딩 중...
                                         </span>

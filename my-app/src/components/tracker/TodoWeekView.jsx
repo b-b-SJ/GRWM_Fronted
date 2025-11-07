@@ -181,15 +181,17 @@ const TodoWeekView = ({
                                                         {postponingTodo === todo.id && (
                                                             <div
                                                                 className="absolute left-0 bottom-full mb-1 bg-white border shadow-lg rounded-lg p-1 z-10 whitespace-nowrap">
-                                                                <button
+                                                                <div // <-- <button> 대신 <div>로 변경
+                                                                    role="button"
+                                                                    tabIndex={0}
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         onPostponeTodo(todo.id, 1);
                                                                     }}
-                                                                    className="block w-full text-left px-2 py-1 text-xs hover:bg-gray-50 rounded"
+                                                                    className="block w-full text-left px-2 py-1 text-xs hover:bg-gray-50 rounded cursor-pointer"
                                                                 >
                                                                     내일로 미루기
-                                                                </button>
+                                                                </div>
                                                             </div>
                                                         )}
                                                     </button>

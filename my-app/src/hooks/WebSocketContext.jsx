@@ -202,7 +202,7 @@ export const WebSocketProvider = ({ children }) => {
             ? window.location.host
             : 'localhost:8080';
 
-        const wsUrl = `${wsProtocol}//${wsHost}/ws/chatroom`;
+        const wsUrl = `${wsProtocol}//${wsHost}/ws/`;
         console.log('WebSocket 연결 URL:', wsUrl);
 
         setConnectionStatus('connecting');

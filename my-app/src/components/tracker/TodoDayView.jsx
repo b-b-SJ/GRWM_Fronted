@@ -102,18 +102,27 @@ const TodoDayView = ({
                                             className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors relative"
                                             title="미루기"
                                         >
-                                            <Clock size={16} />
+                                            <Clock size={16}/>
                                             {postponingTodo === todo.id && (
-                                                <div className="absolute right-0 bottom-full mb-1 bg-white border shadow-lg rounded-lg p-2 z-10 whitespace-nowrap">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            onPostponeTodo(todo.id, 1);
-                                                        }}
-                                                        className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-50 rounded"
+                                                <div
+                                                    className="absolute right-0 bottom-full mb-1 bg-white border shadow-lg rounded-lg p-2 z-10 whitespace-nowrap">
+                                                    <div
+                                                          role="button"
+                                                          tabIndex={0}
+                                                          onClick={(e) => {
+                                                              e.stopPropagation();
+                                                              onPostponeTodo(todo.id, 1);
+                                                          }}
+                                                          onKeyDown={(e) => {
+                                                              if (e.key === 'Enter' || e.key === ' ') {
+                                                                  e.preventDefault();
+                                                                  onPostponeTodo(todo.id, 1);
+                                                              }
+                                                          }}
+                                                          className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-50 rounded cursor-pointer"
                                                     >
                                                         내일로 미루기
-                                                    </button>
+                                                    </div>
                                                 </div>
                                             )}
                                         </button>
@@ -122,14 +131,14 @@ const TodoDayView = ({
                                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                             title="수정"
                                         >
-                                            <Edit2 size={16} />
+                                            <Edit2 size={16}/>
                                         </button>
                                         <button
                                             onClick={() => onDeleteTodo(todo.id)}
                                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                             title="삭제"
                                         >
-                                            <Trash2 size={16} />
+                                            <Trash2 size={16}/>
                                         </button>
                                     </div>
                                 </div>
@@ -145,7 +154,7 @@ const TodoDayView = ({
                     <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-3 border-b">
                         <div className="flex items-center justify-between">
                             <h3 className="font-semibold text-gray-800 flex items-center space-x-2">
-                                <Check size={18} className="text-green-600" />
+                                <Check size={18} className="text-green-600"/>
                                 <span>완료</span>
                             </h3>
                             <span className="text-sm font-medium text-green-600">

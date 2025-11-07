@@ -1,50 +1,47 @@
 import React, { useState } from 'react';
-import { Clock, Users, Eye, EyeOff, Key, Plus } from 'lucide-react';
+import { Clock, Eye, EyeOff, Key, Plus } from 'lucide-react';
 import { useStudyRoomState } from '../../hooks/useStudyRoomState';
 import { useAuth } from '../../hooks/AuthContext';
 
 /**
- * 스터디룸 생성 컴포넌트
- * - 스터디룸 이름, 카테고리, 설명 설정
- * - 지속시간, 연장시간 설정
- * - 공개/비공개 설정
- * - useStudyRoomState API 연동
+ * 스터디룸 생성 컴포넌트 - 필드명 수정
+ * 수정사항:
+ * 1. studyRoomData 생성 시 필드명 수정 (name 일관성 유지)
+ * 2. 디버깅 로그 강화
  */
 const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
     const { user } = useAuth();
-    const { createStudyRoom, joinStudyRoom, fetchStudyRooms } = useStudyRoomState();
+    const { createStudyRoom, joinStudyRoom, fetchStudyRooms, fetchJoinedStudyRooms } = useStudyRoomState();
 
     const [formData, setFormData] = useState({
-        studyRoomName: '',
-        subject: '일반',
+        name: '',
+        category: '일반',
         description: '',
-        duration: 30, // 기본 30분
-        extensionTime: 10, // 기본 10분
+        duration: 30,
+        extensionTime: 10,
         isPrivate: false,
         password: '',
-        maxMembers: 8 // 고정
+        maxMembers: 8
     });
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [loadingMessage, setLoadingMessage] = useState('');
 
-    const categories = ['일반', '프로그래밍', '자격증', '어학', '취업준비', '기타'];
-    const durationOptions = [30, 60, 90, 120]; // 분 단위
-    const extensionOptions = [10, 20, 30, 60]; // 분 단위
+    const categories = ['일반', '자격증', '스터디', '기타'];
+    const durationOptions = [30, 60, 90, 120];
+    const extensionOptions = [10, 20, 30, 60];
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
-        // 로그인 체크
         if (!user || !user.userId) {
             setError('로그인이 필요합니다.');
             return;
         }
 
-        // 유효성 검사
-        if (!formData.studyRoomName.trim()) {
+        if (!formData.name.trim()) {
             setError('스터디룸 이름을 입력해주세요.');
             return;
         }
@@ -76,8 +73,8 @@ const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
 
             // 1. 스터디룸 생성 API 호출
             const studyRoomData = {
-                studyRoomName: formData.studyRoomName,
-                subject: formData.subject,
+                name: formData.name,
+                category: formData.category,
                 description: formData.description,
                 duration: formData.duration,
                 extensionTime: formData.extensionTime,
@@ -85,14 +82,14 @@ const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
                 ...(formData.isPrivate && { password: formData.password })
             };
 
-            console.log('Creating study room with data:', studyRoomData);
+            console.log('[StudyRoomCreator] 스터디룸 생성 요청:', studyRoomData);
             const studyRoomId = await createStudyRoom(studyRoomData);
 
             if (!studyRoomId) {
                 throw new Error('스터디룸 생성에 실패했습니다.');
             }
 
-            console.log('Study room created successfully:', studyRoomId);
+            console.log('[StudyRoomCreator] 스터디룸 생성 성공, ID:', studyRoomId);
             setLoadingMessage('스터디룸에 참여하고 있습니다...');
 
             // 2. 생성된 스터디룸에 자동 참여
@@ -102,16 +99,13 @@ const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
                 throw new Error('스터디룸 참여에 실패했습니다.');
             }
 
-            console.log('Joined study room successfully');
-            setLoadingMessage('스터디룸 목록을 업데이트하고 있습니다...');
+            console.log('[StudyRoomCreator] 스터디룸 참여 성공');
 
-            // 3. 스터디룸 목록 새로고침
-            await fetchStudyRooms(0, 10);
-
+            // joinStudyRoom에서 이미 목록 갱신을 하므로 여기서는 불필요
             // 폼 초기화
             setFormData({
-                studyRoomName: '',
-                subject: '일반',
+                name: '',
+                category: '일반',
                 description: '',
                 duration: 30,
                 extensionTime: 10,
@@ -122,12 +116,14 @@ const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
 
             alert('스터디룸이 성공적으로 생성되고 입장되었습니다!');
 
+            // 부모 컴포넌트에 알림
             if (onRoomCreated) {
+                console.log('[StudyRoomCreator] onRoomCreated 콜백 호출, ID:', studyRoomId);
                 onRoomCreated(studyRoomId);
             }
 
         } catch (error) {
-            console.error('Study room creation error:', error);
+            console.error('[StudyRoomCreator] 오류 발생:', error);
             setError(error.message || '스터디룸 생성 중 오류가 발생했습니다.');
         } finally {
             setIsLoading(false);
@@ -162,14 +158,12 @@ const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
                     </h1>
                 </div>
 
-                {/* 에러 메시지 */}
                 {error && (
                     <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
                         <p className="text-red-700 text-sm">{error}</p>
                     </div>
                 )}
 
-                {/* 로딩 메시지 */}
                 {loadingMessage && (
                     <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
                         <div className="flex items-center space-x-2">
@@ -189,15 +183,15 @@ const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
                             <input
                                 type="text"
                                 required
-                                value={formData.studyRoomName}
-                                onChange={(e) => handleChange('studyRoomName', e.target.value)}
+                                value={formData.name}
+                                onChange={(e) => handleChange('name', e.target.value)}
                                 placeholder="스터디룸 이름을 입력하세요"
                                 className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                 disabled={isLoading}
                                 maxLength={50}
                             />
                             <p className="text-xs text-gray-500 mt-1">
-                                {formData.studyRoomName.length}/50자
+                                {formData.name.length}/50자
                             </p>
                         </div>
 
@@ -207,8 +201,8 @@ const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
                                 카테고리 *
                             </label>
                             <select
-                                value={formData.subject}
-                                onChange={(e) => handleChange('subject', e.target.value)}
+                                value={formData.category}
+                                onChange={(e) => handleChange('category', e.target.value)}
                                 className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                 disabled={isLoading}
                             >

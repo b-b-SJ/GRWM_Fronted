@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTeamPlanner } from '../../../hooks/TeamPlannerProvider';
+import TimeVoteComponent from "./TimeVoteComponent";
 
 function TeamPlannerTestPage() {
     const {
@@ -228,6 +229,11 @@ function TeamPlannerTestPage() {
                     )}
                 </div>
             </section>
+
+
+            // 시간 투표 testtesttest
+            <TimeVoteComponent/>
+
 
             {currentPlanner && (
                 <>
