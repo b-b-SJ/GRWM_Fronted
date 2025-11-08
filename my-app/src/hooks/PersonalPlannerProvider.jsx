@@ -7,6 +7,7 @@ export const PersonalPlannerProvider = ({ children }) => {
   const [planners, setPlanners] = useState([]);
   const [currentPlanner, setCurrentPlanner] = useState(null);
   const [schedules, setSchedules] = useState([]); // TeamScheduleBriefDto 배열
+  const [todaySchedules, setTodaySchedules] = useState([]); // 사이드바용
   const [categories, setCategories] = useState([]); // CategoryDto 배열
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -491,6 +492,44 @@ export const PersonalPlannerProvider = ({ children }) => {
     },
     [isAuthenticated, getAuthHeaders]
   );
+  //일별 일정 - 오늘 한저
+  const fetchTodaySchedules = useCallback(
+    async (plannerId) => {
+      checkAuth();
+      setLoading(true);
+      setError(null);
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = today.getMonth() + 1;
+      const day = today.getDate();
+
+      try {
+        const response = await fetch(
+          `/api/personal-planner/${plannerId}/${year}/${month}/${day}/daily`,
+          {
+            method: "GET",
+            headers: {
+              ...getAuthHeaders(),
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("일별 일정 조회에 실패했습니다.");
+        }
+
+        const data = await response.json();
+        setTodaySchedules(data);
+        return data;
+      } catch (error) {
+        handleError(error, "일별 일정 조회 중 오류가 발생했습니다.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [isAuthenticated, getAuthHeaders]
+  );
 
   // ==================== 카테고리 관리 ====================
 
@@ -840,6 +879,7 @@ export const PersonalPlannerProvider = ({ children }) => {
     planners,
     currentPlanner,
     schedules,
+    todaySchedules,
     categories,
     loading,
     error,
@@ -864,6 +904,7 @@ export const PersonalPlannerProvider = ({ children }) => {
     fetchMonthlySchedules,
     fetchWeeklySchedules,
     fetchDailySchedules,
+    fetchTodaySchedules,
 
     // Category Management
     createCategory,

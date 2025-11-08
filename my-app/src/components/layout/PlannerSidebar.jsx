@@ -15,8 +15,12 @@ const PlannerSidebar = ({ sidebarClassName }) => {
 
   const { plannerId } = useParams();
   const nowPlanner = Number(plannerId);
-  const { schedules, loading, fetchDailySchedules, fetchMonthlySchedules } =
-    useCurrentPlanner(plannerType);
+  const {
+    todaySchedules,
+    loading,
+    fetchTodaySchedules,
+    fetchMonthlySchedules,
+  } = useCurrentPlanner(plannerType);
 
   const [scheduleOpen, setScheduleOpen] = useState(true);
   const [todoOpen, setTodoOpen] = useState(true);
@@ -35,7 +39,7 @@ const PlannerSidebar = ({ sidebarClassName }) => {
     }
     console.log(` [${plannerType}] 일정 로딩 (URL plannerId: ${nowPlanner})`);
 
-    fetchDailySchedules(nowPlanner, year, month + 1, today.getDate());
+    fetchTodaySchedules(nowPlanner, year, month + 1, today.getDate());
   }, [plannerId, plannerType]); //  plannerId 의존!
 
   // 일정 생성 성공 후 - 함수 재호출!
@@ -45,7 +49,7 @@ const PlannerSidebar = ({ sidebarClassName }) => {
     if (!nowPlanner) return;
 
     // 그냥 함수 호출만 하면 Provider가 알아서 schedules 업데이트!
-    await fetchDailySchedules(nowPlanner, year, month + 1, today.getDate());
+    await fetchTodaySchedules(nowPlanner, year, month + 1, today.getDate());
     await fetchMonthlySchedules(nowPlanner, year, month + 1);
   };
 
@@ -55,7 +59,7 @@ const PlannerSidebar = ({ sidebarClassName }) => {
 
     if (!nowPlanner) return;
 
-    await fetchDailySchedules(nowPlanner, year, month + 1, today.getDate());
+    await fetchTodaySchedules(nowPlanner, year, month + 1, today.getDate());
   };
 
   // 캘린더 날짜 계산
@@ -147,7 +151,7 @@ const PlannerSidebar = ({ sidebarClassName }) => {
               {/*  Provider의 schedules와 loading 사용! */}
               <ScheduleListSidebar
                 className="max-h-60 min-h-60"
-                todaySc={schedules}
+                todaySc={todaySchedules}
                 isLoading={loading}
                 onScheduleDeleted={handleScheduleDeleted}
               />

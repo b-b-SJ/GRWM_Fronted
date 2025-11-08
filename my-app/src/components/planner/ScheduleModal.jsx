@@ -20,8 +20,7 @@ const ScheduleModal = () => {
   const nowPlanner = Number(plannerId);
 
   // 🔥 현재 플래너 타입에 맞는 훅 사용
-  const { fetchDailySchedules, fetchScheduleDetail } =
-    useCurrentPlanner(plannerType);
+  const { fetchScheduleDetail } = useCurrentPlanner(plannerType);
 
   // ==================== State ====================
   const [openEditModal, setOpenEditModal] = useState(false);
