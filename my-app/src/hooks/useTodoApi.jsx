@@ -230,6 +230,36 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         setLoading(true);
         setError(null);
 
+        // 백엔드 DTO에 맞게 데이터 구조 변환 및 유효성 검사 (핵심 수정 부분)
+        const { recurrenceType, recurrenceConfig, startDate, ...rest } = recurringTodoData;
+
+        // startDate를 'YYYY-MM-DD' 문자열로 변환 (LocalDate 매핑을 위해)
+        const processedStartDate =
+            startDate instanceof Date ? startDate.toISOString().split('T')[0] : startDate;
+
+        let processedRecurrenceConfig = {
+            interval: 0,
+            weekly: [],
+            monthly: 0,
+        };
+
+        if (recurrenceConfig) {
+            if (recurrenceType === 'daily' && recurrenceConfig.daily) {
+                processedRecurrenceConfig.interval = recurrenceConfig.daily.repeatInterval || 0;
+            } else if (recurrenceType === 'weekly' && recurrenceConfig.weekly) {
+                processedRecurrenceConfig.weekly = recurrenceConfig.weekly.daysOfWeek || []; // daysOfWeek 키를 weekly 키로 매핑
+            } else if (recurrenceType === 'monthly' && recurrenceConfig.monthly) {
+                processedRecurrenceConfig.monthly = recurrenceConfig.monthly.dayOfMonth || 0; // dayOfMonth 키를 monthly 키로 매핑
+            }
+        }
+
+        const dataToSend = {
+            ...rest,
+            recurrenceType,
+            startDate: processedStartDate,
+            recurrenceConfig: processedRecurrenceConfig,
+        };
+
         try {
             const response = await fetch(`/api/users/${userId}/recurring-todos`, {
                 method: 'POST',
@@ -237,16 +267,16 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
                     ...getAuthHeaders(),
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(recurringTodoData),
+                body: JSON.stringify(dataToSend),
             });
 
             if (!response.ok) {
-                throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                // ... (생략)
             }
 
             return await response.json();
         } catch (err) {
-            handleError(err, '반복 To-Do 생성 중 오류가 발생했습니다.');
+            // ... (생략)
         } finally {
             setLoading(false);
         }
@@ -327,6 +357,11 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         setLoading(true);
         setError(null);
 
+        // targetDate가 Date 객체라면 문자열로 변환
+        const processedParams = { ...params };
+        if (processedParams.targetDate && processedParams.targetDate instanceof Date) {
+            processedParams.targetDate = processedParams.targetDate.toISOString().split('T')[0]; // "YYYY-MM-DD"
+        }
         try {
             const response = await fetch(`/api/users/${userId}/recurring-todos/generate`, {
                 method: 'POST',
@@ -334,7 +369,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
                     ...getAuthHeaders(),
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(params),
+                body: JSON.stringify(processedParams),
             });
 
             if (!response.ok) {

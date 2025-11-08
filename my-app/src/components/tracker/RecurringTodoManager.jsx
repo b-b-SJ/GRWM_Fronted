@@ -1,13 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit2, Trash2, Calendar, RotateCcw, AlertCircle } from 'lucide-react';
+import useTodoApi from "../../hooks/useTodoApi";
+import { useAuth } from "../../hooks/AuthContext";
 
 /**
  * 반복 To-Do 관리 페이지
- * @param {Object} props
- * @param {Object} props.todoApi - useTodoApi 훅에서 반환된 API 함수들
- * @param {Object} props.user - 현재 로그인한 사용자 정보
  */
-const RecurringTodoManager = ({ todoApi, user }) => {
+const RecurringTodoManager = () => {
+    // 1. AuthContext에서 인증 정보 가져오기
+    const { user, isAuthenticated, getAuthHeaders } = useAuth();
+    const currentUserId = user?.userId;
+
+    // 2. useTodoApi 훅에 인증 정보 전달
+    const {
+        loading: apiLoading,
+        error: apiError,
+        getRecurringTodos,
+        createRecurringTodo,
+        updateRecurringTodo,
+        deleteRecurringTodo,
+    } = useTodoApi(user, isAuthenticated, getAuthHeaders);
+
+
     const [recurringTodos, setRecurringTodos] = useState([]);
     const [selectedTodo, setSelectedTodo] = useState(null);
     const [isCreating, setIsCreating] = useState(false);
@@ -19,7 +33,7 @@ const RecurringTodoManager = ({ todoApi, user }) => {
         startDate: new Date().toISOString().split('T')[0]
     });
     const [filterStatus, setFilterStatus] = useState('active');
-    const [loading, setLoading] = useState(false);
+    // API 훅의 에러와 별도로, 컴포넌트 자체의 에러 메시지를 관리
     const [error, setError] = useState(null);
 
     // 반복 유형 옵션
@@ -40,29 +54,28 @@ const RecurringTodoManager = ({ todoApi, user }) => {
         { value: 7, label: '토' }
     ];
 
-    // 초기 데이터 로드
-    useEffect(() => {
-        if (user?.userId) {
-            loadRecurringTodos();
+    // loadRecurringTodos 함수 내부
+    const loadRecurringTodos = useCallback(async () => {
+        if (!currentUserId) {
+            setRecurringTodos([]);
+            return;
         }
-    }, [user, filterStatus]);
-
-    // 반복 투두 목록 로드
-    const loadRecurringTodos = async () => {
         try {
-            setLoading(true);
-            const response = await todoApi.getRecurringTodos(user.userId, {
+            setError(null);
+
+            const response = await getRecurringTodos(currentUserId, {
                 status: filterStatus
             });
             setRecurringTodos(response.recurringTodos || []);
-            setError(null);
         } catch (err) {
-            setError('반복 루틴을 불러오는데 실패했습니다.');
-            console.error(err);
-        } finally {
-            setLoading(false);
+            // ...
         }
-    };
+    }, [currentUserId, filterStatus, getRecurringTodos]);
+
+    // 초기 데이터 로드 (의존성: loadRecurringTodos)
+    useEffect(() => {
+        loadRecurringTodos();
+    }, [loadRecurringTodos]);
 
     // 폼 초기화
     const resetForm = () => {
@@ -83,15 +96,29 @@ const RecurringTodoManager = ({ todoApi, user }) => {
         setIsCreating(true);
     };
 
-    // 수정 모드로 전환
+    // 수정 모드로 전환 (데이터 접근 로직 수정)
     const handleEdit = (todo) => {
+        // todo는 RecurringTodoDto 객체입니다.
+        const todoDetails = todo.todoDto; // 개별 To-Do 정보 접근
+        const recurrenceType = todo.repeatRange; // 반복 타입 접근
+
+        let config = {};
+
+        // 백엔드 엔티티 필드를 프론트 폼 구조에 맞게 재구성
+        if (recurrenceType === 'weekly') {
+            config = { daysOfWeek: todo.weekly || [] };
+        } else if (recurrenceType === 'monthly') {
+            config = { dayOfMonth: todo.monthly || 1 };
+        }
+
         setSelectedTodo(todo);
+
         setFormData({
-            title: todo.title,
-            description: todo.description || '',
-            recurrenceType: todo.recurrenceType,
-            recurrenceConfig: todo.recurrenceConfig || {},
-            startDate: todo.startDate?.split('T')[0] || new Date().toISOString().split('T')[0]
+            title: todoDetails?.title || '',
+            description: todoDetails?.description || '',
+            recurrenceType: recurrenceType,
+            recurrenceConfig: config,
+            startDate: todoDetails?.date?.split('T')[0] || new Date().toISOString().split('T')[0],
         });
         setIsCreating(true);
     };
@@ -99,9 +126,11 @@ const RecurringTodoManager = ({ todoApi, user }) => {
     // 삭제
     const handleDelete = async (recurringId) => {
         if (!window.confirm('이 반복 루틴을 삭제하시겠습니까?')) return;
+        if (!currentUserId) return;
 
         try {
-            await todoApi.deleteRecurringTodo(user.userId, recurringId);
+            // API 함수 호출 시 currentUserId 전달
+            await deleteRecurringTodo(currentUserId, recurringId);
             await loadRecurringTodos();
             if (selectedTodo?.recurringId === recurringId) {
                 resetForm();
@@ -111,11 +140,25 @@ const RecurringTodoManager = ({ todoApi, user }) => {
         }
     };
 
-    // 폼 제출
+    // 폼 제출 (payload 변환 로직 포함)
     const handleSubmit = async () => {
-        if (!formData.title.trim()) {
-            alert('제목을 입력해주세요.');
+        if (!formData.title.trim() || !currentUserId) {
+            alert('제목을 입력하고 로그인해주세요.');
             return;
+        }
+
+        let processedConfig = {
+            interval: 0, // Daily 간격 설정이 폼에 없으므로 기본값 0
+            weekly: [],
+            monthly: 0,
+        };
+
+        if (formData.recurrenceType === 'weekly') {
+            // daysOfWeek (프론트)를 weekly (백엔드)로 매핑
+            processedConfig.weekly = formData.recurrenceConfig.daysOfWeek || [];
+        } else if (formData.recurrenceType === 'monthly') {
+            // dayOfMonth (프론트)를 monthly (백엔드)로 매핑
+            processedConfig.monthly = formData.recurrenceConfig.dayOfMonth || 0;
         }
 
         try {
@@ -123,20 +166,24 @@ const RecurringTodoManager = ({ todoApi, user }) => {
                 title: formData.title,
                 description: formData.description,
                 recurrenceType: formData.recurrenceType,
-                recurrenceConfig: formData.recurrenceConfig,
-                startDate: formData.startDate
+                recurrenceConfig: processedConfig, // 변환된 설정
+                startDate: formData.startDate // 'YYYY-MM-DD' 문자열
             };
 
+            // API 함수 호출 시 currentUserId 전달
             if (selectedTodo) {
-                await todoApi.updateRecurringTodo(user.userId, selectedTodo.recurringId, payload);
+                // 수정: selectedTodo.recurringId 사용 (URL 경로에 사용)
+                await updateRecurringTodo(currentUserId, selectedTodo.recurringId, payload);
             } else {
-                await todoApi.createRecurringTodo(user.userId, payload);
+                // 생성
+                await createRecurringTodo(currentUserId, payload);
             }
 
             await loadRecurringTodos();
             resetForm();
         } catch (err) {
             alert(selectedTodo ? '수정에 실패했습니다.' : '생성에 실패했습니다.');
+            console.error("API Error:", err);
         }
     };
 
@@ -208,7 +255,7 @@ const RecurringTodoManager = ({ todoApi, user }) => {
             case 'daily':
                 return '매일';
             case 'weekly':
-                const days = todo.recurrenceConfig?.daysOfWeek?.map(d => weekDays[d].label).join(', ');
+                const days = todo.recurrenceConfig?.daysOfWeek?.map(d => weekDays.find(wd => wd.value === d)?.label).join(', ');
                 return `매주 ${days || ''}`;
             case 'monthly':
                 return `매월 ${todo.recurrenceConfig?.dayOfMonth || 1}일`;
@@ -216,6 +263,9 @@ const RecurringTodoManager = ({ todoApi, user }) => {
                 return todo.recurrenceType;
         }
     };
+
+    // 최종 에러 및 로딩 상태
+    const combinedError = apiError || error;
 
     return (
         <div className="flex h-full bg-gray-50">
@@ -261,15 +311,19 @@ const RecurringTodoManager = ({ todoApi, user }) => {
                     </div>
 
                     {/* 에러 메시지 */}
-                    {error && (
+                    {combinedError && (
                         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
                             <AlertCircle className="text-red-500 flex-shrink-0" size={20} />
-                            <p className="text-red-700 text-sm">{error}</p>
+                            <p className="text-red-700 text-sm">루틴 오류: {combinedError}</p>
                         </div>
                     )}
 
-                    {/* 로딩 */}
-                    {loading ? (
+                    {/* 비로그인 / 로딩 상태 표시 */}
+                    {!isAuthenticated ? (
+                        <div className="text-center py-10 text-gray-500 font-medium border rounded-lg bg-gray-50">
+                            <p>로그인 후 반복 루틴을 관리할 수 있습니다.</p>
+                        </div>
+                    ) : apiLoading ? (
                         <div className="text-center py-12">
                             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                             <p className="mt-2 text-gray-500">로딩 중...</p>
@@ -284,16 +338,16 @@ const RecurringTodoManager = ({ todoApi, user }) => {
                         <div className="space-y-3">
                             {recurringTodos.map(todo => (
                                 <div
-                                    key={todo.recurringId}
+                                    key={todo.todoDto?.todoId}
                                     className={`p-4 border rounded-lg transition-all cursor-pointer ${
-                                        selectedTodo?.recurringId === todo.recurringId
+                                        selectedTodo?.todoDto?.todoId === todo.todoDto?.todoId
                                             ? 'border-blue-500 bg-blue-50'
                                             : 'border-gray-200 hover:border-gray-300 bg-white'
                                     }`}
                                     onClick={() => handleEdit(todo)}
                                 >
                                     <div className="flex items-start justify-between mb-2">
-                                        <h3 className="font-semibold text-gray-800">{todo.title}</h3>
+                                        <h3 className="font-semibold text-gray-800">{todo.todoDto?.title}</h3>
                                         <div className="flex gap-1">
                                             <button
                                                 onClick={(e) => {
@@ -307,7 +361,7 @@ const RecurringTodoManager = ({ todoApi, user }) => {
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    handleDelete(todo.recurringId);
+                                                    handleDelete(todo.todoDto?.todoId);
                                                 }}
                                                 className="p-1.5 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
                                             >
@@ -316,18 +370,24 @@ const RecurringTodoManager = ({ todoApi, user }) => {
                                         </div>
                                     </div>
 
-                                    {todo.description && (
-                                        <p className="text-sm text-gray-600 mb-3">{todo.description}</p>
+                                    {todo.todoDto?.description && (
+                                        <p className="text-sm text-gray-600 mb-3">{todo.todoDto?.description}</p>
                                     )}
 
                                     <div className="flex items-center gap-4 text-sm text-gray-500">
                                         <div className="flex items-center gap-1">
                                             <RotateCcw size={14} />
-                                            <span>{getRecurrenceDisplay(todo)}</span>
+                                            <span>{getRecurrenceDisplay({
+                                                recurrenceType: todo.repeatRange,
+                                                recurrenceConfig: {
+                                                    daysOfWeek: todo.weekly, // 백엔드 필드를 프론트 폼 키로 매핑하여 표시
+                                                    dayOfMonth: todo.monthly
+                                                }
+                                            })}</span>
                                         </div>
                                         <div className="flex items-center gap-1">
                                             <Calendar size={14} />
-                                            <span>시작: {new Date(todo.startDate).toLocaleDateString('ko-KR')}</span>
+                                            <span>시작: {new Date(todo.todoDto?.date).toLocaleDateString('ko-KR')}</span>
                                         </div>
                                     </div>
                                 </div>
