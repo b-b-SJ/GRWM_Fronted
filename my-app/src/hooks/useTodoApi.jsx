@@ -187,8 +187,6 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
 
     /**
      * 2.1 반복 To-Do 목록 조회
-     * @param userId, params(type, status)
-     * @returns {Promise<{recurringTodos: Array, activeCount: number, totalCount: number}>}
      */
     const getRecurringTodos = useCallback(async (userId, params = {}) => {
         checkAuth();
@@ -197,7 +195,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
 
         try {
             const queryParams = new URLSearchParams();
-            if (params.type) queryParams.append('type', params.type);
+            queryParams.append('type', params.type || '');
             if (params.status) queryParams.append('status', params.status);
 
             const response = await fetch(`/api/users/${userId}/recurring-todos?${queryParams.toString()}`, {
@@ -222,18 +220,14 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
 
     /**
      * 2.2 반복 To-Do 생성
-     * @param userId, recurringTodoData(title, description, recurrenceType, recurrenceConfig, startDate)
-     * @returns {Promise<{recurringTodo: Object}>}
      */
     const createRecurringTodo = useCallback(async (userId, recurringTodoData) => {
         checkAuth();
         setLoading(true);
         setError(null);
 
-        // 백엔드 DTO에 맞게 데이터 구조 변환 및 유효성 검사 (핵심 수정 부분)
         const { recurrenceType, recurrenceConfig, startDate, ...rest } = recurringTodoData;
 
-        // startDate를 'YYYY-MM-DD' 문자열로 변환 (LocalDate 매핑을 위해)
         const processedStartDate =
             startDate instanceof Date ? startDate.toISOString().split('T')[0] : startDate;
 
@@ -245,11 +239,12 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
 
         if (recurrenceConfig) {
             if (recurrenceType === 'daily' && recurrenceConfig.daily) {
-                processedRecurrenceConfig.interval = recurrenceConfig.daily.repeatInterval || 0;
+                // 'daily' 타입의 경우 'interval' 필드에 'repeatInterval' 값
+                processedRecurrenceConfig.interval = recurrenceConfig.daily.repeatInterval || 1;
             } else if (recurrenceType === 'weekly' && recurrenceConfig.weekly) {
-                processedRecurrenceConfig.weekly = recurrenceConfig.weekly.daysOfWeek || []; // daysOfWeek 키를 weekly 키로 매핑
+                processedRecurrenceConfig.weekly = recurrenceConfig.weekly.daysOfWeek || [];
             } else if (recurrenceType === 'monthly' && recurrenceConfig.monthly) {
-                processedRecurrenceConfig.monthly = recurrenceConfig.monthly.dayOfMonth || 0; // dayOfMonth 키를 monthly 키로 매핑
+                processedRecurrenceConfig.monthly = recurrenceConfig.monthly.dayOfMonth || 0;
             }
         }
 
@@ -271,12 +266,16 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
             });
 
             if (!response.ok) {
-                // ... (생략)
+                const errorData = await response.json().catch(() => ({}));
+                console.error('Create API Error:', response.status, errorData);
+                throw new Error(`API Error: ${response.status} ${response.statusText}`);
             }
 
-            return await response.json();
+            const data = await response.json();
+            console.log('Create API Success:', data);
+            return data;
         } catch (err) {
-            // ... (생략)
+            handleError(err, '반복 To-Do 생성 중 오류가 발생했습니다.');
         } finally {
             setLoading(false);
         }
@@ -284,8 +283,6 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
 
     /**
      * 2.3 반복 To-Do 수정
-     * @param userId, recurringId, recurringTodoData
-     * @returns {Promise<Object>}
      */
     const updateRecurringTodo = useCallback(async (userId, recurringId, recurringTodoData) => {
         checkAuth();
@@ -316,8 +313,6 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
 
     /**
      * 2.4 반복 To-Do 삭제
-     * @param userId, recurringId
-     * @returns {Promise<{success: boolean}>}
      */
     const deleteRecurringTodo = useCallback(async (userId, recurringId) => {
         checkAuth();
