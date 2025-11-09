@@ -1,156 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import {Edit3, Trash2, Plus, Calendar, Hash, Image, X, ChevronLeft, ChevronRight, Search, Filter, Save, Camera, Smile, Loader
 } from 'lucide-react';
-
-// 샘플 일기 데이터
-const initialDiaries = [
-    {
-        id: 1,
-        date: '2025-08-01',
-        title: '바깥은 여름',
-        content: '너무 덥다... 너무너무너무너무너무너무 덥다... 그래도 실내에만 있으면 괜찮다. 하늘과 나무가 푸르른 계절이라 눈으로 보기만 하면 아름답다. 시원한 에어컨 바람 맞으며 이불을 덮는 사치를 부려보는 하루',
-        mood: '😊',
-        tags: ['#여름', '#더움', '#일상'],
-        hasImage: true,
-        createdAt: '2025-08-01T15:30:00Z'
-    },
-    {
-        id: 2,
-        date: '2025-08-02',
-        title: '책책책 책을 읽읍시다.',
-        content: '책을 읽어야 하는데 영원히 안 읽음. 책 정리 해야하는데 영원히 안 하고 사기만 함. 출판사의 빛과 소금이 되어보겠습니다. 구매비독서의 끝판왕을 보여드리죠.',
-        mood: '😌',
-        tags: ['#취미'],
-        hasImage: false,
-        createdAt: '2025-08-02T20:15:00Z'
-    },
-];
-
-// localStorage 키
-const DIARY_STORAGE_KEY = 'user_diaries';
-
-// API 함수들 (localStorage 사용, 실제 API로 교체 가능)
-const diaryAPI = {
-    // 일기 목록 조회
-    async fetchDiaries(page = 1, search = '', mood = 'all') {
-        // TODO: 실제 API 호출로 교체
-        // const response = await fetch(`/api/diaries?page=${page}&search=${search}&mood=${mood}&limit=6`);
-        // const data = await response.json();
-        // return data;
-
-        // localStorage에서 데이터 가져오기
-        const storedDiaries = localStorage.getItem(DIARY_STORAGE_KEY);
-        let diaries = storedDiaries ? JSON.parse(storedDiaries) : initialDiaries;
-
-        // 첫 실행 시 초기 데이터 저장
-        if (!storedDiaries) {
-            localStorage.setItem(DIARY_STORAGE_KEY, JSON.stringify(initialDiaries));
-            diaries = initialDiaries;
-        }
-
-        // 검색 필터링
-        if (search) {
-            diaries = diaries.filter(diary =>
-                diary.title.toLowerCase().includes(search.toLowerCase()) ||
-                diary.content.toLowerCase().includes(search.toLowerCase()) ||
-                diary.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()))
-            );
-        }
-
-        // 감정 필터링
-        if (mood !== 'all') {
-            diaries = diaries.filter(diary => diary.mood === mood);
-        }
-
-        // 날짜순 정렬 (최신 순)
-        diaries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-        // 페이징 처리
-        const limit = 6;
-        const startIndex = (page - 1) * limit;
-        const paginatedDiaries = diaries.slice(startIndex, startIndex + limit);
-
-        // API 응답 형태로 반환
-        return {
-            diaries: paginatedDiaries,
-            total: diaries.length,
-            totalPages: Math.ceil(diaries.length / limit),
-            currentPage: page
-        };
-    },
-
-    // 새 일기 작성
-    async createDiary(diaryData) {
-        // TODO: 실제 API 호출로 교체
-        // const response = await fetch('/api/diaries', {
-        //     method: 'POST',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify(diaryData)
-        // });
-        // return await response.json();
-
-        const storedDiaries = localStorage.getItem(DIARY_STORAGE_KEY);
-        const diaries = storedDiaries ? JSON.parse(storedDiaries) : [];
-
-        const newDiary = {
-            ...diaryData,
-            id: Date.now(),
-            createdAt: new Date().toISOString()
-        };
-
-        const updatedDiaries = [newDiary, ...diaries];
-        localStorage.setItem(DIARY_STORAGE_KEY, JSON.stringify(updatedDiaries));
-
-        return newDiary;
-    },
-
-    // 일기 수정
-    async updateDiary(id, diaryData) {
-        // TODO: 실제 API 호출로 교체
-        // const response = await fetch(`/api/diaries/${id}`, {
-        //     method: 'PUT',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify(diaryData)
-        // });
-        // return await response.json();
-
-        const storedDiaries = localStorage.getItem(DIARY_STORAGE_KEY);
-        const diaries = storedDiaries ? JSON.parse(storedDiaries) : [];
-
-        const updatedDiaries = diaries.map(diary =>
-            diary.id === id ? { ...diary, ...diaryData, updatedAt: new Date().toISOString() } : diary
-        );
-
-        localStorage.setItem(DIARY_STORAGE_KEY, JSON.stringify(updatedDiaries));
-
-        return updatedDiaries.find(diary => diary.id === id);
-    },
-
-    // 일기 삭제
-    async deleteDiary(id) {
-        // TODO: 실제 API 호출로 교체
-        // await fetch(`/api/diaries/${id}`, { method: 'DELETE' });
-
-        const storedDiaries = localStorage.getItem(DIARY_STORAGE_KEY);
-        const diaries = storedDiaries ? JSON.parse(storedDiaries) : [];
-
-        const updatedDiaries = diaries.filter(diary => diary.id !== id);
-        localStorage.setItem(DIARY_STORAGE_KEY, JSON.stringify(updatedDiaries));
-
-        return { success: true };
-    }
-};
+import { useDiaryApi } from "../../hooks/useDiaryApi";
 
 const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
+    // API 훅 사용
+    const {
+        getDiaryList,
+        getDiaryDetail,
+        createDiary,
+        updateDiary,
+        deleteDiary,
+        isLoading: apiLoading,
+        error: apiError,
+        clearError
+    } = useDiaryApi();
+
     // 상태 관리
     const [diaries, setDiaries] = useState([]);
     const [selectedDiary, setSelectedDiary] = useState(null);
     const [showWritePanel, setShowWritePanel] = useState(false);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false); // 수정 모드 여부
 
     // 페이징 및 필터 상태
-    const [currentPage, setCurrentPage] = useState(1);
+    const [currentPage, setCurrentPage] = useState(0); // API는 0부터 시작
     const [totalPages, setTotalPages] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedMoodFilter, setSelectedMoodFilter] = useState('all');
 
@@ -168,9 +44,9 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
     const [newDiary, setNewDiary] = useState({
         title: '',
         content: '',
-        mood: '😊',
+        emotion: 'happy', // 백엔드 emotion 필드에 맞춤
         tags: [],
-        hasImage: false,
+        category: '', // 백엔드에 category 필드 추가
         date: new Date().toISOString().split('T')[0]
     });
     const [currentTag, setCurrentTag] = useState('');
@@ -183,8 +59,8 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
     // 검색/필터 변경 시 데이터 다시 로딩 (디바운스 적용)
     useEffect(() => {
         const debounceTimer = setTimeout(() => {
-            setCurrentPage(1); // 검색 시 첫 페이지로
-            fetchDiaries(1, searchTerm, selectedMoodFilter);
+            setCurrentPage(0); // 검색 시 첫 페이지로
+            fetchDiaries(0, searchTerm, selectedMoodFilter);
         }, 300);
 
         return () => clearTimeout(debounceTimer);
@@ -201,17 +77,39 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
     }, [writeMode, setWriteMode]);
 
     // 일기 목록 조회
-    const fetchDiaries = async (page = currentPage, search = searchTerm, mood = selectedMoodFilter) => {
+    const fetchDiaries = async (page = currentPage, keyword = searchTerm, emotion = selectedMoodFilter) => {
         setLoading(true);
         setError(null);
+        clearError();
 
         try {
-            const data = await diaryAPI.fetchDiaries(page, search, mood);
-            setDiaries(data.diaries);
-            setTotalPages(data.totalPages);
-            setCurrentPage(data.currentPage);
+            const filters = {
+                page,
+                limit: 6,
+            };
+
+            // 검색어가 있으면 추가
+            if (keyword) {
+                filters.keyword = keyword;
+            }
+
+            // 감정 필터가 있으면 추가
+            if (emotion && emotion !== 'all') {
+                filters.emotion = emotion;
+            }
+
+            const result = await getDiaryList(filters);
+
+            if (result.success) {
+                setDiaries(result.data.diaries || []);
+                setTotalCount(result.data.totalCount || 0);
+                setTotalPages(result.data.totalPages || 1);
+                setCurrentPage(result.data.currentPage || 0);
+            } else {
+                setError(result.error || '일기를 불러오는데 실패했습니다.');
+            }
         } catch (err) {
-            setError('일기를 불러오는데 실패했습니다.');
+            setError('일기를 불러오는 중 오류가 발생했습니다.');
             console.error('Fetch diaries error:', err);
         } finally {
             setLoading(false);
@@ -223,12 +121,19 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
         return newDiary.title.trim() !== '' ||
             newDiary.content.trim() !== '' ||
             newDiary.tags.length > 0 ||
-            newDiary.mood !== '😊';
+            newDiary.emotion !== 'happy' ||
+            newDiary.category.trim() !== '';
     };
 
     // 일기 클릭 핸들러
-    const handleDiaryClick = (diary) => {
-        setSelectedDiary(diary);
+    const handleDiaryClick = async (diary) => {
+        // 상세 정보 조회
+        const result = await getDiaryDetail(diary.id);
+        if (result.success) {
+            setSelectedDiary(result.data);
+        } else {
+            alert(result.error || '일기를 불러오는데 실패했습니다.');
+        }
     };
 
     // 일기 상세보기 닫기
@@ -238,15 +143,34 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
 
     // 새 일기 작성 패널 열기
     const openWritePanel = () => {
+        setIsEditMode(false);
         setShowWritePanel(true);
         // 폼 초기화
         setNewDiary({
             title: '',
             content: '',
-            mood: '😊',
+            emotion: 'happy',
             tags: [],
-            hasImage: false,
+            category: '',
             date: new Date().toISOString().split('T')[0]
+        });
+        setCurrentTag('');
+    };
+
+    // 일기 수정 패널 열기
+    const openEditPanel = (diary) => {
+        setIsEditMode(true);
+        setShowWritePanel(true);
+        setSelectedDiary(diary);
+        // 수정할 데이터로 폼 채우기
+        setNewDiary({
+            id: diary.id,
+            title: diary.title || '',
+            content: diary.content || '',
+            emotion: diary.emotion || 'happy',
+            tags: diary.tags || [],
+            category: diary.category || '',
+            date: diary.createdAt ? new Date(diary.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
         });
         setCurrentTag('');
     };
@@ -257,6 +181,7 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
             setShowExitConfirm(true);
         } else {
             setShowWritePanel(false);
+            setIsEditMode(false);
         }
     };
 
@@ -264,13 +189,14 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
     const confirmCloseWritePanel = () => {
         setShowWritePanel(false);
         setShowExitConfirm(false);
+        setIsEditMode(false);
         // 폼 초기화
         setNewDiary({
             title: '',
             content: '',
-            mood: '😊',
+            emotion: 'happy',
             tags: [],
-            hasImage: false,
+            category: '',
             date: new Date().toISOString().split('T')[0]
         });
         setCurrentTag('');
@@ -281,7 +207,7 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
         setShowExitConfirm(false);
     };
 
-    // 일기 저장
+    // 일기 저장 (생성 또는 수정)
     const handleSaveDiary = async () => {
         if (!newDiary.title.trim() || !newDiary.content.trim()) {
             alert('제목과 내용을 모두 입력해주세요.');
@@ -290,17 +216,55 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
 
         setSaving(true);
         try {
-            const savedDiary = await diaryAPI.createDiary(newDiary);
+            let result;
 
-            // 성공 시 목록 새로고침
-            await fetchDiaries();
+            if (isEditMode && newDiary.id) {
+                // 수정 모드
+                result = await updateDiary(newDiary.id, {
+                    title: newDiary.title,
+                    content: newDiary.content,
+                    category: newDiary.category,
+                    emotion: newDiary.emotion,
+                    tags: newDiary.tags
+                });
 
-            setShowWritePanel(false);
-            confirmCloseWritePanel(); // 폼 초기화
-            alert('일기가 성공적으로 저장되었습니다!');
+                if (result.success) {
+                    alert('일기가 성공적으로 수정되었습니다!');
+                } else {
+                    alert(result.error || '일기 수정에 실패했습니다.');
+                }
+            } else {
+                // 생성 모드
+                result = await createDiary({
+                    title: newDiary.title,
+                    content: newDiary.content,
+                    category: newDiary.category,
+                    emotion: newDiary.emotion,
+                    tags: newDiary.tags,
+                    date: newDiary.date
+                });
 
+                if (result.success) {
+                    alert('일기가 성공적으로 저장되었습니다!');
+                } else {
+                    alert(result.error || '일기 저장에 실패했습니다.');
+                }
+            }
+
+            if (result.success) {
+                // 성공 시 목록 새로고침
+                await fetchDiaries();
+                setShowWritePanel(false);
+                setIsEditMode(false);
+                confirmCloseWritePanel(); // 폼 초기화
+
+                // 상세보기가 열려있었다면 닫기
+                if (selectedDiary) {
+                    setSelectedDiary(null);
+                }
+            }
         } catch (error) {
-            alert('일기 저장에 실패했습니다.');
+            alert(isEditMode ? '일기 수정 중 오류가 발생했습니다.' : '일기 저장 중 오류가 발생했습니다.');
             console.error('Save diary error:', error);
         } finally {
             setSaving(false);
@@ -337,21 +301,32 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
     };
 
     const goToPrevPage = () => {
-        if (currentPage > 1) {
+        if (currentPage > 0) {
             goToPage(currentPage - 1);
         }
     };
 
     const goToNextPage = () => {
-        if (currentPage < totalPages) {
+        if (currentPage < totalPages - 1) {
             goToPage(currentPage + 1);
         }
     };
 
-    // 감정 옵션
-    const moodOptions = [
-        '😊', '😌', '🤔', '😔', '😄', '😢'
+    // 감정 옵션 - 백엔드 Emotion enum과 매핑
+    const emotionOptions = [
+        { value: 'happy', emoji: '😊', label: '기쁨' },
+        { value: 'relieved', emoji: '😌', label: '평온' },
+        { value: 'default', emoji: '😐', label: '기본' },
+        { value: 'depressed', emoji: '😔', label: '우울' },
+        { value: 'angry', emoji: '😠', label: '분노' },
+        { value: 'sad', emoji: '😢', label: '슬픔' }
     ];
+
+    // emotion 값을 이모지로 변환
+    const getEmojiFromEmotion = (emotion) => {
+        const found = emotionOptions.find(opt => opt.value === emotion?.toLowerCase());
+        return found ? found.emoji : '😊';
+    };
 
     // 일기 삭제 요청
     const handleDeleteRequest = (diary) => {
@@ -359,25 +334,29 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
         setShowDeleteConfirm(true);
     };
 
-// 일기 삭제 확인
+    // 일기 삭제 확인
     const handleDeleteConfirm = async () => {
         if (!deletingDiaryId) return;
 
         setDeleting(true);
         try {
-            await diaryAPI.deleteDiary(deletingDiaryId);
+            const result = await deleteDiary(deletingDiaryId);
 
-            // 목록 새로고침
-            await fetchDiaries();
+            if (result.success) {
+                // 목록 새로고침
+                await fetchDiaries();
 
-            // 상세보기 중이었다면 닫기
-            if (selectedDiary && selectedDiary.id === deletingDiaryId) {
-                setSelectedDiary(null);
+                // 상세보기 중이었다면 닫기
+                if (selectedDiary && selectedDiary.id === deletingDiaryId) {
+                    setSelectedDiary(null);
+                }
+
+                alert('일기가 성공적으로 삭제되었습니다.');
+            } else {
+                alert(result.error || '일기 삭제에 실패했습니다.');
             }
-
-            alert('일기가 성공적으로 삭제되었습니다.');
         } catch (error) {
-            alert('일기 삭제에 실패했습니다.');
+            alert('일기 삭제 중 오류가 발생했습니다.');
             console.error('Delete diary error:', error);
         } finally {
             setDeleting(false);
@@ -386,7 +365,7 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
         }
     };
 
-// 일기 삭제 취소
+    // 일기 삭제 취소
     const handleDeleteCancel = () => {
         setShowDeleteConfirm(false);
         setDeletingDiaryId(null);
@@ -454,12 +433,11 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
                             className="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                         >
                             <option value="all">모든 감정</option>
-                            <option value="😊">😊 기쁨</option>
-                            <option value="😌">😌 평온</option>
-                            <option value="🤔">🤔 생각</option>
-                            <option value="😔">😔 우울</option>
-                            <option value="😄">😄 즐거움</option>
-                            <option value="😢">😢 슬픔</option>
+                            {emotionOptions.map(opt => (
+                                <option key={opt.value} value={opt.value}>
+                                    {opt.emoji} {opt.label}
+                                </option>
+                            ))}
                         </select>
                     </div>
                 </div>
@@ -507,60 +485,61 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
             {/* 일기 목록 */}
             {!loading && !error && diaries.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {diaries.map((diary) => (
-                        <div
-                            key={diary.id}
-                            onClick={() => handleDiaryClick(diary)}
-                            className="bg-white rounded-xl shadow-sm border hover:shadow-md transition-all cursor-pointer group"
-                        >
-                            {/* 이미지 영역 */}
-                            <div className="h-32 bg-gradient-to-br from-green-100 to-blue-100 rounded-t-xl relative overflow-hidden">
-                                {diary.hasImage ? (
-                                    <div className="w-full h-full bg-gradient-to-br from-green-200 to-blue-200 flex items-center justify-center">
-                                        <Image size={24} className="text-green-600" />
-                                    </div>
-                                ) : (
+                    {diaries.map((diary) => {
+                        const emoji = getEmojiFromEmotion(diary.emotion);
+                        const displayDate = diary.createdAt ? new Date(diary.createdAt).toLocaleDateString('ko-KR') : '';
+
+                        return (
+                            <div
+                                key={diary.id}
+                                onClick={() => handleDiaryClick(diary)}
+                                className="bg-white rounded-xl shadow-sm border hover:shadow-md transition-all cursor-pointer group"
+                            >
+                                {/* 이미지 영역 */}
+                                <div className="h-32 bg-gradient-to-br from-green-100 to-blue-100 rounded-t-xl relative overflow-hidden">
                                     <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                                        <span className="text-4xl">{diary.mood}</span>
+                                        <span className="text-4xl">{emoji}</span>
                                     </div>
-                                )}
-                                <div className="absolute top-3 right-3 bg-white rounded-full px-2 py-1 text-sm font-medium text-gray-600 shadow-sm">
-                                    {diary.date}
-                                </div>
-                            </div>
-
-                            {/* 내용 영역 */}
-                            <div className="p-4">
-                                <div className="flex items-start justify-between mb-2">
-                                    <h3 className="font-semibold text-gray-800 group-hover:text-green-600 transition-colors line-clamp-1">
-                                        {diary.title}
-                                    </h3>
-                                    <span className="text-xl ml-2">{diary.mood}</span>
+                                    <div className="absolute top-3 right-3 bg-white rounded-full px-2 py-1 text-sm font-medium text-gray-600 shadow-sm">
+                                        {displayDate}
+                                    </div>
                                 </div>
 
-                                <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                                    {diary.content}
-                                </p>
+                                {/* 내용 영역 */}
+                                <div className="p-4">
+                                    <div className="flex items-start justify-between mb-2">
+                                        <h3 className="font-semibold text-gray-800 group-hover:text-green-600 transition-colors line-clamp-1">
+                                            {diary.title}
+                                        </h3>
+                                        <span className="text-xl ml-2">{emoji}</span>
+                                    </div>
 
-                                {/* 태그 */}
-                                <div className="flex flex-wrap gap-1 mb-3">
-                                    {diary.tags.slice(0, 3).map((tag, index) => (
-                                        <span key={index} className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                                            {tag}
-                                        </span>
-                                    ))}
-                                    {diary.tags.length > 3 && (
-                                        <span className="text-xs text-gray-500">+{diary.tags.length - 3}</span>
+                                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                                        {diary.content}
+                                    </p>
+
+                                    {/* 태그 */}
+                                    {diary.tags && diary.tags.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 mb-3">
+                                            {diary.tags.slice(0, 3).map((tag, index) => (
+                                                <span key={index} className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                            {diary.tags.length > 3 && (
+                                                <span className="text-xs text-gray-500">+{diary.tags.length - 3}</span>
+                                            )}
+                                        </div>
                                     )}
-                                </div>
 
-                                {/* 하단 정보 */}
-                                <div className="flex items-center justify-end text-xs text-gray-500">
-                                    <Calendar size={12} />
+                                    {/* 하단 정보 */}
+                                    <div className="flex items-center justify-end text-xs text-gray-500">
+                                        <Calendar size={12} />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 
@@ -569,32 +548,29 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
                 <div className="flex items-center justify-center space-x-2">
                     <button
                         onClick={goToPrevPage}
-                        disabled={currentPage === 1}
+                        disabled={currentPage === 0}
                         className="p-2 rounded-lg border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <ChevronLeft size={16} />
                     </button>
 
-                    {[...Array(totalPages)].map((_, index) => {
-                        const page = index + 1;
-                        return (
-                            <button
-                                key={page}
-                                onClick={() => goToPage(page)}
-                                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                    currentPage === page
-                                        ? 'bg-green-600 text-white'
-                                        : 'border hover:bg-gray-50 text-gray-700'
-                                }`}
-                            >
-                                {page}
-                            </button>
-                        );
-                    })}
+                    {[...Array(totalPages)].map((_, index) => (
+                        <button
+                            key={index}
+                            onClick={() => goToPage(index)}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                currentPage === index
+                                    ? 'bg-green-600 text-white'
+                                    : 'border hover:bg-gray-50 text-gray-700'
+                            }`}
+                        >
+                            {index + 1}
+                        </button>
+                    ))}
 
                     <button
                         onClick={goToNextPage}
-                        disabled={currentPage === totalPages}
+                        disabled={currentPage === totalPages - 1}
                         className="p-2 rounded-lg border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <ChevronRight size={16} />
@@ -621,22 +597,25 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
                             {/* 헤더 */}
                             <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
                                 <div className="flex items-center space-x-3">
-                                    <span className="text-2xl">{selectedDiary.mood}</span>
+                                    <span className="text-2xl">{getEmojiFromEmotion(selectedDiary.emotion)}</span>
                                     <div>
                                         <h2 className="text-xl font-bold text-gray-800">{selectedDiary.title}</h2>
-                                        <p className="text-sm text-gray-500">{selectedDiary.date}</p>
+                                        <p className="text-sm text-gray-500">
+                                            {selectedDiary.createdAt ? new Date(selectedDiary.createdAt).toLocaleDateString('ko-KR') : ''}
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="flex items-center space-x-2">
-                                    {/* 수정 버튼 (향후 구현 가능) */}
+                                    {/* 수정 버튼 */}
                                     <button
+                                        onClick={() => openEditPanel(selectedDiary)}
                                         className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                         title="수정"
                                     >
                                         <Edit3 size={18} />
                                     </button>
 
-                                    {/* 삭제 버튼 - 새로 추가 */}
+                                    {/* 삭제 버튼 */}
                                     <button
                                         onClick={() => handleDeleteRequest(selectedDiary)}
                                         className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -657,10 +636,12 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
 
                             {/* 본문 */}
                             <div className="p-6">
-                                {/* 이미지 */}
-                                {selectedDiary.hasImage && (
-                                    <div className="w-full h-64 bg-gradient-to-br from-green-200 to-blue-200 rounded-lg mb-6 flex items-center justify-center">
-                                        <Image size={48} className="text-green-600" />
+                                {/* 카테고리 */}
+                                {selectedDiary.category && (
+                                    <div className="mb-4">
+                                        <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+                                            {selectedDiary.category}
+                                        </span>
                                     </div>
                                 )}
 
@@ -672,20 +653,27 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
                                 </div>
 
                                 {/* 태그 */}
-                                <div className="flex flex-wrap gap-2 mb-6">
-                                    {selectedDiary.tags.map((tag, index) => (
-                                        <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-700">
-                                            <Hash size={12} className="mr-1" />
-                                            {tag.replace('#', '')}
-                                        </span>
-                                    ))}
-                                </div>
+                                {selectedDiary.tags && selectedDiary.tags.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 mb-6">
+                                        {selectedDiary.tags.map((tag, index) => (
+                                            <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-700">
+                                                <Hash size={12} className="mr-1" />
+                                                {tag.replace('#', '')}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
 
                                 {/* 하단 정보 */}
-                                <div className="flex items-center justify-end py-4 border-t">
-                                    <div className="text-sm text-gray-500">
-                                        {selectedDiary.date}
+                                <div className="flex items-center justify-between py-4 border-t text-sm text-gray-500">
+                                    <div>
+                                        작성: {selectedDiary.createdAt ? new Date(selectedDiary.createdAt).toLocaleString('ko-KR') : ''}
                                     </div>
+                                    {selectedDiary.updatedAt && (
+                                        <div>
+                                            수정: {new Date(selectedDiary.updatedAt).toLocaleString('ko-KR')}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </>
@@ -712,9 +700,11 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
                             {/* 헤더 */}
                             <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
                                 <div className="flex items-center space-x-3">
-                                    <span className="text-2xl">{newDiary.mood}</span>
+                                    <span className="text-2xl">{getEmojiFromEmotion(newDiary.emotion)}</span>
                                     <div>
-                                        <h2 className="text-xl font-bold text-gray-800">새 일기 작성</h2>
+                                        <h2 className="text-xl font-bold text-gray-800">
+                                            {isEditMode ? '일기 수정' : '새 일기 작성'}
+                                        </h2>
                                         <p className="text-sm text-gray-500">{newDiary.date}</p>
                                     </div>
                                 </div>
@@ -727,12 +717,12 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
                                         {saving ? (
                                             <>
                                                 <Loader className="animate-spin" size={16} />
-                                                <span>저장 중...</span>
+                                                <span>{isEditMode ? '수정 중...' : '저장 중...'}</span>
                                             </>
                                         ) : (
                                             <>
                                                 <Save size={16} />
-                                                <span>저장</span>
+                                                <span>{isEditMode ? '수정' : '저장'}</span>
                                             </>
                                         )}
                                     </button>
@@ -769,6 +759,19 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
                                     />
                                 </div>
 
+                                {/* 카테고리 입력 */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">카테고리</label>
+                                    <input
+                                        type="text"
+                                        placeholder="카테고리를 입력하세요 (예: 일상, 업무, 취미)"
+                                        value={newDiary.category}
+                                        onChange={(e) => setNewDiary(prev => ({ ...prev, category: e.target.value }))}
+                                        className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                        disabled={saving}
+                                    />
+                                </div>
+
                                 {/* 감정 선택 */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -776,18 +779,19 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
                                         오늘의 감정
                                     </label>
                                     <div className="flex flex-wrap gap-2">
-                                        {moodOptions.map((mood) => (
+                                        {emotionOptions.map((option) => (
                                             <button
-                                                key={mood}
-                                                onClick={() => setNewDiary(prev => ({ ...prev, mood }))}
+                                                key={option.value}
+                                                onClick={() => setNewDiary(prev => ({ ...prev, emotion: option.value }))}
                                                 disabled={saving}
                                                 className={`text-2xl p-2 rounded-lg border-2 transition-colors disabled:opacity-50 ${
-                                                    newDiary.mood === mood
+                                                    newDiary.emotion === option.value
                                                         ? 'border-green-500 bg-green-50'
                                                         : 'border-gray-200 hover:border-gray-300'
                                                 }`}
+                                                title={option.label}
                                             >
-                                                {mood}
+                                                {option.emoji}
                                             </button>
                                         ))}
                                     </div>
@@ -841,19 +845,6 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
                                         </div>
                                     )}
                                 </div>
-
-                                {/* 이미지 추가 (시각적 표시만) */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        <Camera size={16} className="inline mr-1" />
-                                        이미지
-                                    </label>
-                                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors cursor-pointer">
-                                        <Camera size={32} className="mx-auto text-gray-400 mb-2" />
-                                        <p className="text-gray-500">이미지를 추가하려면 클릭하세요</p>
-                                        <p className="text-xs text-gray-400 mt-1">(현재는 시각적 표시만 지원)</p>
-                                    </div>
-                                </div>
                             </div>
                         </>
                     )}
@@ -863,7 +854,6 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
             {/* 나가기 확인 모달 */}
             {showExitConfirm && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style={{ zIndex: 9999 }}>
-                    {/* 모달 내용 */}
                     <div className="bg-white rounded-xl shadow-2xl p-6 m-4 max-w-md w-full">
                         <div className="flex items-center mb-4">
                             <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
@@ -894,6 +884,7 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
                     </div>
                 </div>
             )}
+
             {/* 삭제 확인 모달 */}
             {showDeleteConfirm && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style={{ zIndex: 9999 }}>
