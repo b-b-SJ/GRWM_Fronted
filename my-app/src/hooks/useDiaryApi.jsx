@@ -293,7 +293,7 @@ export const useDiaryApi = () => {
                         title,
                         content,
                         tags: tags || [],
-                        emotion: (emotion || 'Default').toLowerCase()
+                        emotion: emotion === 'default' ? 'Default' : (emotion || 'default').toLowerCase()
                     })
                 }
             );
