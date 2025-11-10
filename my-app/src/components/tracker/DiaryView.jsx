@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import {Edit3, Trash2, Plus, Calendar, Hash, Image, X, ChevronLeft, ChevronRight, Search, Filter, Save, Camera, Smile, Loader
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import {Edit3, Trash2, Plus, Calendar, Hash, X, ChevronLeft, ChevronRight, Search, Filter, Save, Smile, Loader
 } from 'lucide-react';
 import { useDiaryApi } from "../../hooks/useDiaryApi";
 
-const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
+const ITEMS_PER_PAGE = 6; // 페이지당 항목 수 고정
+
+const DiaryView = ({ showHeader = false}) => {
     // API 훅 사용
     const {
-        getDiaryList,
         getDiaryDetail,
         createDiary,
         updateDiary,
@@ -16,16 +17,15 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
     } = useDiaryApi();
 
     // 상태 관리
-    const [diaries, setDiaries] = useState([]);
+    const [allDiaries, setAllDiaries] = useState([]); // 전체 일기 목록
+    const [paginatedDiaries, setPaginatedDiaries] = useState([]); // 화면에 표시될 일기 목록
     const [selectedDiary, setSelectedDiary] = useState(null);
     const [showWritePanel, setShowWritePanel] = useState(false);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
-    const [isEditMode, setIsEditMode] = useState(false); // 수정 모드 여부
+    const [isEditMode, setIsEditMode] = useState(false);
 
     // 페이징 및 필터 상태
-    const [currentPage, setCurrentPage] = useState(0); // API는 0부터 시작
-    const [totalPages, setTotalPages] = useState(1);
-    const [totalCount, setTotalCount] = useState(0);
+    const [currentPage, setCurrentPage] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedMoodFilter, setSelectedMoodFilter] = useState('all');
 
@@ -43,71 +43,61 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
     const [newDiary, setNewDiary] = useState({
         title: '',
         content: '',
-        emotion: 'happy', // 백엔드 emotion 필드에 맞춤
+        emotion: 'happy',
         tags: [],
         category: '', // 백엔드에 category 필드 추가
         date: new Date().toISOString().split('T')[0]
     });
     const [currentTag, setCurrentTag] = useState('');
 
-    // 초기 데이터 로딩
-    useEffect(() => {
-        fetchDiaries();
-    }, []);
+    // 1. 검색어/필터링을 적용한 최종 목록 계산
+    const filteredDiaries = useMemo(() => {
+        let filtered = allDiaries;
+        const lowerSearchTerm = searchTerm.trim().toLowerCase();
 
-    // 검색/필터 변경 시 데이터 다시 로딩 (디바운스 적용)
-    useEffect(() => {
-        const debounceTimer = setTimeout(() => {
-            setCurrentPage(0); // 검색 시 첫 페이지로
-            fetchDiaries(0, searchTerm, selectedMoodFilter);
-        }, 300);
-
-        return () => clearTimeout(debounceTimer);
-    }, [searchTerm, selectedMoodFilter]);
-
-    // writeMode prop 변경 감지
-    useEffect(() => {
-        if (writeMode) {
-            openWritePanel();
-            if (setWriteMode) {
-                setWriteMode(false);
-            }
+        // 검색어 필터링
+        if (lowerSearchTerm) {
+            filtered = filtered.filter(diary =>
+                diary.title?.toLowerCase().includes(lowerSearchTerm) ||
+                diary.content?.toLowerCase().includes(lowerSearchTerm) ||
+                diary.tags?.some(tag => tag.toLowerCase().includes(lowerSearchTerm))
+            );
         }
-    }, [writeMode, setWriteMode]);
 
-    // 일기 목록 조회
-    const fetchDiaries = async (page = currentPage, keyword = searchTerm, emotion = selectedMoodFilter) => {
+        // 감정 필터링
+        if (selectedMoodFilter !== 'all') {
+            const filterValue = selectedMoodFilter.toLowerCase();
+            filtered = filtered.filter(diary =>
+                diary.emotion?.toLowerCase() === filterValue
+            );
+        }
+
+        return filtered;
+    }, [allDiaries, searchTerm, selectedMoodFilter]);
+
+    // 2. 계산된 필터링 목록을 기반으로 총 개수 및 페이지 수 계산
+    const totalCount = filteredDiaries.length;
+    const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+
+    // 3. 페이지네이션 적용 함수
+    const applyFilterAndPagination = useCallback((page) => {
+        const start = page * ITEMS_PER_PAGE;
+        const end = start + ITEMS_PER_PAGE;
+        setPaginatedDiaries(filteredDiaries.slice(start, end));
+    }, [filteredDiaries]);
+
+    // 서버에서 전체 목록을 불러오는 기본 함수 (API 호출)
+    const fetchAllDiaries = async () => {
         setLoading(true);
         setError(null);
         clearError();
 
         try {
-            let result;
-            // 검색어 또는 감정 필터가 있는지 확인
-            const isSearching = keyword.trim() !== '' || emotion !== 'all';
-
-            if (isSearching) {
-                // 검색/필터링 중: getDiaryList (검색 전용) 사용
-                const filters = {
-                    page,
-                    limit: 6,
-                    keyword: keyword.trim(),
-                    emotion: emotion
-                };
-                console.log('VIEW_LOG: 검색/필터링 요청', filters);
-                result = await getDiaryList(filters);
-            } else {
-                // 검색/필터링 아님: getAllDiaries (기본 조회) 사용
-                console.log('VIEW_LOG: 기본 목록 조회 요청', { page, limit: 6 });
-                result = await getAllDiaries(page, 6);
-            }
-
+            const result = await getAllDiaries(0, 999); // 충분히 큰 Limit을 보낸다고 가정
 
             if (result.success) {
-                setDiaries(result.data.diaries || []);
-                setTotalCount(result.data.totalCount || 0);
-                setTotalPages(result.data.totalPages || 1);
-                setCurrentPage(result.data.currentPage || 0);
+                setAllDiaries(result.data.diaries || []);
+                setCurrentPage(0); // 데이터 갱신 시 페이지 0으로 이동 (useEffect가 페이지네이션 처리)
             } else {
                 setError(result.error || '일기를 불러오는데 실패했습니다.');
             }
@@ -118,6 +108,22 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
             setLoading(false);
         }
     };
+
+    // 초기 데이터 로딩: 컴포넌트 마운트 시 전체 목록 불러오기
+    useEffect(() => {
+        fetchAllDiaries();
+    }, []);
+
+    useEffect(() => {
+        applyFilterAndPagination(currentPage);
+    }, [currentPage, filteredDiaries, applyFilterAndPagination]);
+
+    // 검색/필터 변경 시 페이지를 0으로 초기화
+    useEffect(() => {
+        // Debounce 없이 즉시 검색 결과 반영 (useMemo 덕분)
+        setCurrentPage(0);
+    }, [searchTerm, selectedMoodFilter]);
+
 
     // 작성 중인 내용이 있는지 확인하는 함수
     const hasUnsavedChanges = () => {
@@ -222,7 +228,7 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
             let result;
 
             if (isEditMode && newDiary.id) {
-                // 수정 모드 (로직 유지)
+                // 수정 모드
                 result = await updateDiary(newDiary.id, {
                     title: newDiary.title,
                     content: newDiary.content,
@@ -237,7 +243,7 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
                     alert(result.error || '일기 수정에 실패했습니다.');
                 }
             } else {
-                // 생성 모드 (로직 유지)
+                // 생성 모드
                 result = await createDiary({
                     title: newDiary.title,
                     content: newDiary.content,
@@ -255,26 +261,16 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
             }
 
             if (result.success) {
-                if (!isEditMode) {
-                    console.log('VIEW_LOG: 새 일기 작성 성공. 0페이지 재로딩 시작...');
-                    // ⭐ 검색/필터 상태 초기화 (새 글은 전체 목록의 0페이지에 보장되므로)
-                    setSearchTerm('');
-                    setSelectedMoodFilter('all');
-                    // 필터가 없는 상태(keyword='', emotion='all')로 0페이지 재로딩 -> fetchDiaries는 getAllDiaries 호출
-                    await fetchDiaries(0, '', 'all');
-                    console.log('VIEW_LOG: 0페이지 재로딩 완료.');
-                } else {
-                    console.log('VIEW_LOG: 일기 수정 성공. 현재 페이지 재로딩 시작...');
-                    // 수정은 현재 페이지/필터 상태를 유지하고 재로딩
-                    await fetchDiaries();
-                    console.log('VIEW_LOG: 현재 페이지 재로딩 완료.');
-                }
+                await fetchAllDiaries();
+
+                // 검색/필터 상태 초기화 (새 글이 확실히 보이도록)
+                setSearchTerm('');
+                setSelectedMoodFilter('all');
 
                 setShowWritePanel(false);
                 setIsEditMode(false);
-                confirmCloseWritePanel(); // 폼 초기화
+                confirmCloseWritePanel();
 
-                // 상세보기가 열려있었다면 닫기
                 if (selectedDiary) {
                     setSelectedDiary(null);
                 }
@@ -312,8 +308,9 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
 
     // 페이지 이동
     const goToPage = (page) => {
-        setCurrentPage(page);
-        fetchDiaries(page, searchTerm, selectedMoodFilter);
+        if (page >= 0 && page < totalPages) {
+            setCurrentPage(page);
+        }
     };
 
     const goToPrevPage = () => {
@@ -360,7 +357,10 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
 
             if (result.success) {
                 // 목록 새로고침
-                await fetchDiaries();
+                await fetchAllDiaries();
+                setCurrentPage(0); // 삭제 후 0페이지로 이동
+                setSearchTerm(''); // 필터 초기화
+                setSelectedMoodFilter('all');
 
                 // 상세보기 중이었다면 닫기
                 if (selectedDiary && selectedDiary.id === deletingDiaryId) {
@@ -474,7 +474,7 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
                 <div className="text-center py-12">
                     <div className="text-red-500 mb-4">{error}</div>
                     <button
-                        onClick={() => fetchDiaries()}
+                        onClick={fetchAllDiaries}
                         className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
                     >
                         다시 시도
@@ -483,7 +483,7 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
             )}
 
             {/* 검색 결과가 없을 때 */}
-            {!loading && !error && diaries.length === 0 && (
+            {!loading && !error && paginatedDiaries.length === 0 && (
                 <div className="text-center py-12">
                     <Calendar size={48} className="mx-auto text-gray-300 mb-4" />
                     <h3 className="text-lg font-medium text-gray-600 mb-2">
@@ -499,9 +499,9 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
             )}
 
             {/* 일기 목록 */}
-            {!loading && !error && diaries.length > 0 && (
+            {!loading && !error && paginatedDiaries.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {diaries.map((diary) => {
+                    {paginatedDiaries.map((diary) => {
                         const emoji = getEmojiFromEmotion(diary.emotion);
                         const displayDate = diary.createdAt ? new Date(diary.createdAt).toLocaleDateString('ko-KR') : '';
 

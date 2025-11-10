@@ -57,90 +57,6 @@ export const useDiaryApi = () => {
         }
     }, [getAuthHeaders, user]);
 
-    // 일기 목록 조회 (필터, 검색)
-    const getDiaryList = useCallback(async (filters = {}) => {
-        const { date, category, emotion, keyword, page = 0, limit = 10 } = filters;
-
-        if (!user?.userId) {
-            setError('로그인이 필요합니다.');
-            return { success: false, error: '로그인이 필요합니다.' };
-        }
-
-        setIsLoading(true);
-        setError('');
-
-        try {
-            const queryParams = new URLSearchParams();
-
-            if (date) {
-                queryParams.append('date', date);
-            }
-
-            queryParams.append('category', category || '');
-            queryParams.append('keyword', keyword || '');
-
-            if (emotion && emotion !== 'all') {
-                let emotionValue;
-                if (emotion.toLowerCase() === 'default') {
-                    emotionValue = 'Default';
-                } else {
-                    emotionValue = emotion.toLowerCase();
-                }
-                queryParams.append('emotion', emotionValue);
-            }
-
-            // 2. 페이징 파라미터는 항상 추가
-            queryParams.append('page', page);
-            queryParams.append('limit', limit);
-
-            // 로그 추가: 요청 URL 및 파라미터 확인
-            const url = `/api/users/${user.userId}/diaries?${queryParams.toString()}`
-
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: getAuthHeaders()
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                return {
-                    success: true,
-                    data: {
-                        diaries: data.diaries || [],
-                        totalCount: data.totalCount || 0,
-                        currentPage: data.currentPage || 0,
-                        totalPages: data.totalPages || 0
-                    }
-                };
-            } else {
-                let errorMessage = '일기 목록을 불러오는데 실패했습니다.';
-                try {
-                    const errorData = await response.json();
-                    errorMessage = errorData.message || errorMessage;
-                    console.error('일기 목록 조회 실패 (JSON):', errorData);
-                } catch (e) {
-                    console.error('일기 목록 조회 실패 (상태 코드):', response.status);
-                    if (response.status === 403) {
-                        errorMessage = '접근 권한이 없습니다. 다시 로그인해주세요.';
-                    } else if (response.status === 400) {
-                        errorMessage = '잘못된 요청입니다.';
-                    } else if (response.status === 500) {
-                        errorMessage = '서버 오류가 발생했습니다.';
-                    }
-                }
-                setError(errorMessage);
-                return { success: false, error: errorMessage };
-            }
-        } catch (error) {
-            console.error('일기 목록 조회 오류:', error);
-            const errorMsg = '일기 목록을 불러오는 중 오류가 발생했습니다.';
-            setError(errorMsg);
-            return { success: false, error: errorMsg };
-        } finally {
-            setIsLoading(false);
-        }
-    }, [getAuthHeaders, user]);
-
     // 일기 상세 조회
     const getDiaryDetail = useCallback(async (diaryId) => {
         if (!user?.userId) {
@@ -377,7 +293,6 @@ export const useDiaryApi = () => {
     return {
         isLoading,
         error,
-        getDiaryList,
         getDiaryDetail,
         createDiary,
         updateDiary,
