@@ -11,8 +11,7 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
         createDiary,
         updateDiary,
         deleteDiary,
-        isLoading: apiLoading,
-        error: apiError,
+        getAllDiaries,
         clearError
     } = useDiaryApi();
 
@@ -83,22 +82,26 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
         clearError();
 
         try {
-            const filters = {
-                page,
-                limit: 6,
-            };
+            let result;
+            // 검색어 또는 감정 필터가 있는지 확인
+            const isSearching = keyword.trim() !== '' || emotion !== 'all';
 
-            // 검색어가 있으면 추가
-            if (keyword) {
-                filters.keyword = keyword;
+            if (isSearching) {
+                // 검색/필터링 중: getDiaryList (검색 전용) 사용
+                const filters = {
+                    page,
+                    limit: 6,
+                    keyword: keyword.trim(),
+                    emotion: emotion
+                };
+                console.log('VIEW_LOG: 검색/필터링 요청', filters);
+                result = await getDiaryList(filters);
+            } else {
+                // 검색/필터링 아님: getAllDiaries (기본 조회) 사용
+                console.log('VIEW_LOG: 기본 목록 조회 요청', { page, limit: 6 });
+                result = await getAllDiaries(page, 6);
             }
 
-            // 감정 필터가 있으면 추가
-            if (emotion && emotion !== 'all') {
-                filters.emotion = emotion;
-            }
-
-            const result = await getDiaryList(filters);
 
             if (result.success) {
                 setDiaries(result.data.diaries || []);
@@ -219,7 +222,7 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
             let result;
 
             if (isEditMode && newDiary.id) {
-                // 수정 모드
+                // 수정 모드 (로직 유지)
                 result = await updateDiary(newDiary.id, {
                     title: newDiary.title,
                     content: newDiary.content,
@@ -234,7 +237,7 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
                     alert(result.error || '일기 수정에 실패했습니다.');
                 }
             } else {
-                // 생성 모드
+                // 생성 모드 (로직 유지)
                 result = await createDiary({
                     title: newDiary.title,
                     content: newDiary.content,
@@ -252,8 +255,21 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
             }
 
             if (result.success) {
-                // 성공 시 목록 새로고침
-                await fetchDiaries();
+                if (!isEditMode) {
+                    console.log('VIEW_LOG: 새 일기 작성 성공. 0페이지 재로딩 시작...');
+                    // ⭐ 검색/필터 상태 초기화 (새 글은 전체 목록의 0페이지에 보장되므로)
+                    setSearchTerm('');
+                    setSelectedMoodFilter('all');
+                    // 필터가 없는 상태(keyword='', emotion='all')로 0페이지 재로딩 -> fetchDiaries는 getAllDiaries 호출
+                    await fetchDiaries(0, '', 'all');
+                    console.log('VIEW_LOG: 0페이지 재로딩 완료.');
+                } else {
+                    console.log('VIEW_LOG: 일기 수정 성공. 현재 페이지 재로딩 시작...');
+                    // 수정은 현재 페이지/필터 상태를 유지하고 재로딩
+                    await fetchDiaries();
+                    console.log('VIEW_LOG: 현재 페이지 재로딩 완료.');
+                }
+
                 setShowWritePanel(false);
                 setIsEditMode(false);
                 confirmCloseWritePanel(); // 폼 초기화
@@ -297,7 +313,7 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
     // 페이지 이동
     const goToPage = (page) => {
         setCurrentPage(page);
-        fetchDiaries(page);
+        fetchDiaries(page, searchTerm, selectedMoodFilter);
     };
 
     const goToPrevPage = () => {
@@ -316,7 +332,7 @@ const DiaryView = ({ showHeader = false, writeMode = false, setWriteMode }) => {
     const emotionOptions = [
         { value: 'happy', emoji: '😊', label: '기쁨' },
         { value: 'relieved', emoji: '😌', label: '평온' },
-        { value: 'default', emoji: '😐', label: '기본' },
+        { value: 'Default', emoji: '😐', label: '기본' },
         { value: 'depressed', emoji: '😔', label: '우울' },
         { value: 'angry', emoji: '😠', label: '분노' },
         { value: 'sad', emoji: '😢', label: '슬픔' }
