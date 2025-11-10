@@ -41,42 +41,6 @@ const TomorrowMessage = () => {
         }
     }, [error, clearError]);
 
-    // 메시지 목록 불러오기
-    const loadMessages = useCallback(async () => {
-        if (!user?.userId) {
-            setLoadingMessages(false);
-            return;
-        }
-
-        setLoadingMessages(true);
-        try {
-            // localStorage에서 메시지 ID 목록 가져오기
-            // 실제로는 GET /api/users/${userId}/future-messages 같은 목록 API 필요
-            const messageIds = JSON.parse(
-                localStorage.getItem(`messageIds_${user.userId}`) || '[]'
-            );
-
-            const loadedMessages = [];
-            for (const messageId of messageIds) {
-                const result = await getTomorrowMessage(messageId);
-                if (result.success) {
-                    loadedMessages.push(result.data);
-                }
-            }
-
-            // 예약 시간순 정렬
-            loadedMessages.sort((a, b) =>
-                new Date(a.scheduledTime) - new Date(b.scheduledTime)
-            );
-
-            setMessages(loadedMessages);
-        } catch (error) {
-            console.error('메시지 로딩 오류:', error);
-        } finally {
-            setLoadingMessages(false);
-        }
-    }, [user, getTomorrowMessage]);
-
     // 메시지 ID 목록 업데이트
     const updateMessageIds = useCallback((newMessages) => {
         if (!user?.userId) return;
@@ -87,6 +51,45 @@ const TomorrowMessage = () => {
             JSON.stringify(messageIds)
         );
     }, [user]);
+
+    // 메시지 목록 불러오기
+    const loadMessages = useCallback(async () => {
+        if (!user?.userId) {
+            setLoadingMessages(false);
+            return;
+        }
+
+        setLoadingMessages(true);
+        try {
+            const messageIds = JSON.parse(
+                localStorage.getItem(`messageIds_${user.userId}`) || '[]'
+            );
+
+            if (messageIds.length === 0) {
+                setMessages([]);
+                return;
+            }
+
+            const singleMessageId = messageIds[0];
+
+            const result = await getTomorrowMessage(singleMessageId);
+
+            if (result.success && result.data && result.data.messageId) {
+
+                setMessages([result.data]);
+            } else {
+                setMessages([]);
+                console.warn(`Message ID ${singleMessageId} does not exist on server or returned empty data.`);
+                updateMessageIds([]);
+            }
+
+        } catch (error) {
+            console.error('메시지 로딩 오류:', error);
+        } finally {
+            setLoadingMessages(false);
+        }
+    }, [user, getTomorrowMessage, updateMessageIds]);
+
 
     // 폼 초기화
     const resetForm = useCallback(() => {
@@ -306,7 +309,7 @@ const TomorrowMessage = () => {
                 </div>
             )}
 
-            {/* 메시지 목록 */}
+            {/* 메시지 조회 */}
             {messages.length > 0 && !showForm && (
                 <div className="w-full max-w-2xl mx-auto space-y-6 px-4">
                     {messages.map((message) => {
@@ -336,9 +339,6 @@ const TomorrowMessage = () => {
                                             <p className="text-gray-800 text-lg leading-relaxed whitespace-pre-wrap">
                                                 {message.content}
                                             </p>
-                                        </div>
-                                        <div className="text-sm text-gray-500 text-center">
-                                            {new Date(message.createdAt).toLocaleDateString('ko-KR')}에 작성된 메시지
                                         </div>
                                     </div>
                                 ) : (
@@ -375,9 +375,6 @@ const TomorrowMessage = () => {
                                                 <p className="text-gray-500 text-lg">
                                                     메시지가 날아오는 중 . . .
                                                 </p>
-                                                <div className="text-sm text-gray-400 pt-4">
-                                                    {new Date(message.createdAt).toLocaleDateString('ko-KR')}에 작성됨
-                                                </div>
                                             </div>
                                         </div>
                                     </div>
