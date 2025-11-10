@@ -29,7 +29,8 @@ const RecurringTodoManager = () => {
         description: '',
         recurrenceType: 'daily',
         recurrenceConfig: {},
-        startDate: new Date().toISOString().split('T')[0]
+        startDate: new Date().toISOString().split('T')[0],
+        active : true,
     });
     const [filterStatus, setFilterStatus] = useState('active');
     const [filterType, setFilterType] = useState('');
@@ -50,7 +51,6 @@ const RecurringTodoManager = () => {
         { value: 5, label: '금' },
         { value: 6, label: '토' }
     ];
-// RecurringTodoManager.jsx 내 loadRecurringTodos 함수 수정
 
     const loadRecurringTodos = useCallback(async () => {
         if (!currentUserId) {
@@ -79,10 +79,14 @@ const RecurringTodoManager = () => {
 
 
             const normalizedTodos = recurringTodosList.map(todo => ({
-                ...todo.todoDto,
+                ...todo.todoDto, // todoDto의 필드들 (title, description, date 등)
                 recurringId: todo.recurringId,
                 repeatRange: todo.repeatRange,
                 active: todo.active,
+
+                interval: todo.recurrenceConfig?.interval || 1, // 일간 반복 간격
+                weekly: todo.recurrenceConfig?.weekly || [],    // 주간 반복 요일 배열
+                monthly: todo.recurrenceConfig?.monthly || 1,   // 월간 반복 일자
             }));
 
             // 디버깅 4: 정규화된 (state에 저장될) 데이터 로깅
@@ -110,7 +114,8 @@ const RecurringTodoManager = () => {
             description: '',
             recurrenceType: 'daily',
             recurrenceConfig: { interval: 1 },
-            startDate: localDate
+            startDate: localDate,
+            active : true,
         });
         setSelectedTodo(null);
         setIsCreating(false);
@@ -169,6 +174,7 @@ const RecurringTodoManager = () => {
             recurrenceType: recurrenceType,
             recurrenceConfig: config,
             startDate: dateStr,
+            active : todo.active,
         });
         setIsCreating(true);
     };
@@ -227,7 +233,7 @@ const RecurringTodoManager = () => {
                 recurrenceType: formData.recurrenceType,
                 recurrenceConfig: processedConfig,
                 startDate: formData.startDate,
-                active: selectedTodo ? selectedTodo.active : true
+                active: formData.active,
             };
 
             console.log('Submitting payload:', payload);
@@ -235,17 +241,10 @@ const RecurringTodoManager = () => {
             if (selectedTodo) {
                 const idToUpdate = selectedTodo.recurringId;
                 console.log('Updating todo:', idToUpdate);
-                const updated = await updateRecurringTodo(currentUserId, idToUpdate, payload);
-                console.log('Updated:', updated);
 
-                // 목록에서 해당 투두 업데이트
-                setRecurringTodos(prev =>
-                    prev.map(todo =>
-                        todo.recurringId === idToUpdate
-                            ? { ...todo, ...updated, recurringId: idToUpdate }
-                            : todo
-                    )
-                );
+                await updateRecurringTodo(currentUserId, idToUpdate, payload);
+
+                await loadRecurringTodos();
             } else {
                 console.log('Creating new todo');
                 const created = await createRecurringTodo(currentUserId, payload);
@@ -354,22 +353,21 @@ const RecurringTodoManager = () => {
 
         switch (recurrenceType) {
             case 'daily':
-                return '매일';
+                return todo.interval > 1 ? `매일 ${todo.interval}일 마다` : '매일';
             case 'weekly':
-                const weeklyDays = todo.weekly || todo.recurrenceConfig?.daysOfWeek || [];
+                const weeklyDays = todo.weekly || [];
                 const days = weeklyDays
                     .map(d => weekDays.find(wd => wd.value === d)?.label)
                     .filter(Boolean)
                     .join(', ');
                 return `매주 ${days || ''}`;
             case 'monthly':
-                const dayOfMonth = todo.monthly || todo.recurrenceConfig?.dayOfMonth || 1;
+                const dayOfMonth = todo.monthly || 1;
                 return `매월 ${dayOfMonth}일`;
             default:
                 return recurrenceType || '알 수 없음';
         }
     };
-
     const combinedError = error;
 
     return (
@@ -439,7 +437,7 @@ const RecurringTodoManager = () => {
                             {recurringTodos.map(todo => (
                                 <div
                                     key={todo.recurringId}
-                                    className={`p-4 border rounded-lg transition-all cursor-pointer ${
+                                    className={`p-4 border rounded-lg transition-all cursor-pointer relative ${ // relative 추가
                                         selectedTodo?.recurringId === todo.recurringId
                                             ? 'border-blue-500 bg-blue-50'
                                             : 'border-gray-200 hover:border-gray-300 bg-white'
@@ -488,6 +486,30 @@ const RecurringTodoManager = () => {
                                             <span>시작: {new Date(todo.date).toLocaleDateString('ko-KR')}</span>
                                         </div>
                                     </div>
+
+                                    <div className="absolute right-4 bottom-4">
+                                        <label className="flex items-center cursor-default"> {/* cursor-default로 클릭 방지 */}
+                                            <div className="relative">
+                                                <input
+                                                    type="checkbox"
+                                                    className="sr-only"
+                                                    checked={todo.active}
+                                                    readOnly // 클릭 방지
+                                                />
+                                                <div className={`block w-10 h-6 rounded-full transition-colors ${
+                                                    todo.active ? 'bg-green-400' : 'bg-gray-300'
+                                                }`}></div>
+                                                <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${
+                                                    todo.active ? 'translate-x-4' : 'translate-x-0'
+                                                }`}></div>
+                                            </div>
+                                            <div className={`ml-3 text-sm font-medium ${
+                                                todo.active ? 'text-green-600' : 'text-gray-500'
+                                            }`}>
+                                            </div>
+                                        </label>
+                                    </div>
+
                                 </div>
                             ))}
                         </div>
@@ -512,6 +534,7 @@ const RecurringTodoManager = () => {
                                 </button>
                             </div>
 
+                            {/* ... (제목, 설명, 반복 유형 필드 동일) ... */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     제목 <span className="text-red-500">*</span>
@@ -562,6 +585,37 @@ const RecurringTodoManager = () => {
                             </div>
 
                             {renderRecurrenceConfig()}
+
+                            {selectedTodo && ( // 수정 모드에서만 활성/비활성 토글 표시
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">활성 상태</label>
+                                    <div className="flex gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, active: true })}
+                                            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                                                formData.active
+                                                    ? 'bg-green-500 text-white'
+                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                            }`}
+                                        >
+                                            활성
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, active: false })}
+                                            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                                                !formData.active
+                                                    ? 'bg-gray-500 text-white'
+                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                            }`}
+                                        >
+                                            비활성
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">시작 날짜</label>
