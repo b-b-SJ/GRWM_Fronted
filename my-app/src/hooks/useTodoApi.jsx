@@ -86,6 +86,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
                     },
                     body: JSON.stringify(todoData),
                 });
+                console.log(todoData);
 
                 return await response.json();
             } catch (err) {
@@ -195,10 +196,13 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
 
         try {
             const queryParams = new URLSearchParams();
-            queryParams.append('type', params.type || '');
-            if (params.status) queryParams.append('status', params.status);
 
-            const response = await fetch(`/api/users/${userId}/recurring-todos?${queryParams.toString()}`, {
+            if (params.status) queryParams.append('status', params.status);
+            const queryString = queryParams.toString();
+
+            const url = `/api/users/${userId}/recurring-todos?${queryString}`;
+
+            const response = await fetch(url, {
                 method: 'GET',
                 headers: {
                     ...getAuthHeaders(),
@@ -210,7 +214,10 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
                 throw new Error(`API Error: ${response.status} ${response.statusText}`);
             }
 
-            return await response.json();
+            // 백엔드는 RecurringTodoListDto 형태로 반환하므로, 리스트만 추출하여 반환
+            const data = await response.json();
+            return data.recurringTodos; // DTO 구조에 맞춰 리스트만 반환하도록 수정
+
         } catch (err) {
             handleError(err, '반복 To-Do 목록 조회 중 오류가 발생했습니다.');
         } finally {
@@ -253,6 +260,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
             recurrenceType,
             startDate: processedStartDate,
             recurrenceConfig: processedRecurrenceConfig,
+            recurring : true,
         };
 
         try {
@@ -289,6 +297,20 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         setLoading(true);
         setError(null);
 
+        const dataToSend = {
+            todoDto: {
+                title: recurringTodoData.title,
+                description: recurringTodoData.description,
+                date: recurringTodoData.date,
+                creatorId: recurringTodoData.creatorId,
+                todoId: recurringTodoData.todoId,
+            },
+            // RecurringTodoDto 필드
+            active: recurringTodoData.active, // RecurrenceManager에서 이 필드를 넘겨야 함
+            repeatRange: recurringTodoData.recurrenceType, // RecurrenceManager에서 recurrenceType으로 보냄
+            };
+
+
         try {
             const response = await fetch(`/api/users/${userId}/recurring-todos/${recurringId}`, {
                 method: 'PUT',
@@ -296,7 +318,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
                     ...getAuthHeaders(),
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(recurringTodoData),
+                body: JSON.stringify(dataToSend), // 매핑된 dataToSend 사용
             });
 
             if (!response.ok) {
