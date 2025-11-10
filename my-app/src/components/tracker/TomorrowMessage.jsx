@@ -21,6 +21,7 @@ const TomorrowMessage = () => {
     const [editingMessage, setEditingMessage] = useState(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
     const [loadingMessages, setLoadingMessages] = useState(true);
+    const [activeMessageId, setActiveMessageId] = useState(null);
     const [formData, setFormData] = useState({
         time: '',
         content: ''
@@ -41,17 +42,6 @@ const TomorrowMessage = () => {
         }
     }, [error, clearError]);
 
-    // 메시지 ID 목록 업데이트
-    const updateMessageIds = useCallback((newMessages) => {
-        if (!user?.userId) return;
-
-        const messageIds = newMessages.map(msg => msg.messageId);
-        localStorage.setItem(
-            `messageIds_${user.userId}`,
-            JSON.stringify(messageIds)
-        );
-    }, [user]);
-
     // 메시지 목록 불러오기
     const loadMessages = useCallback(async () => {
         if (!user?.userId) {
@@ -59,28 +49,29 @@ const TomorrowMessage = () => {
             return;
         }
 
+        if (!activeMessageId) {
+            setMessages([]);
+            setLoadingMessages(false);
+            return;
+        }
+
         setLoadingMessages(true);
         try {
-            const messageIds = JSON.parse(
-                localStorage.getItem(`messageIds_${user.userId}`) || '[]'
-            );
+            const activeMessageId = messages.length > 0 ? messages[0].messageId : 1; // 🚨 임시 ID
 
-            if (messageIds.length === 0) {
+            if (!activeMessageId) {
                 setMessages([]);
                 return;
             }
 
-            const singleMessageId = messageIds[0];
-
-            const result = await getTomorrowMessage(singleMessageId);
+            const result = await getTomorrowMessage(activeMessageId);
 
             if (result.success && result.data && result.data.messageId) {
-
+                // 단일 메시지만 저장
                 setMessages([result.data]);
             } else {
                 setMessages([]);
-                console.warn(`Message ID ${singleMessageId} does not exist on server or returned empty data.`);
-                updateMessageIds([]);
+                console.warn(`활성화된 메시지가 없거나 ID ${activeMessageId}의 메시지를 찾을 수 없습니다.`);
             }
 
         } catch (error) {
@@ -88,7 +79,7 @@ const TomorrowMessage = () => {
         } finally {
             setLoadingMessages(false);
         }
-    }, [user, getTomorrowMessage, updateMessageIds]);
+    }, [messages, user, getTomorrowMessage, activeMessageId]);
 
 
     // 폼 초기화
@@ -109,11 +100,16 @@ const TomorrowMessage = () => {
         const tomorrow = new Date(now);
         tomorrow.setDate(tomorrow.getDate() + 1);
 
-        // 내일 날짜 + 선택한 시간으로 배달 시간 설정
         const [hours, minutes] = formData.time.split(':');
-        const deliveryDateTime = new Date(tomorrow);
-        deliveryDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
+        // 1. 현재 UTC 날짜를 가져와 '내일'로 설정
+        const nowUtc = new Date(new Date().toUTCString());
+        const tomorrowUtc = new Date(nowUtc);
+        tomorrowUtc.setUTCDate(tomorrowUtc.getUTCDate() + 1);
+
+        // 2. 내일 UTC 날짜와 사용자가 입력한 시간을 결합
+        const deliveryDateTime = new Date(tomorrowUtc);
+        deliveryDateTime.setUTCHours(parseInt(hours), parseInt(minutes), 0, 0);
         if (editingMessage) {
             // 메시지 수정
             const result = await updateTomorrowMessage({
@@ -123,11 +119,7 @@ const TomorrowMessage = () => {
             });
 
             if (result.success) {
-                const updatedMessages = messages.map(msg =>
-                    msg.messageId === editingMessage.messageId ? result.data : msg
-                );
-                setMessages(updatedMessages);
-                updateMessageIds(updatedMessages);
+                setMessages([result.data]);
                 alert('메시지가 수정되었습니다! 📝');
                 resetForm();
             }
@@ -139,9 +131,8 @@ const TomorrowMessage = () => {
             });
 
             if (result.success) {
-                const newMessages = [...messages, result.data];
-                setMessages(newMessages);
-                updateMessageIds(newMessages);
+                setActiveMessageId(result.data.messageId);
+                setMessages([result.data]);
                 alert('메시지가 전송되었습니다! 📮');
                 resetForm();
             }
@@ -155,7 +146,7 @@ const TomorrowMessage = () => {
         const timeString = `${scheduledTime.getHours().toString().padStart(2, '0')}:${scheduledTime.getMinutes().toString().padStart(2, '0')}`;
 
         setFormData({
-            time: timeString,
+            time: timeString, // KST 기준으로 설정
             content: message.content
         });
         setShowForm(true);
@@ -166,9 +157,8 @@ const TomorrowMessage = () => {
         const result = await deleteTomorrowMessage(messageId);
 
         if (result.success) {
-            const newMessages = messages.filter(msg => msg.messageId !== messageId);
-            setMessages(newMessages);
-            updateMessageIds(newMessages);
+            setMessages([]);
+            setActiveMessageId(null);
             alert('메시지가 삭제되었습니다.');
         }
 
@@ -189,10 +179,11 @@ const TomorrowMessage = () => {
             month: 'long',
             day: 'numeric'
         });
+
         const timeString = deliveryDate.toLocaleTimeString('ko-KR', {
             hour: 'numeric',
             minute: 'numeric',
-            hour12: false
+            hour12: false // 24시간 형식 유지
         });
 
         return `${dateString} ${timeString}에 전달 예정`;
