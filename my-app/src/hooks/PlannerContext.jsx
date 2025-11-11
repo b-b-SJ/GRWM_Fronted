@@ -9,6 +9,7 @@ export const PlannerProvider = ({ children, plannerType = "personal" }) => {
   const [viewMode, setViewMode] = useState("monthly");
   const [openScModal, setOpenScModal] = useState(false);
   const [selectedSc, setSelectedSc] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   const STORAGE_KEY = `planner_last_${plannerType}_id`;
 
@@ -60,6 +61,9 @@ export const PlannerProvider = ({ children, plannerType = "personal" }) => {
         viewMode,
         setViewMode,
 
+        //카테고리
+        selectedCategory,
+        setSelectedCategory,
         // 현재 플래너
         nowPlanner,
         setNowPlanner,

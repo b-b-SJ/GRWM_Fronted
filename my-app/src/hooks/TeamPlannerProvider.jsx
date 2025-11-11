@@ -882,10 +882,19 @@ export const TeamPlannerProvider = ({ children }) => {
           throw new Error("카테고리 수정에 실패했습니다.");
         }
 
-        const updatedCategory = await response.json();
-        setCategories((prev) =>
-          prev.map((c) => (c.categoryId === categoryId ? updatedCategory : c))
-        );
+        if (!response.ok) {
+          throw new Error("카테고리 수정에 실패했습니다.");
+        }
+        let updatedCategory = null;
+        if (response.status !== 204) {
+          const contentType = response.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            updatedCategory = await response.json();
+          }
+        }
+        // 카테고리 목록 새로고침
+        await fetchCategories(plannerId);
+
         return updatedCategory;
       } catch (error) {
         handleError(error, "카테고리 수정 중 오류가 발생했습니다.");

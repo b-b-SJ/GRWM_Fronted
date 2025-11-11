@@ -318,7 +318,7 @@ const ScheduleFormModal = ({
                       key={category.categoryId}
                       value={category.categoryId}
                     >
-                      {category.name}
+                      {category.categoryName}
                     </option>
                   ))}
               </select>

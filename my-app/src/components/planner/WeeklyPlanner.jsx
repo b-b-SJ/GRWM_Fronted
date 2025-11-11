@@ -167,7 +167,8 @@ const WeeklyPlanner = ({ onDateClick }) => {
                 {daySchedules.map((sc, idx) => (
                   <button
                     key={sc.scheduleId || sc.id || idx}
-                    className="text-sm px-2 py-1 bg-rose-100 text-rose-700 rounded truncate text-left"
+                    className="text-sm px-2 py-1 bg-gray-200 rounded truncate text-left"
+                    style={{ backgroundColor: sc.category?.color }}
                     onClick={(e) => {
                       e.stopPropagation(); // 데일리로 이동 방지
                       setOpenScModal(true);

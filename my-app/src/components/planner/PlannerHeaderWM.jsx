@@ -1,11 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import WeeklyPlanner from "./WeeklyPlanner";
-import { ChevronLeft, ChevronRight, Users } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Users,
+  Plus,
+  Search,
+  Filter,
+} from "lucide-react";
 import DailyPlanner from "./DailyPlanner";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useCurrentPlanner } from "../../hooks/useCurrentPlanner";
 import { usePlannerContext } from "../../hooks/PlannerContext";
+import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
 import MonthlyGrid from "./MonthlyGrid";
+import CategoryManager from "./CategoryManager";
 
 const PlannerHeaderWM = () => {
   const {
@@ -17,18 +26,38 @@ const PlannerHeaderWM = () => {
     currentMonthName,
     currentWeekNum,
     year,
+    month,
     nowPlanner,
     plannerType,
+    selectedCategory,
+    setSelectedCategory,
   } = usePlannerContext();
 
-  const { planners } = useCurrentPlanner(plannerType);
+  const {
+    planners,
+    categories,
+    fetchCategories,
+    fetchSchedulesByCategory,
+    fetchMonthlySchedules,
+  } = useCurrentPlanner(plannerType);
+
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+
+  const navigate = useNavigate();
+
+  // 카테고리 목록 불러오기
+  useEffect(() => {
+    if (nowPlanner && plannerType === "shared") {
+      fetchCategories(nowPlanner);
+    }
+  }, [nowPlanner, plannerType]);
 
   const findNowPlannerInfo = () => {
     return planners.find((planner) => planner.plannerId === nowPlanner);
   };
 
   const nowPlannerInfo = findNowPlannerInfo();
-  const navigate = useNavigate();
 
   const handleGoToList = () => {
     navigate(`/planner/list/${plannerType}`);
@@ -37,7 +66,25 @@ const PlannerHeaderWM = () => {
   const goPrev = () => setCurrentDate((prev) => STEP[viewMode].prev(prev));
   const goNext = () => setCurrentDate((prev) => STEP[viewMode].next(prev));
 
-  const [selectCalendar, setSelectCalendar] = useState(false);
+  // 카테고리 필터 적용
+  const handleApplyFilter = async () => {
+    if (selectedCategory) {
+      // 선택된 카테고리로 필터링
+      await fetchSchedulesByCategory(nowPlanner, selectedCategory);
+    } else {
+      // 전체 일정 다시 불러오기
+      await fetchMonthlySchedules(nowPlanner, year, month);
+    }
+    setShowCategoryDropdown(false);
+  };
+
+  // 선택된 카테고리 정보 가져오기
+  const getSelectedCategoryInfo = () => {
+    if (!selectedCategory) return null;
+    return categories.find((cat) => cat.categoryId === selectedCategory);
+  };
+
+  const selectedCategoryInfo = getSelectedCategoryInfo();
 
   return (
     <div className="pt-4">
@@ -123,6 +170,94 @@ const PlannerHeaderWM = () => {
             </button>
           </div>
         </div>
+
+        {/* 오른쪽: 카테고리 필터 + 검색 */}
+
+        <div className="ml-auto flex items-center gap-2">
+          {/* 카테고리 드롭다운 */}
+          <div className="relative">
+            <button
+              onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+              className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50"
+            >
+              <Filter size={18} />
+              {selectedCategoryInfo ? (
+                <>
+                  <div
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: selectedCategoryInfo.color }}
+                  />
+                  <span>{selectedCategoryInfo.categoryName}</span>
+                </>
+              ) : (
+                <span>전체</span>
+              )}
+            </button>
+
+            {/* 드롭다운 메뉴 */}
+            {showCategoryDropdown && (
+              <div className="absolute right-0 top-full mt-2 w-64 bg-white border rounded-lg shadow-lg z-50">
+                <div className="p-2 max-h-80 overflow-y-auto">
+                  {/* 전체 옵션 */}
+                  <button
+                    onClick={() => setSelectedCategory(null)}
+                    className={`w-full text-left px-3 py-2 rounded hover:bg-gray-50 ${
+                      !selectedCategory ? "bg-blue-50" : ""
+                    }`}
+                  >
+                    전체
+                  </button>
+
+                  {/* 카테고리 목록 */}
+                  {categories.map((category) => (
+                    <button
+                      key={category.categoryId}
+                      onClick={() => setSelectedCategory(category.categoryId)}
+                      className={`w-full text-left px-3 py-2 rounded hover:bg-gray-50 flex items-center gap-2 ${
+                        selectedCategory === category.categoryId
+                          ? "bg-blue-50"
+                          : ""
+                      }`}
+                    >
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: category.color }}
+                      />
+                      {category.categoryName}
+                    </button>
+                  ))}
+                </div>
+
+                {/* 적용 버튼 */}
+                <div className="border-t p-2">
+                  <button
+                    onClick={handleApplyFilter}
+                    className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  >
+                    적용
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 카테고리 관리 버튼 */}
+          <button
+            onClick={() => setShowCategoryManager(true)}
+            className="p-2 border rounded-lg hover:bg-gray-50"
+            title="카테고리 관리"
+          >
+            <Plus size={20} />
+          </button>
+
+          {/* 검색 버튼 (나중에 구현) */}
+          <button
+            className="p-2 border rounded-lg hover:bg-gray-50"
+            title="일정 검색"
+          >
+            <Search size={20} />
+          </button>
+        </div>
       </div>
 
       {/* 뷰 모드별 플래너 표시 */}
@@ -158,6 +293,13 @@ const PlannerHeaderWM = () => {
 
         {viewMode === "daily" && <DailyPlanner />}
       </div>
+
+      {/* 카테고리 관리 모달 */}
+      <CategoryManager
+        isOpen={showCategoryManager}
+        onClose={() => setShowCategoryManager(false)}
+        plannerId={nowPlanner}
+      />
     </div>
   );
 };

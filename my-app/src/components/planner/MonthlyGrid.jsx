@@ -21,6 +21,7 @@ const MonthlyGrid = ({
 
   //  스케줄 데이터 관리
   const [schedules, setSchedules] = useState([]);
+  console.log("스케쥴 데이터 확인", schedules);
   const [loading, setLoading] = useState(false);
 
   // 날짜별로 그룹화하는 함수
@@ -178,7 +179,8 @@ const MonthlyGrid = ({
                       {daySchedules.slice(0, 2).map((sc, idx) => (
                         <div
                           key={sc.scheduleId || sc.id || idx}
-                          className="text-xs px-2 py-1 bg-rose-100 text-rose-700 rounded truncate"
+                          className="text-xs px-2 py-1 rounded truncate bg-gray-200"
+                          style={{ backgroundColor: sc.category?.color }}
                         >
                           {sc.title}
                         </div>
