@@ -19,7 +19,7 @@ const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
         description: '',
         duration: 30,
         extensionTime: 10,
-        isPrivate: false,
+        private: false,
         password: '',
         maxMembers: 8
     });
@@ -51,17 +51,17 @@ const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
             return;
         }
 
-        if (formData.isPrivate && !formData.password.trim()) {
+        if (formData.private && !formData.password.trim()) {
             setError('비공개 스터디룸은 비밀번호가 필요합니다.');
             return;
         }
 
-        if (formData.isPrivate && formData.password.length !== 5) {
+        if (formData.private && formData.password.length !== 5) {
             setError('비밀번호는 5자리여야 합니다.');
             return;
         }
 
-        if (formData.isPrivate && !/^\d{5}$/.test(formData.password)) {
+        if (formData.private && !/^\d{5}$/.test(formData.password)) {
             setError('비밀번호는 5자리 숫자여야 합니다.');
             return;
         }
@@ -79,7 +79,7 @@ const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
                 duration: formData.duration,
                 extensionTime: formData.extensionTime,
                 maxMembers: formData.maxMembers,
-                ...(formData.isPrivate && { password: formData.password })
+                ...(formData.private && { password: formData.password })
             };
 
             console.log('[StudyRoomCreator] 스터디룸 생성 요청:', studyRoomData);
@@ -109,7 +109,7 @@ const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
                 description: '',
                 duration: 30,
                 extensionTime: 10,
-                isPrivate: false,
+                private: false,
                 password: '',
                 maxMembers: 8
             });
@@ -296,8 +296,8 @@ const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
                                         type="radio"
                                         id="public"
                                         name="privacy"
-                                        checked={!formData.isPrivate}
-                                        onChange={() => handleChange('isPrivate', false)}
+                                        checked={!formData.private}
+                                        onChange={() => handleChange('private', false)}
                                         className="mr-3 mt-1"
                                         disabled={isLoading}
                                     />
@@ -314,8 +314,8 @@ const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
                                         type="radio"
                                         id="private"
                                         name="privacy"
-                                        checked={formData.isPrivate}
-                                        onChange={() => handleChange('isPrivate', true)}
+                                        checked={formData.private}
+                                        onChange={() => handleChange('private', true)}
                                         className="mr-3 mt-1"
                                         disabled={isLoading}
                                     />
@@ -331,7 +331,7 @@ const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
                         </div>
 
                         {/* 비밀번호 (비공개일 때만) */}
-                        {formData.isPrivate && (
+                        {formData.private && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     비밀번호 *

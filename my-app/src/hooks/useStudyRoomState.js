@@ -161,7 +161,7 @@ export const useStudyRoomState = () => {
                         setCurrentStudyRoom(prev => ({
                             ...prev,
                             extensionCount: event.extendedCount,
-                            endTime: event.newEndTime
+                            endTime: event.extendedEndTime
                         }));
                     }
                     break;
@@ -336,6 +336,7 @@ export const useStudyRoomState = () => {
                 name: data.name || '이름 없는 스터디룸',
                 description: data.description || '',
                 category: data.category || '일반',
+                private : data.private,
                 status: 'ACTIVE', // 참여 중이면 활성 상태
                 currentMembers: 1, // 본인만 표시하거나 백엔드에서 받은 값 사용
                 maxMembers: data.maxMember || data.maxMembers || 8,
@@ -396,6 +397,7 @@ export const useStudyRoomState = () => {
                 category: studyRoomData.category,
                 creator: studyRoomData.creator,
                 extensionTime: studyRoomData.extensionTime,
+                private : studyRoomData.private,
 
                 roomName: studyRoomData.name,
                 endTime: studyRoomData.endTime,
@@ -408,7 +410,7 @@ export const useStudyRoomState = () => {
                 maxMembers: 8,
 
                 todoList: studyRoomData.todoList || [],
-                currentUserStatus: data.currentUserStatus
+                currentUserStatus: studyRoomData.currentUserStatus
             };
             console.log('[useStudyRoomState] mappedRoom:', mappedRoom); // 디버깅용
 
