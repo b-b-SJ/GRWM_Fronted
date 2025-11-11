@@ -28,6 +28,7 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
         addTodoReaction,
         voteExtension,
         leaveStudyRoom,
+        extendStudyRoom,
         clearError
     } = useStudyRoomState();
 
@@ -345,8 +346,6 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
             alert('자신의 To-Do에는 리액션을 추가할 수 없습니다.');
             return;
         }
-
-        const reactionId = await addTodoReaction(studyRoomId, todoId);
     };
 
     // 연장 투표
