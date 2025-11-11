@@ -8,15 +8,10 @@ export const useTomorrowMessageApi = () => {
     const [error, setError] = useState('');
 
     // 미래 메시지 조회
-    const getTomorrowMessage = useCallback(async (messageId) => {
+    const getTomorrowMessage = useCallback(async () => {
         if (!user?.userId) {
             setError('로그인이 필요합니다.');
             return { success: false, error: '로그인이 필요합니다.' };
-        }
-
-        if (!messageId) {
-            setError('메시지 ID가 필요합니다.');
-            return { success: false, error: '메시지 ID가 필요합니다.' };
         }
 
         setIsLoading(true);
@@ -24,7 +19,7 @@ export const useTomorrowMessageApi = () => {
 
         try {
             const response = await fetch(
-                `/api/users/${user.userId}/future-message/${messageId}`,
+                `/api/users/${user.userId}/future-message`, // url 수정
                 {
                     method: 'GET',
                     headers: getAuthHeaders()

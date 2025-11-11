@@ -21,7 +21,6 @@ const TomorrowMessage = () => {
     const [editingMessage, setEditingMessage] = useState(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
     const [loadingMessages, setLoadingMessages] = useState(true);
-    const [activeMessageId, setActiveMessageId] = useState(null);
     const [formData, setFormData] = useState({
         time: '',
         content: ''
@@ -49,38 +48,22 @@ const TomorrowMessage = () => {
             return;
         }
 
-        if (!activeMessageId) {
-            setMessages([]);
-            setLoadingMessages(false);
-            return;
-        }
-
         setLoadingMessages(true);
         try {
-            const activeMessageId = messages.length > 0 ? messages[0].messageId : 1; // 🚨 임시 ID
-
-            if (!activeMessageId) {
-                setMessages([]);
-                return;
-            }
-
-            const result = await getTomorrowMessage(activeMessageId);
+            const result = await getTomorrowMessage();  // 파라미터 없이 호출
 
             if (result.success && result.data && result.data.messageId) {
-                // 단일 메시지만 저장
                 setMessages([result.data]);
             } else {
                 setMessages([]);
-                console.warn(`활성화된 메시지가 없거나 ID ${activeMessageId}의 메시지를 찾을 수 없습니다.`);
             }
-
         } catch (error) {
             console.error('메시지 로딩 오류:', error);
+            setMessages([]);
         } finally {
             setLoadingMessages(false);
         }
-    }, [messages, user, getTomorrowMessage, activeMessageId]);
-
+    }, [user, getTomorrowMessage]);
 
     // 폼 초기화
     const resetForm = useCallback(() => {
@@ -131,7 +114,6 @@ const TomorrowMessage = () => {
             });
 
             if (result.success) {
-                setActiveMessageId(result.data.messageId);
                 setMessages([result.data]);
                 alert('메시지가 전송되었습니다! 📮');
                 resetForm();
@@ -158,7 +140,6 @@ const TomorrowMessage = () => {
 
         if (result.success) {
             setMessages([]);
-            setActiveMessageId(null);
             alert('메시지가 삭제되었습니다.');
         }
 
@@ -170,6 +151,7 @@ const TomorrowMessage = () => {
         const now = new Date();
         const deliveryTime = new Date(message.scheduledTime);
         return now >= deliveryTime;
+        // return true; 임시로 바로 전송되게 - 스크린샷 용으로 사용함
     }, []);
 
     // 배달 예정 시간 포맷팅
