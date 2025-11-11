@@ -238,73 +238,99 @@ const TomorrowMessage = () => {
                                 <label className="block text-lg font-medium text-gray-700 mb-3 text-center">
                                     내일 언제 받아볼까요?
                                 </label>
-                                <input
-                                    type="time"
-                                    value={formData.time}
-                                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                                    className="w-full p-4 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center text-lg"
-                                    disabled={isLoading}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-lg font-medium text-gray-700 mb-3 text-center">
+                                <div className="flex items-center justify-center gap-3">
+                                    <select
+                                        value={formData.time.split(':')[0] || '09'}
+                                        onChange={(e) => {
+                                            const minutes = formData.time.split(':')[1] || '00';
+                                            setFormData({...formData, time: `${e.target.value}:${minutes}`});
+                                        }}
+                                        className="px-4 py-4 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center text-2xl font-medium bg-white cursor-pointer hover:bg-gray-50 transition-colors"
+                                        disabled={isLoading}
+                                    >
+                                        {Array.from({length: 24}, (_, i) => i).map(hour => (
+                                            <option key={hour} value={hour.toString().padStart(2, '0')}>
+                                                {hour.toString().padStart(2, '0')}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <span className="text-3xl font-bold text-gray-400">:</span>
+                                    <select
+                                        value={formData.time.split(':')[1] || '00'}
+                                        onChange={(e) => {
+                                            const hours = formData.time.split(':')[0] || '09';
+                                            setFormData({...formData, time: `${hours}:${e.target.value}`});
+                                        }}
+                                        className="px-4 py-4 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center text-2xl font-medium bg-white cursor-pointer hover:bg-gray-50 transition-colors"
+                                        disabled={isLoading}
+                                    >
+                                        {Array.from({length: 60}, (_, i) => i).map(minute => (
+                                            <option key={minute} value={minute.toString().padStart(2, '0')}>
+                                                {minute.toString().padStart(2, '0')}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <label className="block text-lg font-medium text-gray-700 mt-10 mb-3 text-center">
                                     내일의 나에게 전하고 싶은 말
                                 </label>
                                 <textarea
                                     rows={5}
                                     value={formData.content}
-                                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                                    onChange={(e) => setFormData({...formData, content: e.target.value})}
                                     placeholder="        ✨ 내일의 나에게 전하고 싶은 말을 무엇이든 적어보세요! ✨"
                                     className="w-full p-4 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-lg leading-relaxed"
-                                    disabled={isLoading}
-                                />
-                            </div>
-                            <div className="flex space-x-4">
+                                disabled={isLoading}
+                            />
+                        </div>
+                        <div className="flex space-x-4">
+                            <button
+                                onClick={handleSubmit}
+                                className="flex-1 bg-green-600 text-white py-4 rounded-xl hover:bg-green-700 transition-colors text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={isLoading}
+                            >
+                                {editingMessage ? '📮 메시지 수정하기' : '📮 메시지 보내기'}
+                            </button>
+                            {editingMessage && (
                                 <button
-                                    onClick={handleSubmit}
-                                    className="flex-1 bg-green-600 text-white py-4 rounded-xl hover:bg-green-700 transition-colors text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                    onClick={resetForm}
+                                    className="px-8 py-4 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors text-lg disabled:opacity-50"
                                     disabled={isLoading}
                                 >
-                                    {editingMessage ? '📮 메시지 수정하기' : '📮 메시지 보내기'}
+                                    취소
                                 </button>
-                                {editingMessage && (
-                                    <button
-                                        onClick={resetForm}
-                                        className="px-8 py-4 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors text-lg disabled:opacity-50"
-                                        disabled={isLoading}
-                                    >
-                                        취소
-                                    </button>
-                                )}
-                            </div>
+                            )}
                         </div>
                     </div>
                 </div>
-            )}
+                </div>
+                )}
 
-            {/* 메시지 조회 */}
-            {messages.length > 0 && !showForm && (
-                <div className="w-full max-w-2xl mx-auto space-y-6 px-4">
-                    {messages.map((message) => {
-                        const messageReady = isMessageReady(message);
+{/* 메시지 조회 */
+}
+{
+    messages.length > 0 && !showForm && (
+        <div className="w-full max-w-2xl mx-auto space-y-6 px-4">
+            {messages.map((message) => {
+                const messageReady = isMessageReady(message);
 
-                        return (
-                            <div key={message.messageId} className="bg-white rounded-xl shadow-lg border overflow-hidden">
-                                {messageReady ? (
-                                    // 배달된 메시지
-                                    <div className="p-8">
-                                        <div className="flex items-center justify-between mb-6">
-                                            <div className="flex items-center space-x-3">
-                                                <div className="text-2xl">📬</div>
-                                                <span className="text-lg font-medium text-green-600">
+                return (
+                    <div key={message.messageId} className="bg-white rounded-xl shadow-lg border overflow-hidden">
+                        {messageReady ? (
+                            // 배달된 메시지
+                            <div className="p-8">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="text-2xl">📬</div>
+                                        <span className="text-lg font-medium text-green-600">
                                                     메시지가 도착했습니다!
                                                 </span>
-                                            </div>
-                                            <button
-                                                onClick={() => setShowDeleteConfirm(message.messageId)}
-                                                className="p-2 hover:bg-red-50 rounded-lg transition-colors text-red-500"
-                                                disabled={isLoading}
-                                            >
+                                    </div>
+                                    <button
+                                        onClick={() => setShowDeleteConfirm(message.messageId)}
+                                        className="p-2 hover:bg-red-50 rounded-lg transition-colors text-red-500"
+                                        disabled={isLoading}
+                                    >
                                                 <Trash2 size={18} />
                                             </button>
                                         </div>
