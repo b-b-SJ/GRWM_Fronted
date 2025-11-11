@@ -144,15 +144,10 @@ export const useTomorrowMessageApi = () => {
     }, [getAuthHeaders, user]);
 
     // 미래 메시지 삭제
-    const deleteTomorrowMessage = useCallback(async (messageId) => {
+    const deleteTomorrowMessage = useCallback(async () => {
         if (!user?.userId) {
             setError('로그인이 필요합니다.');
             return { success: false, error: '로그인이 필요합니다.' };
-        }
-
-        if (!messageId) {
-            setError('메시지 ID가 필요합니다.');
-            return { success: false, error: '메시지 ID가 필요합니다.' };
         }
 
         setIsLoading(true);
@@ -160,7 +155,7 @@ export const useTomorrowMessageApi = () => {
 
         try {
             const response = await fetch(
-                `/api/users/${user.userId}/future-message/${messageId}`,
+                `/api/users/${user.userId}/future-message`,
                 {
                     method: 'DELETE',
                     headers: getAuthHeaders()

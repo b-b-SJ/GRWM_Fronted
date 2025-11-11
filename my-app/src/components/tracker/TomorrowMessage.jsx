@@ -239,15 +239,16 @@ const TomorrowMessage = () => {
                                     내일 언제 받아볼까요?
                                 </label>
                                 <div className="flex items-center justify-center gap-3">
+                                    {/* 시 */}
                                     <select
-                                        value={formData.time.split(':')[0] || '09'}
+                                        value={formData.time.split(':')[0] || ''}
                                         onChange={(e) => {
-                                            const minutes = formData.time.split(':')[1] || '00';
+                                            const minutes = formData.time.split(':')[1] || '';
                                             setFormData({...formData, time: `${e.target.value}:${minutes}`});
                                         }}
-                                        className="px-4 py-4 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center text-2xl font-medium bg-white cursor-pointer hover:bg-gray-50 transition-colors"
-                                        disabled={isLoading}
-                                    >
+                                        className="px-4 py-4 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center text-[20px] font-semibold bg-white cursor-pointer hover:bg-gray-50 transition-colors"
+                                        disabled={isLoading}>
+                                        <option value="" disabled>--</option>
                                         {Array.from({length: 24}, (_, i) => i).map(hour => (
                                             <option key={hour} value={hour.toString().padStart(2, '0')}>
                                                 {hour.toString().padStart(2, '0')}
@@ -255,15 +256,17 @@ const TomorrowMessage = () => {
                                         ))}
                                     </select>
                                     <span className="text-3xl font-bold text-gray-400">:</span>
+                                    {/* 분 */}
                                     <select
-                                        value={formData.time.split(':')[1] || '00'}
+                                        value={formData.time.split(':')[1] || ''}
                                         onChange={(e) => {
-                                            const hours = formData.time.split(':')[0] || '09';
+                                            const hours = formData.time.split(':')[0] || '';
                                             setFormData({...formData, time: `${hours}:${e.target.value}`});
                                         }}
-                                        className="px-4 py-4 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center text-2xl font-medium bg-white cursor-pointer hover:bg-gray-50 transition-colors"
+                                        className="px-4 py-4 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center text-[20px] font-semibold bg-white cursor-pointer hover:bg-gray-50 transition-colors"
                                         disabled={isLoading}
                                     >
+                                        <option value="" disabled>--</option>
                                         {Array.from({length: 60}, (_, i) => i).map(minute => (
                                             <option key={minute} value={minute.toString().padStart(2, '0')}>
                                                 {minute.toString().padStart(2, '0')}
