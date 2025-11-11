@@ -61,6 +61,7 @@ const LoginPage = ({
                                     placeholder="아이디를 입력하세요"
                                     className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                     disabled={isLoading}
+                                    autoComplete="current-id"
                                 />
                             </div>
                         </div>
@@ -83,6 +84,7 @@ const LoginPage = ({
                                     placeholder="비밀번호를 입력하세요"
                                     className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                     disabled={isLoading}
+                                    autoComplete="current-password"
                                 />
                                 <button
                                     type="button"
