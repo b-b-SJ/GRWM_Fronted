@@ -75,10 +75,17 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                     votedUsers: event.data.votedUserIds || []
                 }));
             } else if (event.type === 'ROOM_EXTENDED') {
-                alert(`투표가 통과되었습니다! ${event.data.extensionMinutes}분 연장됩니다.`);
+                alert(`투표가 통과되었습니다! ${currentStudyRoom.extensionTime}분 연장됩니다.`);
                 setShowVoteAlert(false);
-                setVoteStatus(prev => ({ ...prev, isVoting: false }));
-                // 스터디룸 정보 새로고침
+                setVoteStatus({
+                    isVoting: false,
+                    votedUsers: [],
+                    totalVotes: 0,
+                    requiredVotes: 0
+                });
+                setHasVoted(false);
+
+                // 스터디룸 정보 새로고침 (연장된 종료 시간 반영)
                 fetchStudyRoomDetail(studyRoomId);
             }
         });
@@ -357,6 +364,7 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
             setVoteStatus(prev => ({
                 ...prev,
                 totalVotes: result.agreeCount,
+                votedUsers: [...prev.votedUsers, user.communityId],
                 isVoting: !result.isCompleted,
                 requiredVotes: Math.ceil(result.totalParticipants / 2)
             }));
@@ -364,12 +372,16 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
             // 투표 완료 처리
             if (result.isCompleted) {
                 if (result.result) {
-                    // 연장 성공 - WebSocket으로 ROOM_EXTENDED 메시지가 올 것임
-                    console.log('투표 통과! 연장 대기 중...');
+                    console.log('투표 통과! 연장 요청 중...');
+                    const extensionResult = await extendStudyRoom(studyRoomId);
+                    if (extensionResult) {
+                        console.log('연장 성공:', extensionResult);
+                        // WebSocket으로 ROOM_EXTENDED 메시지가 올 것임
+                    }
                 } else {
-                    // 연장 실패
                     alert('투표가 부결되었습니다.');
                     setShowVoteAlert(false);
+                    setVoteStatus(prev => ({ ...prev, isVoting: false }));
                 }
             }
         }
