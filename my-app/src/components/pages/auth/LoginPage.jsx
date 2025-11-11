@@ -132,7 +132,7 @@ const LoginPage = ({
                     <div className="space-y-3 mb-6">
                         {/* Google Login */}
                         <a
-                            href="/oauth2/authorization/google" // 추가
+                            href="http://localhost:8080/oauth2/authorization/google" // 주소 수정
                             className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             aria-disabled={isLoading}
                         >
