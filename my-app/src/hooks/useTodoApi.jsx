@@ -298,18 +298,22 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         setError(null);
 
         const dataToSend = {
+            recurringId: recurringTodoData.recurringId,
             todoDto: {
                 title: recurringTodoData.title,
                 description: recurringTodoData.description,
-                date: recurringTodoData.date,
-                creatorId: recurringTodoData.creatorId,
-                todoId: recurringTodoData.todoId,
+                date: recurringTodoData.startDate || recurringTodoData.date,
             },
-            // RecurringTodoDto 필드
-            active: recurringTodoData.active, // RecurrenceManager에서 이 필드를 넘겨야 함
-            repeatRange: recurringTodoData.recurrenceType, // RecurrenceManager에서 recurrenceType으로 보냄
-            };
+            repeatRange: recurringTodoData.recurrenceType,
+            isActive: recurringTodoData.active ?? true, // undefined 방지
+            recurrenceConfig: recurringTodoData.recurrenceConfig || {
+                interval: 0,
+                weekly: [],
+                monthly: 0
+            }
+        };
 
+        console.log('Update Request Data:', dataToSend); // 디버깅용
 
         try {
             const response = await fetch(`/api/users/${userId}/recurring-todos/${recurringId}`, {
@@ -318,10 +322,12 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
                     ...getAuthHeaders(),
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(dataToSend), // 매핑된 dataToSend 사용
+                body: JSON.stringify(dataToSend),
             });
 
             if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                console.error('Update API Error:', response.status, errorData);
                 throw new Error(`API Error: ${response.status} ${response.statusText}`);
             }
 
