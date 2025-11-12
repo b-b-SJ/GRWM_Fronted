@@ -298,20 +298,17 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         setError(null);
 
         const dataToSend = {
-            recurringId: recurringTodoData.recurringId,
-            todoDto: {
-                title: recurringTodoData.title,
-                description: recurringTodoData.description,
-                date: recurringTodoData.startDate || recurringTodoData.date,
-            },
-            repeatRange: recurringTodoData.recurrenceType,
-            isActive: recurringTodoData.active ?? true, // undefined 방지
-            recurrenceConfig: recurringTodoData.recurrenceConfig || {
-                interval: 0,
-                weekly: [],
-                monthly: 0
-            }
+            title: recurringTodoData.title,
+            description: recurringTodoData.description,
+            startDate: recurringTodoData.startDate || recurringTodoData.date,
+            active: recurringTodoData.active ?? recurringTodoData.active ?? true,
+            repeatRange: recurringTodoData.repeatRange || recurringTodoData.recurrenceType,
+            // 개별 필드로 전송
+            daily: recurringTodoData.daily || 0,
+            weekly: recurringTodoData.weekly || [],
+            monthly: recurringTodoData.monthly || 0
         };
+
 
         console.log('Update Request Data:', dataToSend); // 디버깅용
 
