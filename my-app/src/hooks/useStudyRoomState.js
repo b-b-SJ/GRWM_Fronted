@@ -336,13 +336,14 @@ export const useStudyRoomState = () => {
                 name: data.name || '이름 없는 스터디룸',
                 description: data.description || '',
                 category: data.category || '일반',
-                private : data.private,
+                isPrivate : data.private ||  data.isPrivate,
                 status: 'ACTIVE', // 참여 중이면 활성 상태
                 currentMembers: 1, // 본인만 표시하거나 백엔드에서 받은 값 사용
                 maxMembers: data.maxMember || data.maxMembers || 8,
                 endTime: data.endTime,
                 startTime: data.startTime,
-                creator: data.creator
+                creator: data.creator,
+                password : data.password,
             };
 
             console.log('매핑된 참여 중인 스터디룸:', mappedRoom);
@@ -397,7 +398,8 @@ export const useStudyRoomState = () => {
                 category: studyRoomData.category,
                 creator: studyRoomData.creator,
                 extensionTime: studyRoomData.extensionTime,
-                private : studyRoomData.private,
+                isPrivate : studyRoomData.private || studyRoomData.isPrivate,
+                password : studyRoomData.password,
 
                 roomName: studyRoomData.name,
                 endTime: studyRoomData.endTime,
@@ -497,7 +499,7 @@ export const useStudyRoomState = () => {
      * POST /api/study-rooms/{studyRoomId}/join
      * 참여 성공 시 WebSocket 연결
      */
-    const joinStudyRoom = useCallback(async (studyRoomId) => {
+    const joinStudyRoom = useCallback(async (studyRoomId, isPrivate = false, password = null) => {
         if (!isAuthenticated) {
             setError('로그인이 필요합니다.');
             return false;
@@ -508,17 +510,26 @@ export const useStudyRoomState = () => {
             return false;
         }
 
+        // 비공개 스터디룸인데 비밀번호가 없으면 에러
+        if (isPrivate && !password) {
+            setError('비공개 스터디룸은 비밀번호가 필요합니다.');
+            return false;
+        }
+
         setLoading(true);
         setError(null);
 
         try {
             console.log('[useStudyRoomState] 스터디룸 참여 시작:', studyRoomId);
 
+            const requestBody = isPrivate ? { password } : {};
+
             const response = await fetch(
                 `/api/study-rooms/${studyRoomId}/join`,
                 {
                     method: 'POST',
-                    headers: getAuthHeaders()
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(requestBody)
                 }
             );
 

@@ -80,7 +80,7 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
         }
 
         // 비공개 방이면 비밀번호 입력 모달 열기
-        if (room.isPrivate) {
+        if (room.private) {
             setPasswordModal({
                 isOpen: true,
                 roomId: roomId,
@@ -256,10 +256,10 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
                                                 <h3 className="font-semibold text-gray-800 truncate">
                                                     {room.studyRoomName || room.name || '이름 없는 스터디룸'}
                                                 </h3>
-                                                {room.isPrivate ? (
-                                                    <Lock size={14} className="text-gray-400 flex-shrink-0" />
+                                                {room.private ? (
+                                                    <Lock size={14} className="text-red-400 flex-shrink-0" />
                                                 ) : (
-                                                    <Unlock size={14} className="text-gray-400 flex-shrink-0" />
+                                                    <Unlock size={14} className="text-green-400 flex-shrink-0" />
                                                 )}
                                             </div>
                                             {room.category && (
@@ -317,7 +317,7 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
                                             ? '참여중'
                                             : isFull
                                                 ? '인원 마감'
-                                                : room.isPrivate
+                                                : room.private
                                                     ? '비밀번호 입력'
                                                     : '참여하기'
                                         }

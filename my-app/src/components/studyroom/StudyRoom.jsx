@@ -346,6 +346,23 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
             alert('자신의 To-Do에는 리액션을 추가할 수 없습니다.');
             return;
         }
+        // 이미 리액션을 눌렀는지 확인
+        const todo = todos.find(t => t.todoId === todoId);
+        if (!todo) return;
+
+        const myReaction = todo.reactions?.find(r => r.creatorId === user?.communityId);
+
+        if (myReaction) {
+            // 이미 눌렀으면 리액션 삭제
+            console.log('[StudyRoom] 리액션 삭제:', myReaction.reactionId);
+            // await deleteTodoReaction(studyRoomId, todoId, myReaction.reactionId);
+        } else {
+            // 리액션 추가
+            console.log('[StudyRoom] 리액션 추가:', todoId);
+            await addTodoReaction(studyRoomId, todoId);
+        }
+
+        await fetchTodos(studyRoomId);
     };
 
     // 연장 투표
@@ -605,7 +622,7 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                         <button
                             onClick={() => {
                                 clearError();
-                                joinStudyRoom(studyRoomId);
+                                joinStudyRoom(studyRoomId, false, null);
                             }}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                         >
