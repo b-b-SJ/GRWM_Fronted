@@ -17,14 +17,14 @@ const PlannerMain = ({ sidebarOpen }) => {
   const { planners, fetchPlanners, setCurrentPlanner } =
     useCurrentPlanner(plannerType);
 
-  // 🔥 URL → Context 동기화 (localStorage 자동 저장)
+  //  URL → Context 동기화 (localStorage 자동 저장)
   useEffect(() => {
     if (!plannerId) return;
 
     const plannerIdNum = Number(plannerId);
     console.log(`🔄 [${plannerType}] URL → Context 동기화:`, plannerIdNum);
 
-    setNowPlanner(plannerIdNum); // 🔥 이게 빠졌었음!
+    setNowPlanner(plannerIdNum); //  이게 빠졌었음!
   }, [plannerId, plannerType, setNowPlanner]);
 
   // 플래너 목록 & 현재 플래너 로드
@@ -54,7 +54,7 @@ const PlannerMain = ({ sidebarOpen }) => {
       <div className="flex-1 flex flex-col">
         <PlannerHeaderWM />
       </div>
-      {isShared && <TeamMemberSidebar />}
+      {isShared && <TeamMemberSidebar plannerId={Number(plannerId)} />}
       {openScModal && <ScheduleModal />}
     </div>
   );

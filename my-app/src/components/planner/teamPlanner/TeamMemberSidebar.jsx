@@ -4,19 +4,22 @@ import MemberCard from "./MemberCard";
 import AddMemberModal from "./AddMemberModal";
 import { Users, UserPlus, Funnel } from "lucide-react";
 import { useAuth } from "../../../hooks/AuthContext";
+import { usePlannerContext } from "../../../hooks/PlannerContext";
 
 const TeamMemberSidebar = ({ plannerId }) => {
   const { members, fetchMembers, loading, error, currentPlanner } =
     useTeamPlanner();
   const { user } = useAuth();
+  const { selectedMember, setSelectedMember } = usePlannerContext();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [memberScFilterMode, setMemberScFilterMode] = useState(false);
+
   // 플래너가 선택되면 멤버 목록 불러오기
   useEffect(() => {
     if (plannerId) {
       fetchMembers(plannerId);
     }
-  }, [plannerId]);
+  }, []);
 
   // 현재 사용자가 이 플래너에서 manager인지 확인
   const currentUserMember = members.find((m) => m.userId === user?.userId);
@@ -28,6 +31,7 @@ const TeamMemberSidebar = ({ plannerId }) => {
       <div className="p-4 border-b sticky top-0 bg-white z-10">
         <div className="flex items-center gap-2 pb-3 border-b">
           <Funnel size={20} className="text-gray-600" />
+          {/* 일정보기 - 프론트에서 카테고리 했던 거처럼 필터링하면됨 */}
           <h2 className="font-bold text-lg">팀원별 일정 보기</h2>
           <button onClick={() => setMemberScFilterMode(!memberScFilterMode)}>
             <input
@@ -46,14 +50,14 @@ const TeamMemberSidebar = ({ plannerId }) => {
           <span className="text-sm text-gray-500">{members.length}명</span>
         </div>
 
-        {/* ✅ 권한 상태 표시 (디버깅용 - 나중에 삭제 가능) */}
+        {/* 권한 상태 표시 (디버깅용) */}
         {currentUserMember && (
           <div className="mb-2 text-xs text-gray-500">
             내 역할: {currentUserMember.role === "manager" ? "관리자" : "멤버"}
           </div>
         )}
 
-        {/* ✅ 멤버 추가 버튼 (manager만) */}
+        {/* 멤버 추가 버튼 (manager 역할만) */}
         {isManager && (
           <button
             onClick={() => setIsAddModalOpen(true)}
@@ -64,7 +68,7 @@ const TeamMemberSidebar = ({ plannerId }) => {
           </button>
         )}
 
-        {/* ✅ 권한 없을 때 안내 메시지 */}
+        {/* 권한 없을 때 안내 메시지 */}
         {!isManager && members.length > 0 && (
           <div className="text-xs text-gray-500 text-center py-2">
             팀원 초대는 관리자만 가능합니다
@@ -82,8 +86,35 @@ const TeamMemberSidebar = ({ plannerId }) => {
       {error && <div className="p-4 text-red-500 text-sm">에러: {error}</div>}
 
       {/* 멤버 목록 */}
+      {/* 여기에서 select하는 모드일 경우에 멤버 카드 옆에 선택하는 거가 생김 */}
+      <label className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+        <div>
+          {members.map((member) => (
+            <>
+              <input
+                type="radio"
+                name="selectedMember"
+                value="member"
+                checked={selectedMember === member.userId}
+                onChange={(e) => setSelectedMember(e.target.value)}
+                className="w-4 h-4"
+              />
+              <MemberCard
+                key={member.userId}
+                member={member}
+                plannerId={plannerId}
+                isManager={isManager}
+                user={user}
+              />
+            </>
+          ))}
+          <div className="text-xs text-gray-500">일정 조회 및 참여 가능</div>
+        </div>
+      </label>
+
       <div className="p-4 space-y-3">
-        {members.map((member) => (
+        {/*
+                {members.map((member) => (
           <MemberCard
             key={member.userId}
             member={member}
@@ -92,6 +123,8 @@ const TeamMemberSidebar = ({ plannerId }) => {
             user={user}
           />
         ))}
+
+        */}
 
         {members.length === 0 && !loading && (
           <div className="text-center py-8 text-gray-500">팀원이 없습니다</div>

@@ -4,7 +4,7 @@ import { usePlannerContext } from "../../hooks/PlannerContext";
 
 const WeeklyPlanner = ({
   onDateClick,
-  schedules = [], // props로 받기
+  schedules, // props로 받기
 }) => {
   const {
     weeks,

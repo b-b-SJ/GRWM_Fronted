@@ -12,7 +12,6 @@ import DailyPlanner from "./DailyPlanner";
 import { useNavigate } from "react-router-dom";
 import { useCurrentPlanner } from "../../hooks/useCurrentPlanner";
 import { usePlannerContext } from "../../hooks/PlannerContext";
-import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
 import MonthlyGrid from "./MonthlyGrid";
 import CategoryManager from "./CategoryManager";
 
@@ -49,13 +48,47 @@ const PlannerHeaderWM = () => {
 
   const navigate = useNavigate();
 
+  //  주 번호 계산 함수
+  const getWeekNumber = (date) => {
+    const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+    const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+    return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+  };
+
   // 카테고리 목록 불러오기
   useEffect(() => {
-    if (nowPlanner && plannerType === "shared") {
-      fetchCategories(nowPlanner);
-    }
-  }, [nowPlanner, plannerType]);
+    const loadData = async () => {
+      if (!nowPlanner) return;
 
+      console.log("now뭐야", nowPlanner, viewMode);
+
+      try {
+        if (viewMode === "monthly") {
+          console.log("일로 들어는 가나요");
+          await fetchMonthlySchedules(nowPlanner, year, month + 1);
+          console.log(
+            "‼️먼슬리",
+            schedules,
+            await fetchMonthlySchedules(nowPlanner, year, month + 1)
+          );
+        } else {
+          await fetchWeeklySchedules(
+            nowPlanner,
+            year,
+            getWeekNumber(currentDate)
+          );
+        }
+
+        if (plannerType === "shared") {
+          await fetchCategories(nowPlanner);
+        }
+      } catch (error) {
+        console.error("데이터 로딩 실패:", error);
+      }
+    };
+
+    loadData();
+  }, [nowPlanner, plannerType, viewMode, year, month, currentDate]);
   const findNowPlannerInfo = () => {
     return planners.find((planner) => planner.plannerId === nowPlanner);
   };
@@ -250,16 +283,6 @@ const PlannerHeaderWM = () => {
                       {category.categoryName}
                     </button>
                   ))}
-                </div>
-
-                {/* 적용 버튼 */}
-                <div className="border-t p-2">
-                  <button
-                    onClick={handleApplyFilter}
-                    className="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    적용
-                  </button>
                 </div>
               </div>
             )}

@@ -7,7 +7,7 @@ const MonthlyGrid = ({
   currentMonthStyle,
   ncMonthStyle,
   showSchedules = true,
-  schedules = [], // props로 받기
+  schedules, // props로 받기
 }) => {
   const { weeks, month, weekNames } = usePlannerContext();
 
