@@ -36,13 +36,16 @@ const PlannerHeaderWM = () => {
   const {
     planners,
     categories,
+    schedules,
     fetchCategories,
     fetchSchedulesByCategory,
     fetchMonthlySchedules,
+    fetchWeeklySchedules,
   } = useCurrentPlanner(plannerType);
 
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState("");
 
   const navigate = useNavigate();
 
@@ -56,6 +59,12 @@ const PlannerHeaderWM = () => {
   const findNowPlannerInfo = () => {
     return planners.find((planner) => planner.plannerId === nowPlanner);
   };
+
+  const filteredSchedules = selectedCategory
+    ? schedules?.filter(
+        (schedule) => schedule.category?.categoryId === selectedCategory
+      )
+    : schedules;
 
   const nowPlannerInfo = findNowPlannerInfo();
 
@@ -85,6 +94,21 @@ const PlannerHeaderWM = () => {
   };
 
   const selectedCategoryInfo = getSelectedCategoryInfo();
+
+  const handleSearch = async () => {
+    if (!searchKeyword.trim()) {
+      alert("검색어를 입력하세요");
+      return;
+    }
+    console.log("검색:", searchKeyword);
+    // TODO: 검색 API 호출
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
 
   return (
     <div className="pt-4">
@@ -240,7 +264,6 @@ const PlannerHeaderWM = () => {
               </div>
             )}
           </div>
-
           {/* 카테고리 관리 버튼 */}
           <button
             onClick={() => setShowCategoryManager(true)}
@@ -249,22 +272,34 @@ const PlannerHeaderWM = () => {
           >
             <Plus size={20} />
           </button>
-
-          {/* 검색 버튼 (나중에 구현) */}
+        </div>
+      </div>
+      {/* 검색창 - 나중에 수정 필요 */}
+      <div className="mt-3 px-4 flex justify-end">
+        <div className="flex items-center gap-2 w-80">
+          <input
+            type="text"
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="일정 검색"
+            className="flex-1 px-3 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
           <button
-            className="p-2 border rounded-lg hover:bg-gray-50"
-            title="일정 검색"
+            onClick={handleSearch}
+            className="px-4 py-1.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 flex items-center gap-1"
           >
-            <Search size={20} />
+            <Search size={16} />
+            검색
           </button>
         </div>
       </div>
-
       {/* 뷰 모드별 플래너 표시 */}
       <div>
         {viewMode === "monthly" && (
           <div className="mt-4 mx-8">
             <MonthlyGrid
+              schedules={filteredSchedules}
               totalDateStyle={`
                 relative p-4 border border-gray-100 min-h-[120px] 
                 hover:bg-gray-100 bg-white shadow-sm
@@ -284,6 +319,7 @@ const PlannerHeaderWM = () => {
 
         {viewMode === "weekly" && (
           <WeeklyPlanner
+            schedules={filteredSchedules}
             onDateClick={(day) => {
               setViewMode("daily");
               setCurrentDate(day);

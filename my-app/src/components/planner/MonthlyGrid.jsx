@@ -1,40 +1,26 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useMemo } from "react";
 import { usePlannerContext } from "../../hooks/PlannerContext";
-import { useCurrentPlanner } from "../../hooks/useCurrentPlanner";
-import { useParams } from "react-router-dom";
 
 const MonthlyGrid = ({
   totalDateStyle,
   onDateClick,
   currentMonthStyle,
   ncMonthStyle,
-  showSchedules = true, // 일정 표시 여부 (기본값: true)
+  showSchedules = true,
+  schedules = [], // props로 받기
 }) => {
-  // Context에서 UI 관련 상태만 가져오기
-  const { weeks, month, year, weekNames, currentDate, plannerType } =
-    usePlannerContext();
+  const { weeks, month, weekNames } = usePlannerContext();
 
-  const { fetchMonthlySchedules } = useCurrentPlanner(plannerType);
-
-  // URL에서 plannerId 가져오기
-  const { plannerId } = useParams();
-
-  //  스케줄 데이터 관리
-  const [schedules, setSchedules] = useState([]);
-  console.log("스케쥴 데이터 확인", schedules);
-  const [loading, setLoading] = useState(false);
-
-  // 날짜별로 그룹화하는 함수
-  const groupSchedulesByDate = useCallback((scheduleList) => {
-    if (!Array.isArray(scheduleList) || scheduleList.length === 0) {
-      console.log("📅 그룹화할 일정이 없음");
+  // 날짜별로 그룹화 (useMemo로 최적화)
+  const groupedSchedules = useMemo(() => {
+    if (!showSchedules || !Array.isArray(schedules) || schedules.length === 0) {
       return [];
     }
 
-    console.log("📅 그룹화 시작, 총 일정 수:", scheduleList.length);
+    console.log("📅 그룹화 시작, 총 일정 수:", schedules.length);
     const grouped = {};
 
-    scheduleList.forEach((schedule) => {
+    schedules.forEach((schedule) => {
       const startDate = schedule.startDateTime.slice(0, 10);
       const endDate = schedule.finishDateTime.slice(0, 10);
 
@@ -65,76 +51,7 @@ const MonthlyGrid = ({
 
     console.log("📅 그룹화 완료:", result);
     return result;
-  }, []);
-
-  // 월별 일정 불러오기 (showSchedules가 true일 때만 실행)
-  useEffect(() => {
-    // 일정을 표시하지 않으면 fetch 안 함
-    if (!showSchedules) {
-      console.log("📅 사이드바 모드: 일정 fetch 안 함");
-      return;
-    }
-
-    const loadSchedules = async () => {
-      if (!plannerId || !currentDate || !fetchMonthlySchedules) {
-        console.log("📅 필수 값 없음:", {
-          plannerId,
-          currentDate,
-          fetchMonthlySchedules,
-        });
-        return;
-      }
-
-      setLoading(true);
-      try {
-        const targetYear = currentDate.getFullYear();
-        const targetMonth = currentDate.getMonth() + 1;
-
-        console.log(
-          ` 월별 일정 조회 시작: ${targetYear}년 ${targetMonth}월, plannerId: ${plannerId}`
-        );
-
-        const data = await fetchMonthlySchedules(
-          plannerId,
-          targetYear,
-          targetMonth
-        );
-
-        console.log("API 응답 데이터:", data);
-        console.log("데이터 타입:", typeof data, Array.isArray(data));
-
-        if (data && data.length > 0) {
-          console.log(" 첫 번째 일정 샘플:", data[0]);
-        }
-
-        const grouped = groupSchedulesByDate(data || []);
-        console.log("그룹화 후 저장할 데이터:", grouped);
-        setSchedules(grouped);
-      } catch (error) {
-        console.error("월별 일정 조회 실패:", error);
-        setSchedules([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadSchedules();
-  }, [
-    plannerId,
-    currentDate,
-    fetchMonthlySchedules,
-    groupSchedulesByDate,
-    showSchedules,
-  ]);
-
-  // 로딩 중일 때 (일정을 표시할 때만)
-  if (loading && showSchedules) {
-    return (
-      <div className="text-center py-10">
-        <div className="text-gray-500">일정을 불러오는 중...</div>
-      </div>
-    );
-  }
+  }, [schedules, showSchedules]);
 
   return (
     <div>
@@ -153,14 +70,9 @@ const MonthlyGrid = ({
                 day.getMonth() + 1
               ).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
 
-              // 일정을 표시할 때만 해당 날짜의 일정 찾기
-              let daySchedules = [];
-              if (showSchedules) {
-                const dayObj = Array.isArray(schedules)
-                  ? schedules.find((d) => d.date === dateKey)
-                  : undefined;
-                daySchedules = dayObj ? dayObj.schedules : [];
-              }
+              // 해당 날짜의 일정 찾기
+              const dayObj = groupedSchedules.find((d) => d.date === dateKey);
+              const daySchedules = dayObj ? dayObj.schedules : [];
 
               return (
                 <div
@@ -179,8 +91,10 @@ const MonthlyGrid = ({
                       {daySchedules.slice(0, 2).map((sc, idx) => (
                         <div
                           key={sc.scheduleId || sc.id || idx}
-                          className="text-xs px-2 py-1 rounded truncate bg-gray-200"
-                          style={{ backgroundColor: sc.category?.color }}
+                          className="text-xs px-2 py-1 rounded truncate"
+                          style={{
+                            backgroundColor: sc.category?.color || "#E5E7EB",
+                          }}
                         >
                           {sc.title}
                         </div>
@@ -205,7 +119,6 @@ const MonthlyGrid = ({
                                 </div>
                               ))}
                             </div>
-                            {/* 화살표 */}
                             <div className="absolute bottom-full left-4 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-white"></div>
                           </div>
                         </div>
