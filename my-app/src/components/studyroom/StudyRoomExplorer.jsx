@@ -243,27 +243,38 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
                             const maxMembers = room.maxMembers || 8;
                             const isFull = currentMembers >= maxMembers;
                             const remainingMinutes = getRemainingTime(room.endTime);
+                            const isEnded = remainingMinutes <= 0;
 
                             return (
                                 <div
                                     key={roomId || `room-${index}`}
-                                    className="bg-white rounded-lg border p-5 hover:shadow-md transition-shadow"
+                                    className={`rounded-lg border p-5 transition-shadow ${
+                                        isEnded
+                                            ? 'bg-gray-50 border-gray-200'
+                                            : 'bg-white hover:shadow-md'
+                                    }`}
                                 >
                                     {/* 헤더 */}
                                     <div className="flex items-start justify-between mb-3">
                                         <div className="flex-1">
                                             <div className="flex items-center space-x-2 mb-1">
-                                                <h3 className="font-semibold text-gray-800 truncate">
+                                                <h3 className={`font-semibold truncate ${
+                                                    isEnded ? 'text-gray-400' : 'text-gray-800'
+                                                }`}>
                                                     {room.studyRoomName || room.name || '이름 없는 스터디룸'}
                                                 </h3>
                                                 {room.private ? (
-                                                    <Lock size={14} className="text-red-400 flex-shrink-0" />
+                                                    <Lock size={14} className={`flex-shrink-0 ${isEnded ? 'text-gray-300' : 'text-red-400'}`} />
                                                 ) : (
-                                                    <Unlock size={14} className="text-green-400 flex-shrink-0" />
+                                                    <Unlock size={14} className={`flex-shrink-0 ${isEnded ? 'text-gray-300' : 'text-green-400'}`} />
                                                 )}
                                             </div>
                                             {room.category && (
-                                                <span className="inline-block px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
+                                                <span className={`inline-block px-2 py-1 text-xs rounded ${
+                                                    isEnded
+                                                        ? 'bg-gray-100 text-gray-400'
+                                                        : 'bg-green-100 text-green-700'
+                                                }`}>
                                                     {room.category}
                                                 </span>
                                             )}
@@ -272,7 +283,9 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
 
                                     {/* 설명 */}
                                     {room.description && (
-                                        <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                                        <p className={`text-sm mb-4 line-clamp-2 ${
+                                            isEnded ? 'text-gray-400' : 'text-gray-600'
+                                        }`}>
                                             {room.description}
                                         </p>
                                     )}
@@ -280,22 +293,32 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
                                     {/* 정보 */}
                                     <div className="space-y-2 mb-4">
                                         <div className="flex items-center justify-between text-sm">
-                                            <div className="flex items-center space-x-2 text-gray-600">
+                                            <div className={`flex items-center space-x-2 ${
+                                                isEnded ? 'text-gray-400' : 'text-gray-600'
+                                            }`}>
                                                 <Clock size={14} />
                                                 <span>남은 시간</span>
                                             </div>
                                             <span className={`font-medium ${
-                                                remainingMinutes <= 10 ? 'text-red-600' : 'text-gray-800'
+                                                isEnded
+                                                    ? 'text-gray-400'
+                                                    : remainingMinutes <= 10
+                                                        ? 'text-red-600'
+                                                        : 'text-gray-800'
                                             }`}>
                                                 {formatTime(remainingMinutes)}
                                             </span>
                                         </div>
                                         <div className="flex items-center justify-between text-sm">
-                                            <div className="flex items-center space-x-2 text-gray-600">
+                                            <div className={`flex items-center space-x-2 ${
+                                                isEnded ? 'text-gray-400' : 'text-gray-600'
+                                            }`}>
                                                 <Users size={14} />
                                                 <span>참여 인원</span>
                                             </div>
-                                            <span className="font-medium text-gray-800">
+                                            <span className={`font-medium ${
+                                                isEnded ? 'text-gray-400' : 'text-gray-800'
+                                            }`}>
                                                 {currentMembers}/{maxMembers}
                                             </span>
                                         </div>
@@ -304,22 +327,26 @@ const StudyRoomExplorer = ({ onJoinRoom, joinedRoomIds = [] }) => {
                                     {/* 참여 버튼 */}
                                     <button
                                         onClick={() => handleJoinRoom(room)}
-                                        disabled={isJoined || isFull}
+                                        disabled={isJoined || isFull || isEnded}
                                         className={`w-full py-2 rounded-lg font-medium transition-colors ${
-                                            isJoined
-                                                ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                                                : isFull
+                                            isEnded
+                                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                                : isJoined
                                                     ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                                                    : 'bg-green-600 text-white hover:bg-green-700'
+                                                    : isFull
+                                                        ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                                                        : 'bg-green-600 text-white hover:bg-green-700'
                                         }`}
                                     >
-                                        {isJoined
-                                            ? '참여중'
-                                            : isFull
-                                                ? '인원 마감'
-                                                : room.private
-                                                    ? '비밀번호 입력'
-                                                    : '참여하기'
+                                        {isEnded
+                                            ? '종료됨'
+                                            : isJoined
+                                                ? '참여중'
+                                                : isFull
+                                                    ? '인원 마감'
+                                                    : room.private
+                                                        ? '비밀번호 입력'
+                                                        : '참여하기'
                                         }
                                     </button>
                                 </div>
