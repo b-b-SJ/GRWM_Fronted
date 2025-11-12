@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import {useNavigate} from "react-router-dom";
 import { useNotificationAPI } from '../../hooks/notificationAPI';
+import { useAuth } from '../../hooks/AuthContext';
 
 /**
  * FixedSidebar 컴포넌트
@@ -28,6 +29,8 @@ const FixedSidebar = ({ currentUser }) => {
     const [showNotificationMenu, setShowNotificationMenu] = useState(false);
     const [showSettingsModal, setShowSettingsModal] = useState(false);
     const [activeNotificationTab, setActiveNotificationTab] = useState('전체');
+
+    const { clearAllStorage } = useAuth();
 
     // 알림 관련 상태
     const [notifications, setNotifications] = useState([]);
@@ -221,6 +224,7 @@ const FixedSidebar = ({ currentUser }) => {
     const navigate = useNavigate();
     const handleLogout = () => {
         // 로그아웃 로직 구현해야
+        clearAllStorage();
         console.log('로그아웃');
         navigate('/auth');
     };

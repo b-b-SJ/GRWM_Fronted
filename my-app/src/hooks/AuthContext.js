@@ -219,6 +219,7 @@ export const AuthProvider = ({ children }) => {
             clearError,
             getAuthHeaders,
             validateToken,
+            clearAllStorage,
             setJoinedStudyRoom, // 스터디룸 참여 정보 저장
             clearJoinedStudyRoom // 스터디룸 참여 정보 제거
         }}>
