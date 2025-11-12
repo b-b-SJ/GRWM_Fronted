@@ -3,8 +3,21 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { usePlannerContext } from "../../hooks/PlannerContext";
 import { useCurrentPlanner } from "../../hooks/useCurrentPlanner";
+import { useTeamPlanner } from "../../hooks/TeamPlannerProvider";
+import { useAuth } from "../../hooks/AuthContext";
 import ScheduleFormModal from "./ScheduleFormModal";
-import { MapPin, Pencil, X, NotepadText, Clock, Clock2 } from "lucide-react";
+import {
+  MapPin,
+  Pencil,
+  X,
+  NotepadText,
+  Clock,
+  Clock2,
+  Users,
+  UserPlus,
+  UserMinus,
+  User,
+} from "lucide-react";
 
 const ScheduleModal = () => {
   const {
@@ -22,11 +35,18 @@ const ScheduleModal = () => {
   // 🔥 현재 플래너 타입에 맞는 훅 사용
   const { fetchScheduleDetail } = useCurrentPlanner(plannerType);
 
+  // 🔥 팀 플래너 전용 기능
+  const { addScheduleMember, removeScheduleMember } = useTeamPlanner();
+
+  // 🔥 현재 사용자 정보
+  const { user } = useAuth();
+
   // ==================== State ====================
   const [openEditModal, setOpenEditModal] = useState(false);
   const [scheduleDetail, setScheduleDetail] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [participantLoading, setParticipantLoading] = useState(false);
 
   // ==================== 일정 상세 불러오기 ====================
   useEffect(() => {
@@ -37,23 +57,23 @@ const ScheduleModal = () => {
       setError(null);
 
       try {
-        console.log(" 일정 상세 로딩:", {
+        console.log("✅ 일정 상세 로딩:", {
           plannerId: nowPlanner,
           scheduleId: selectedSc,
           plannerType,
         });
 
-        //  일정 상세 조회
+        // ✅ 일정 상세 조회
         const detail = await fetchScheduleDetail(nowPlanner, selectedSc);
 
         if (detail) {
-          console.log(" 일정 상세 로드 성공:", detail);
+          console.log("✅ 일정 상세 로드 성공:", detail);
           setScheduleDetail(detail);
         } else {
           throw new Error("일정을 찾을 수 없습니다.");
         }
       } catch (err) {
-        console.error("일정 상세 로드 실패:", err);
+        console.error("❌ 일정 상세 로드 실패:", err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -62,6 +82,69 @@ const ScheduleModal = () => {
 
     loadScheduleDetail();
   }, [openScModal, selectedSc, nowPlanner, plannerType, fetchScheduleDetail]);
+
+  // ==================== 참여자 관리 ====================
+
+  // 🔥 현재 사용자가 참여 중인지 확인
+  const isParticipating = scheduleDetail?.participants?.some(
+    (p) => p.userId === user?.userId
+  );
+
+  // 🔥 참여하기
+  const handleJoinSchedule = async () => {
+    if (!nowPlanner || !selectedSc) return;
+
+    setParticipantLoading(true);
+    try {
+      console.log("🎯 일정 참여 시도:", {
+        plannerId: nowPlanner,
+        scheduleId: selectedSc,
+      });
+
+      const updatedMembers = await addScheduleMember(nowPlanner, selectedSc);
+
+      if (updatedMembers) {
+        console.log("✅ 참여 성공! 업데이트된 멤버:", updatedMembers);
+
+        // 일정 상세 다시 불러오기
+        const detail = await fetchScheduleDetail(nowPlanner, selectedSc);
+        setScheduleDetail(detail);
+      }
+    } catch (err) {
+      console.error("❌ 참여 실패:", err);
+      alert("일정 참여에 실패했습니다: " + err.message);
+    } finally {
+      setParticipantLoading(false);
+    }
+  };
+
+  // 🔥 나가기
+  const handleLeaveSchedule = async () => {
+    if (!nowPlanner || !selectedSc) return;
+
+    if (!window.confirm("이 일정에서 나가시겠습니까?")) return;
+
+    setParticipantLoading(true);
+    try {
+      console.log("🚪 일정 나가기 시도:", {
+        plannerId: nowPlanner,
+        scheduleId: selectedSc,
+      });
+
+      await removeScheduleMember(nowPlanner, selectedSc);
+
+      console.log("✅ 나가기 성공!");
+
+      // 일정 상세 다시 불러오기
+      const detail = await fetchScheduleDetail(nowPlanner, selectedSc);
+      setScheduleDetail(detail);
+    } catch (err) {
+      console.error("❌ 나가기 실패:", err);
+      alert("일정 나가기에 실패했습니다: " + err.message);
+    } finally {
+      setParticipantLoading(false);
+    }
+  };
 
   // ==================== Handlers ====================
   const handleClose = () => {
@@ -79,13 +162,12 @@ const ScheduleModal = () => {
 
   const handleEditClick = () => {
     setOpenEditModal(true);
-    // setOpenScModal(false);
   };
 
   const handleScheduleUpdated = async () => {
-    console.log(" 일정 수정 성공!");
+    console.log("✅ 일정 수정 성공!");
 
-    //  일정 다시 불러오기
+    // ✅ 일정 다시 불러오기
     if (selectedSc && nowPlanner) {
       const detail = await fetchScheduleDetail(nowPlanner, selectedSc);
       setScheduleDetail(detail);
@@ -108,7 +190,7 @@ const ScheduleModal = () => {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
         <div className="bg-white p-6 rounded-lg">
           <p className="text-gray-500">일정 로딩 중...</p>
         </div>
@@ -119,7 +201,7 @@ const ScheduleModal = () => {
   if (error) {
     return (
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40"
         onClick={backDropClick}
       >
         <div className="bg-white p-6 rounded-lg max-w-lg">
@@ -145,7 +227,7 @@ const ScheduleModal = () => {
   if (!scheduleDetail) {
     return (
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40"
         onClick={backDropClick}
       >
         <div className="bg-white p-6 rounded-lg">
@@ -163,13 +245,13 @@ const ScheduleModal = () => {
         onClick={backDropClick}
       >
         <div
-          className="bg-white p-6 rounded-lg max-w-lg mx-auto mt-48 relative"
+          className="bg-white p-6 rounded-lg max-w-lg mx-auto mt-48 relative max-h-[80vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="space-y-2">
             {/* 닫기 버튼 */}
             <X
-              className="absolute cursor-pointer -right-2.5 -top-4 hover:text-red-500 transition-colors"
+              className="absolute cursor-pointer right-4 top-4 hover:text-red-500 transition-colors"
               onClick={handleClose}
               size={24}
             />
@@ -203,7 +285,7 @@ const ScheduleModal = () => {
               {/* 장소 */}
               {scheduleDetail.location && (
                 <div className="flex items-center gap-2">
-                  <MapPin size={18} className="text-green-500" />
+                  <MapPin size={18} className="" />
                   <h2 className="font-medium">장소:</h2>
                   <span>{scheduleDetail.location}</span>
                 </div>
@@ -212,7 +294,7 @@ const ScheduleModal = () => {
               {/* 메모 */}
               {scheduleDetail.memo && (
                 <div className="flex items-start gap-2">
-                  <NotepadText size={18} className="text-purple-500 mt-1" />
+                  <NotepadText size={18} className="mt-1" />
                   <div className="flex-1">
                     <h3 className="font-medium mb-1">메모:</h3>
                     <p className="text-gray-600 whitespace-pre-wrap">
@@ -223,21 +305,80 @@ const ScheduleModal = () => {
               )}
 
               {/* 🔥 공유 플래너일 때만 참여자 표시 */}
-              {plannerType === "shared" && scheduleDetail.participants && (
-                <div className="flex items-start gap-2">
-                  <div className="flex-1">
-                    <h3 className="font-medium mb-1">참여자:</h3>
+              {plannerType === "shared" && (
+                <div className="border-t pt-4 mt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Users size={18} className="text-blue-500" />
+                      <h3 className="font-semibold">
+                        참여자 ({scheduleDetail.members?.length || 0}명)
+                      </h3>
+                    </div>
+
+                    {/* 참여하기/나가기 버튼 */}
+                    {isParticipating ? (
+                      <button
+                        onClick={handleLeaveSchedule}
+                        disabled={participantLoading}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        <UserMinus size={16} />
+                        나가기
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleJoinSchedule}
+                        disabled={participantLoading}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        <UserPlus size={16} />
+                        참여하기
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 참여자 카드 리스트 */}
+                  {scheduleDetail.members &&
+                  scheduleDetail.members.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
-                      {scheduleDetail.participants.map((participant, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded"
+                      {scheduleDetail.members.map((participant) => (
+                        <div
+                          key={participant.userId}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${
+                            participant.userId === user?.userId
+                              ? "bg-blue-50 border-blue-200"
+                              : "bg-gray-50 border-gray-200"
+                          }`}
                         >
-                          {participant.nickname || participant.username}
-                        </span>
+                          {participant.profileImage ? (
+                            <img
+                              src={participant.profileImage}
+                              alt={participant.nickname}
+                              className="w-8 h-8 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                              <User className="w-4 h-4 text-gray-500 font-bold" />
+                            </div>
+                          )}
+                          <span className="text-sm font-medium">
+                            {participant.username}
+                            {participant.userId === user?.userId && " (나)"}
+                          </span>
+                        </div>
                       ))}
                     </div>
-                  </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 text-center py-4">
+                      아직 참여자가 없습니다. 첫 참여자가 되어보세요!
+                    </p>
+                  )}
+
+                  {participantLoading && (
+                    <p className="text-xs text-gray-500 text-center mt-2">
+                      처리 중...
+                    </p>
+                  )}
                 </div>
               )}
 
