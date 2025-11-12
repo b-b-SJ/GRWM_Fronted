@@ -32,13 +32,12 @@ const ScheduleModal = () => {
   const { plannerId } = useParams();
   const nowPlanner = Number(plannerId);
 
-  // 🔥 현재 플래너 타입에 맞는 훅 사용
   const { fetchScheduleDetail } = useCurrentPlanner(plannerType);
 
-  // 🔥 팀 플래너 전용 기능
+  //팀 플래너 전용 기능
   const { addScheduleMember, removeScheduleMember } = useTeamPlanner();
 
-  // 🔥 현재 사용자 정보
+  // 현재 사용자 정보
   const { user } = useAuth();
 
   // ==================== State ====================
@@ -63,7 +62,7 @@ const ScheduleModal = () => {
           plannerType,
         });
 
-        // ✅ 일정 상세 조회
+        //  일정 상세 조회
         const detail = await fetchScheduleDetail(nowPlanner, selectedSc);
 
         if (detail) {
@@ -85,18 +84,18 @@ const ScheduleModal = () => {
 
   // ==================== 참여자 관리 ====================
 
-  // 🔥 현재 사용자가 참여 중인지 확인
-  const isParticipating = scheduleDetail?.participants?.some(
+  // 현재 사용자가 참여 중인지 확인
+  const isParticipating = scheduleDetail?.members?.some(
     (p) => p.userId === user?.userId
   );
 
-  // 🔥 참여하기
+  // 참여하기
   const handleJoinSchedule = async () => {
     if (!nowPlanner || !selectedSc) return;
 
     setParticipantLoading(true);
     try {
-      console.log("🎯 일정 참여 시도:", {
+      console.log(" 일정 참여 시도:", {
         plannerId: nowPlanner,
         scheduleId: selectedSc,
       });
@@ -104,21 +103,21 @@ const ScheduleModal = () => {
       const updatedMembers = await addScheduleMember(nowPlanner, selectedSc);
 
       if (updatedMembers) {
-        console.log("✅ 참여 성공! 업데이트된 멤버:", updatedMembers);
+        console.log("참여 성공! 업데이트된 멤버:", updatedMembers);
 
         // 일정 상세 다시 불러오기
         const detail = await fetchScheduleDetail(nowPlanner, selectedSc);
         setScheduleDetail(detail);
       }
     } catch (err) {
-      console.error("❌ 참여 실패:", err);
+      console.error("참여 실패:", err);
       alert("일정 참여에 실패했습니다: " + err.message);
     } finally {
       setParticipantLoading(false);
     }
   };
 
-  // 🔥 나가기
+  // 나가기
   const handleLeaveSchedule = async () => {
     if (!nowPlanner || !selectedSc) return;
 
@@ -126,7 +125,7 @@ const ScheduleModal = () => {
 
     setParticipantLoading(true);
     try {
-      console.log("🚪 일정 나가기 시도:", {
+      console.log(" 일정 나가기 시도:", {
         plannerId: nowPlanner,
         scheduleId: selectedSc,
       });

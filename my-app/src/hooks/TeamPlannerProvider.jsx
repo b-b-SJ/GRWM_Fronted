@@ -240,7 +240,7 @@ export const TeamPlannerProvider = ({ children }) => {
       setError(null);
       try {
         const response = await fetch(
-          `/api/team-planner/${plannerId}/member/${memberId}/${role}`,
+          `http://localhost:8080/api/team-planner/${plannerId}/member/${memberId}/${role}`,
           {
             method: "POST",
             headers: {
@@ -551,7 +551,7 @@ export const TeamPlannerProvider = ({ children }) => {
     [isAuthenticated, getAuthHeaders]
   );
 
-  // 일정에 참여하기
+  // 일정에 참여하기 -> 안쓰는듯..넘 헷갈려
   const joinSchedule = useCallback(
     async (plannerId, scheduleId, userId) => {
       checkAuth();
@@ -627,7 +627,7 @@ export const TeamPlannerProvider = ({ children }) => {
         const response = await fetch(
           `/api/team-planner/${plannerId}/schedule/${scheduleId}/delete-member`,
           {
-            method: "POST",
+            method: "DELETE",
             headers: {
               ...getAuthHeaders(),
               "Content-Type": "application/json",
