@@ -268,6 +268,24 @@ destination:/topic/studyroom.${studyRoomId}.presence
                         isConnectingRef.current = false;
                         setReconnectAttempts(0);
                     }, 500);
+
+                    // Extension 토픽 구독 추가
+                    const extensionSubId = `sub-extension-${studyRoomId}-${Date.now()}`;
+                    const extensionSubscribeFrame = `SUBSCRIBE
+id:${extensionSubId}
+destination:/topic/studyroom.${studyRoomId}.extension
+
+\0`;
+                    ws.send(extensionSubscribeFrame);
+                    subscriptionIdsRef.current.push(extensionSubId);
+                    console.log('[StudyRoom] Extension 토픽 구독:', `/topic/studyroom.${studyRoomId}.extension`);
+
+                    setTimeout(() => {
+                        console.log('[StudyRoom] 구독 완료');
+                        setConnectionStatus('connected');
+                        isConnectingRef.current = false;
+                        setReconnectAttempts(0);
+                    }, 500);
                 }
                 // STOMP MESSAGE 프레임
                 else if (event.data.startsWith('MESSAGE')) {

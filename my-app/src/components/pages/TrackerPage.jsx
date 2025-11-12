@@ -10,11 +10,12 @@ import TrackerSidebar from '../layout/TrackerSidebar';
 import DiaryView from '../../components/tracker/DiaryView';
 import TomorrowMessage from '../../components/tracker/TomorrowMessage';
 import TodoView from '../../components/tracker/TodoView';
+import RecurringTodoManager from '../../components/tracker/RecurringTodoManager';
 
 /**
  * 트래커 페이지 - 회고일기 관리
  */
-const TrackerPage = () => {
+const TrackerPage = ({ todoApi, user }) => {
     const [searchParams] = useSearchParams();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [writeMode, setWriteMode] = useState(false);
@@ -125,6 +126,13 @@ const TrackerPage = () => {
         </div>
     );
 
+    // To-do 반복 루틴 관리 뷰
+    const TodoRoutineView = () => (
+        <div className="flex-1 flex flex-col">
+            <RecurringTodoManager todoApi={todoApi} user={user} />
+        </div>
+    );
+
     // 일기 캘린더 뷰 (DiaryView 래퍼)
     const DiaryCalendarView = () => (
         <div className="flex-1 flex flex-col p-6">
@@ -144,9 +152,15 @@ const TrackerPage = () => {
     );
 
     const renderCurrentView = () => {
-        // trackerMode가 'todo'인 경우 빈 화면 표시
         if (trackerMode === 'todo') {
-            return <TodoCalendarView />;
+            switch (currentView) {
+                case 'todo-calendar':
+                    return <TodoCalendarView />;
+                case 'todo-routine':
+                    return <TodoRoutineView />;
+                default:
+                    return <TodoCalendarView />;
+            }
         }
 
         // diary 모드에서의 뷰 렌더링

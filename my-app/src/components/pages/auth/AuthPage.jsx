@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/AuthContext';
 import useLoginId from '../../../hooks/useLoginId';
@@ -30,6 +30,29 @@ const AuthPage = () => {
         isAvailable: loginIdAvailable,
         resetState: resetLoginIdState
     } = useLoginId();
+
+    // OAuth 콜백 처리 로직 추가
+    useEffect(() => {
+        // URL fragment에서 토큰 추출
+        const hash = window.location.hash;
+
+        if (hash) {
+            console.log('감지된 URL hash:', hash);
+
+            const params = new URLSearchParams(hash.substring(1));
+            const accessToken = params.get('token');
+
+            if (accessToken) {
+                console.log('OAuth 토큰 감지:', accessToken);
+
+                localStorage.setItem('accessToken', accessToken);
+                window.history.replaceState(null, '', window.location.pathname);
+
+                alert('구글 로그인 성공!');
+                window.location.href = '/main';
+            }
+        }
+    }, []);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;

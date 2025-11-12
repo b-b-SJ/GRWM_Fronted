@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTeamPlanner } from '../../../hooks/TeamPlannerProvider';
 import { Calendar, Clock, Users, X, Check } from 'lucide-react';
 
+// 공유 플래너의 시간 투표 컴포넌트. 임시이며 초안이므로 api 연결이 이런저런 수정이 필요할 확률이 높습니다. 파이띵.
 const TimeVoteComponent = ({ plannerId, voteId, onClose }) => {
     const {
         user,
@@ -22,7 +23,7 @@ const TimeVoteComponent = ({ plannerId, voteId, onClose }) => {
     const [showVoterModal, setShowVoterModal] = useState(false);
     const [selectedSlotInfo, setSelectedSlotInfo] = useState(null);
 
-    // 생성 폼 상태
+    // 생성 폼 상태 (임시, 추후에 정확한 필드로 수정 요망!)
     const [createForm, setCreateForm] = useState({
         title: '',
         voteRange: [],
@@ -30,7 +31,7 @@ const TimeVoteComponent = ({ plannerId, voteId, onClose }) => {
         memberIds: [],
     });
 
-    // 시간 슬롯 설정 (1시간 단위)
+    // 시간 슬롯 설정 (1시간 단위로 구분)
     const timeSlots = [];
     for (let hour = 0; hour < 24; hour++) {
         const time = `${String(hour).padStart(2, '0')}:00`;
@@ -44,7 +45,8 @@ const TimeVoteComponent = ({ plannerId, voteId, onClose }) => {
         }
     }, [mode, plannerId]);
 
-    // 임시 더미 데이터 생성 함수
+    // MOCK!! 아래는 플래너 id가 없어서, 임의로 투표 생성하기 위한 더미 데이터입니다. 추후 삭제 ~.~
+    // MOCK!! 임시 더미 데이터 생성 함수. 추후에 삭제
     const createDummyVote = () => {
         const today = new Date();
         const dummyVote = {
@@ -77,7 +79,7 @@ const TimeVoteComponent = ({ plannerId, voteId, onClose }) => {
         return dummyVote;
     };
 
-    // 더미 매트릭스 데이터 생성 (1시간 단위)
+    // MOCK!! 더미 매트릭스 데이터 생성 (1시간 단위), 추후 삭제
     const generateDummyMatrix = (dates) => {
         const matrix = [];
         const totalMembers = 4;
@@ -86,7 +88,7 @@ const TimeVoteComponent = ({ plannerId, voteId, onClose }) => {
             // 9시부터 18시까지만 생성
             for (let hour = 9; hour < 18; hour++) {
                 const time = `${String(hour).padStart(2, '0')}:00`;
-                // 랜덤하게 득표율 생성 (점심시간은 낮게)
+                // 랜덤하게 득표율 생성
                 let overlapCount;
                 if (hour === 12 || hour === 13) {
                     overlapCount = Math.floor(Math.random() * 2); // 0-1명
@@ -306,7 +308,7 @@ const TimeVoteComponent = ({ plannerId, voteId, onClose }) => {
         }
     };
 
-    // 득표율에 따른 색상
+    // 득표율에 따른 색상 (일단 초록색 베이스)
     const getColorByPercentage = (percentage) => {
         if (percentage === 0) return 'bg-gray-100';
         if (percentage < 30) return 'bg-green-200';

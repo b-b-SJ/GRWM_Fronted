@@ -1,58 +1,79 @@
-import React, { useState, useEffect } from 'react';
-import { Clock, Edit3, Trash2, X } from 'lucide-react';
+// src/pages/TomorrowMessage.jsx
+import React, { useState, useEffect, useCallback } from 'react';
+import { Clock, Edit3, Trash2, X, Loader } from 'lucide-react';
+import { useAuth } from '../../hooks/AuthContext';
+import { useTomorrowMessageApi } from '../../hooks/useTomorrowMessageApi';
 
 const TomorrowMessage = () => {
+    const { user } = useAuth();
+    const {
+        isLoading,
+        error,
+        getTomorrowMessage,
+        createTomorrowMessage,
+        updateTomorrowMessage,
+        deleteTomorrowMessage,
+        clearError
+    } = useTomorrowMessageApi();
+
     const [messages, setMessages] = useState([]);
     const [showForm, setShowForm] = useState(false);
     const [editingMessage, setEditingMessage] = useState(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+    const [loadingMessages, setLoadingMessages] = useState(true);
     const [formData, setFormData] = useState({
         time: '',
         content: ''
     });
 
-    // 컴포넌트 마운트 시 저장된 메시지 불러오기
+    // 컴포넌트 마운트 시 메시지 목록 불러오기
     useEffect(() => {
-        loadMessages();
-    }, []);
+        if (user?.userId) {
+            loadMessages();
+        }
+    }, [user]);
 
-    // 메시지 불러오기 및 만료된 메시지 정리
-    const loadMessages = () => {
-        const savedMessages = JSON.parse(localStorage.getItem('tomorrowMessages') || '[]');
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // 에러 표시
+    useEffect(() => {
+        if (error) {
+            alert(error);
+            clearError();
+        }
+    }, [error, clearError]);
 
-        // 오늘 날짜가 지난 메시지들은 삭제
-        const validMessages = savedMessages.filter(msg => {
-            const deliveryDate = new Date(msg.deliveryDate);
-            return deliveryDate >= today;
-        });
-
-        // 만료된 메시지가 있다면 localStorage 업데이트
-        if (validMessages.length !== savedMessages.length) {
-            localStorage.setItem('tomorrowMessages', JSON.stringify(validMessages));
+    // 메시지 목록 불러오기
+    const loadMessages = useCallback(async () => {
+        if (!user?.userId) {
+            setLoadingMessages(false);
+            return;
         }
 
-        setMessages(validMessages);
-    };
+        setLoadingMessages(true);
+        try {
+            const result = await getTomorrowMessage();  // 파라미터 없이 호출
 
-    // 메시지 저장
-    const saveMessages = (newMessages) => {
-        localStorage.setItem('tomorrowMessages', JSON.stringify(newMessages));
-        setMessages(newMessages);
-    };
+            if (result.success && result.data && result.data.messageId) {
+                setMessages([result.data]);
+            } else {
+                setMessages([]);
+            }
+        } catch (error) {
+            console.error('메시지 로딩 오류:', error);
+            setMessages([]);
+        } finally {
+            setLoadingMessages(false);
+        }
+    }, [user, getTomorrowMessage]);
 
     // 폼 초기화
-    const resetForm = () => {
+    const resetForm = useCallback(() => {
         setFormData({ time: '', content: '' });
         setShowForm(false);
         setEditingMessage(null);
-    };
+    }, []);
 
     // 메시지 추가/수정
-    const handleSubmit = (e) => {
-        e.preventDefault();
-
+    const handleSubmit = async () => {
         if (!formData.time || !formData.content.trim()) {
             alert('시간과 메시지를 모두 입력해주세요.');
             return;
@@ -62,69 +83,122 @@ const TomorrowMessage = () => {
         const tomorrow = new Date(now);
         tomorrow.setDate(tomorrow.getDate() + 1);
 
-        // 내일 날짜 + 선택한 시간으로 배달 시간 설정
         const [hours, minutes] = formData.time.split(':');
-        const deliveryDateTime = new Date(tomorrow);
-        deliveryDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-        const messageData = {
-            id: editingMessage ? editingMessage.id : Date.now(),
-            content: formData.content,
-            deliveryTime: formData.time,
-            deliveryDate: tomorrow.toISOString().split('T')[0],
-            deliveryDateTime: deliveryDateTime.toISOString(),
-            createdAt: editingMessage ? editingMessage.createdAt : new Date().toISOString()
-        };
+        // 1. 현재 UTC 날짜를 가져와 '내일'로 설정
+        const nowUtc = new Date(new Date().toUTCString());
+        const tomorrowUtc = new Date(nowUtc);
+        tomorrowUtc.setUTCDate(tomorrowUtc.getUTCDate() + 1);
 
-        let newMessages;
+        // 2. 내일 UTC 날짜와 사용자가 입력한 시간을 결합
+        const deliveryDateTime = new Date(tomorrowUtc);
+        deliveryDateTime.setUTCHours(parseInt(hours), parseInt(minutes), 0, 0);
         if (editingMessage) {
-            newMessages = messages.map(msg =>
-                msg.id === editingMessage.id ? messageData : msg
-            );
-        } else {
-            newMessages = [...messages, messageData];
-        }
+            // 메시지 수정
+            const result = await updateTomorrowMessage({
+                messageId: editingMessage.messageId,
+                content: formData.content,
+                scheduledTime: deliveryDateTime.toISOString()
+            });
 
-        saveMessages(newMessages);
-        resetForm();
+            if (result.success) {
+                setMessages([result.data]);
+                alert('메시지가 수정되었습니다! 📝');
+                resetForm();
+            }
+        } else {
+            // 새 메시지 생성
+            const result = await createTomorrowMessage({
+                content: formData.content,
+                scheduledTime: deliveryDateTime.toISOString()
+            });
+
+            if (result.success) {
+                setMessages([result.data]);
+                alert('메시지가 전송되었습니다! 📮');
+                resetForm();
+            }
+        }
     };
 
     // 메시지 수정 시작
-    const startEdit = (message) => {
+    const startEdit = useCallback((message) => {
         setEditingMessage(message);
+        const scheduledTime = new Date(message.scheduledTime);
+        const timeString = `${scheduledTime.getHours().toString().padStart(2, '0')}:${scheduledTime.getMinutes().toString().padStart(2, '0')}`;
+
         setFormData({
-            time: message.deliveryTime,
+            time: timeString, // KST 기준으로 설정
             content: message.content
         });
         setShowForm(true);
-    };
+    }, []);
 
     // 메시지 삭제
-    const deleteMessage = (messageId) => {
-        const newMessages = messages.filter(msg => msg.id !== messageId);
-        saveMessages(newMessages);
+    const handleDelete = async (messageId) => {
+        const result = await deleteTomorrowMessage(messageId);
+
+        if (result.success) {
+            setMessages([]);
+            alert('메시지가 삭제되었습니다.');
+        }
+
         setShowDeleteConfirm(null);
     };
 
     // 메시지가 배달 시간인지 확인
-    const isMessageReady = (message) => {
+    const isMessageReady = useCallback((message) => {
         const now = new Date();
-        const deliveryTime = new Date(message.deliveryDateTime);
+        const deliveryTime = new Date(message.scheduledTime);
         return now >= deliveryTime;
-    };
+        // return true; 임시로 바로 전송되게 - 스크린샷 용으로 사용함
+    }, []);
 
     // 배달 예정 시간 포맷팅
-    const formatDeliveryTime = (message) => {
-        const deliveryDate = new Date(message.deliveryDate);
-        const tomorrow = deliveryDate.toLocaleDateString('ko-KR', {
+    const formatDeliveryTime = useCallback((message) => {
+        const deliveryDate = new Date(message.scheduledTime);
+        const dateString = deliveryDate.toLocaleDateString('ko-KR', {
             month: 'long',
             day: 'numeric'
         });
-        const [hours, minutes] = message.deliveryTime.split(':');
-        const timeString = `${parseInt(hours)}시 ${parseInt(minutes)}분`;
 
-        return `${tomorrow} ${timeString}에 전달 예정`;
-    };
+        const timeString = deliveryDate.toLocaleTimeString('ko-KR', {
+            hour: 'numeric',
+            minute: 'numeric',
+            hour12: false // 24시간 형식 유지
+        });
+
+        return `${dateString} ${timeString}에 전달 예정`;
+    }, []);
+
+    // 로그인하지 않은 경우
+    if (!user) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <p className="text-gray-600 text-lg mb-4">로그인이 필요한 서비스입니다.</p>
+                    <button
+                        onClick={() => window.location.href = '/login'}
+                        className="bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 transition-colors"
+                    >
+                        로그인하러 가기
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // 로딩 중
+    if (loadingMessages) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <Loader className="animate-spin mx-auto mb-4" size={48} />
+                    <p className="text-gray-600 text-lg">메시지를 불러오는 중...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="max-h-screen flex flex-col items-center justify-start py-4">
@@ -134,9 +208,17 @@ const TomorrowMessage = () => {
                 <p className="text-gray-600 mt-2 text-lg">미래의 나에게 전하고 싶은 메시지를 보내보세요</p>
             </div>
 
-            {/* 메시지 입력창 - 메시지가 없거나 수정 모드일 때 표시 */}
+            {/* 로딩 인디케이터 */}
+            {isLoading && (
+                <div className="fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2 z-50">
+                    <Loader className="animate-spin" size={20} />
+                    <span>처리 중...</span>
+                </div>
+            )}
+
+            {/* 메시지 입력창 */}
             {(messages.length === 0 || showForm) && (
-                <div className="w-full max-w-2xl mx-auto">
+                <div className="w-full max-w-2xl mx-auto px-4">
                     <div className="bg-white rounded-xl shadow-lg border p-8">
                         {editingMessage && (
                             <div className="flex justify-between items-center mb-6">
@@ -144,82 +226,114 @@ const TomorrowMessage = () => {
                                 <button
                                     onClick={resetForm}
                                     className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                    disabled={isLoading}
                                 >
                                     <X size={20} />
                                 </button>
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="space-y-6">
                             <div>
                                 <label className="block text-lg font-medium text-gray-700 mb-3 text-center">
                                     내일 언제 받아볼까요?
                                 </label>
-                                <input
-                                    type="time"
-                                    value={formData.time}
-                                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                                    className="w-full p-4 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center text-lg"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-lg font-medium text-gray-700 mb-3 text-center">
+                                <div className="flex items-center justify-center gap-3">
+                                    {/* 시 */}
+                                    <select
+                                        value={formData.time.split(':')[0] || ''}
+                                        onChange={(e) => {
+                                            const minutes = formData.time.split(':')[1] || '';
+                                            setFormData({...formData, time: `${e.target.value}:${minutes}`});
+                                        }}
+                                        className="px-4 py-4 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center text-[20px] font-semibold bg-white cursor-pointer hover:bg-gray-50 transition-colors"
+                                        disabled={isLoading}>
+                                        <option value="" disabled>--</option>
+                                        {Array.from({length: 24}, (_, i) => i).map(hour => (
+                                            <option key={hour} value={hour.toString().padStart(2, '0')}>
+                                                {hour.toString().padStart(2, '0')}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <span className="text-3xl font-bold text-gray-400">:</span>
+                                    {/* 분 */}
+                                    <select
+                                        value={formData.time.split(':')[1] || ''}
+                                        onChange={(e) => {
+                                            const hours = formData.time.split(':')[0] || '';
+                                            setFormData({...formData, time: `${hours}:${e.target.value}`});
+                                        }}
+                                        className="px-4 py-4 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-center text-[20px] font-semibold bg-white cursor-pointer hover:bg-gray-50 transition-colors"
+                                        disabled={isLoading}
+                                    >
+                                        <option value="" disabled>--</option>
+                                        {Array.from({length: 60}, (_, i) => i).map(minute => (
+                                            <option key={minute} value={minute.toString().padStart(2, '0')}>
+                                                {minute.toString().padStart(2, '0')}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <label className="block text-lg font-medium text-gray-700 mt-10 mb-3 text-center">
                                     내일의 나에게 전하고 싶은 말
                                 </label>
                                 <textarea
                                     rows={5}
                                     value={formData.content}
-                                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                                    onChange={(e) => setFormData({...formData, content: e.target.value})}
                                     placeholder="        ✨ 내일의 나에게 전하고 싶은 말을 무엇이든 적어보세요! ✨"
                                     className="w-full p-4 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-lg leading-relaxed"
-                                    required
-                                />
-                            </div>
-                            <div className="flex space-x-4">
+                                disabled={isLoading}
+                            />
+                        </div>
+                        <div className="flex space-x-4">
+                            <button
+                                onClick={handleSubmit}
+                                className="flex-1 bg-green-600 text-white py-4 rounded-xl hover:bg-green-700 transition-colors text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={isLoading}
+                            >
+                                {editingMessage ? '📮 메시지 수정하기' : '📮 메시지 보내기'}
+                            </button>
+                            {editingMessage && (
                                 <button
-                                    type="submit"
-                                    className="flex-1 bg-green-600 text-white py-4 rounded-xl hover:bg-green-700 transition-colors text-lg font-medium"
+                                    onClick={resetForm}
+                                    className="px-8 py-4 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors text-lg disabled:opacity-50"
+                                    disabled={isLoading}
                                 >
-                                    {editingMessage ? '📮 메시지 수정하기' : '📮 메시지 보내기'}
+                                    취소
                                 </button>
-                                {editingMessage && (
-                                    <button
-                                        type="button"
-                                        onClick={resetForm}
-                                        className="px-8 py-4 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors text-lg"
-                                    >
-                                        취소
-                                    </button>
-                                )}
-                            </div>
-                        </form>
+                            )}
+                        </div>
                     </div>
                 </div>
-            )}
+                </div>
+                )}
 
-            {/* 메시지 목록 */}
-            {messages.length > 0 && !showForm && (
-                <div className="w-full max-w-2xl mx-auto space-y-6">
-                    {messages.map((message) => {
-                        const messageReady = isMessageReady(message);
+{/* 메시지 조회 */
+}
+{
+    messages.length > 0 && !showForm && (
+        <div className="w-full max-w-2xl mx-auto space-y-6 px-4">
+            {messages.map((message) => {
+                const messageReady = isMessageReady(message);
 
-                        return (
-                            <div key={message.id} className="bg-white rounded-xl shadow-lg border overflow-hidden">
-                                {messageReady ? (
-                                    // 배달된 메시지 (열어볼 수 있는 상태)
-                                    <div className="p-8">
-                                        <div className="flex items-center justify-between mb-6">
-                                            <div className="flex items-center space-x-3">
-                                                <div className="text-2xl">📬</div>
-                                                <span className="text-lg font-medium text-green-600">
+                return (
+                    <div key={message.messageId} className="bg-white rounded-xl shadow-lg border overflow-hidden">
+                        {messageReady ? (
+                            // 배달된 메시지
+                            <div className="p-8">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="text-2xl">📬</div>
+                                        <span className="text-lg font-medium text-green-600">
                                                     메시지가 도착했습니다!
                                                 </span>
-                                            </div>
-                                            <button
-                                                onClick={() => deleteMessage(message.id)}
-                                                className="p-2 hover:bg-red-50 rounded-lg transition-colors text-red-500"
-                                            >
+                                    </div>
+                                    <button
+                                        onClick={() => setShowDeleteConfirm(message.messageId)}
+                                        className="p-2 hover:bg-red-50 rounded-lg transition-colors text-red-500"
+                                        disabled={isLoading}
+                                    >
                                                 <Trash2 size={18} />
                                             </button>
                                         </div>
@@ -228,25 +342,24 @@ const TomorrowMessage = () => {
                                                 {message.content}
                                             </p>
                                         </div>
-                                        <div className="text-sm text-gray-500 text-center">
-                                            {new Date(message.createdAt).toLocaleDateString('ko-KR')}에 작성된 메시지
-                                        </div>
                                     </div>
                                 ) : (
-                                    // 밀봉된 메시지 (아직 시간이 되지 않음)
+                                    // 밀봉된 메시지
                                     <div className="p-8 text-center">
                                         <div className="flex justify-end space-x-2 mb-6">
                                             <button
                                                 onClick={() => startEdit(message)}
                                                 className="p-3 hover:bg-gray-100 rounded-xl transition-colors text-gray-600"
                                                 title="메시지 수정"
+                                                disabled={isLoading}
                                             >
                                                 <Edit3 size={18} />
                                             </button>
                                             <button
-                                                onClick={() => setShowDeleteConfirm(message.id)}
+                                                onClick={() => setShowDeleteConfirm(message.messageId)}
                                                 className="p-3 hover:bg-red-50 rounded-xl transition-colors text-red-500"
                                                 title="메시지 삭제"
+                                                disabled={isLoading}
                                             >
                                                 <Trash2 size={18} />
                                             </button>
@@ -264,9 +377,6 @@ const TomorrowMessage = () => {
                                                 <p className="text-gray-500 text-lg">
                                                     메시지가 날아오는 중 . . .
                                                 </p>
-                                                <div className="text-sm text-gray-400 pt-4">
-                                                    {new Date(message.createdAt).toLocaleDateString('ko-KR')}에 작성됨
-                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -274,10 +384,9 @@ const TomorrowMessage = () => {
                             </div>
                         );
                     })}
+
                 </div>
             )}
-
-            {/* 빈 상태일 때 안내 메시지 (입력창이 바로 표시되므로 제거) */}
 
             {/* 삭제 확인 팝업 */}
             {showDeleteConfirm && (
@@ -293,14 +402,16 @@ const TomorrowMessage = () => {
                         </div>
                         <div className="flex space-x-3">
                             <button
-                                onClick={() => deleteMessage(showDeleteConfirm)}
-                                className="flex-1 bg-red-600 text-white py-3 rounded-xl hover:bg-red-700 transition-colors font-medium"
+                                onClick={() => handleDelete(showDeleteConfirm)}
+                                className="flex-1 bg-red-600 text-white py-3 rounded-xl hover:bg-red-700 transition-colors font-medium disabled:opacity-50"
+                                disabled={isLoading}
                             >
                                 삭제
                             </button>
                             <button
                                 onClick={() => setShowDeleteConfirm(null)}
-                                className="flex-1 border border-gray-300 py-3 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+                                className="flex-1 border border-gray-300 py-3 rounded-xl hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
+                                disabled={isLoading}
                             >
                                 취소
                             </button>

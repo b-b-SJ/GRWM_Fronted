@@ -28,6 +28,7 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
         addTodoReaction,
         voteExtension,
         leaveStudyRoom,
+        extendStudyRoom,
         clearError
     } = useStudyRoomState();
 
@@ -75,10 +76,17 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                     votedUsers: event.data.votedUserIds || []
                 }));
             } else if (event.type === 'ROOM_EXTENDED') {
-                alert(`투표가 통과되었습니다! ${event.data.extensionMinutes}분 연장됩니다.`);
+                alert(`투표가 통과되었습니다! ${currentStudyRoom.extensionTime}분 연장됩니다.`);
                 setShowVoteAlert(false);
-                setVoteStatus(prev => ({ ...prev, isVoting: false }));
-                // 스터디룸 정보 새로고침
+                setVoteStatus({
+                    isVoting: false,
+                    votedUsers: [],
+                    totalVotes: 0,
+                    requiredVotes: 0
+                });
+                setHasVoted(false);
+
+                // 스터디룸 정보 새로고침 (연장된 종료 시간 반영)
                 fetchStudyRoomDetail(studyRoomId);
             }
         });
@@ -338,8 +346,6 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
             alert('자신의 To-Do에는 리액션을 추가할 수 없습니다.');
             return;
         }
-
-        const reactionId = await addTodoReaction(studyRoomId, todoId);
     };
 
     // 연장 투표
@@ -354,6 +360,29 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
 
         if (result) {
             setHasVoted(true);
+            setVoteStatus(prev => ({
+                ...prev,
+                totalVotes: result.agreeCount,
+                votedUsers: [...prev.votedUsers, user.communityId],
+                isVoting: !result.isCompleted,
+                requiredVotes: Math.ceil(result.totalParticipants / 2)
+            }));
+
+            // 투표 완료 처리
+            if (result.isCompleted) {
+                if (result.result) {
+                    console.log('투표 통과! 연장 요청 중...');
+                    const extensionResult = await extendStudyRoom(studyRoomId);
+                    if (extensionResult) {
+                        console.log('연장 성공:', extensionResult);
+                        // WebSocket으로 ROOM_EXTENDED 메시지가 올 것임
+                    }
+                } else {
+                    alert('투표가 부결되었습니다.');
+                    setShowVoteAlert(false);
+                    setVoteStatus(prev => ({ ...prev, isVoting: false }));
+                }
+            }
         }
     };
 
@@ -662,8 +691,7 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                                     종료 5분 전입니다! 스터디룸을 {currentStudyRoom.extensionTime}분 연장하시겠습니까?
                                 </p>
                                 <p className="text-xs text-amber-700 mt-1">
-                                    투표 현황: {voteStatus.totalVotes}/{voteStatus.requiredVotes}
-                                    ({voteStatus.votedUsers.length}/{currentStudyRoom.currentMembers}명 참여)
+                                    투표 현황: {voteStatus.totalVotes}/{currentStudyRoom.currentMembers}
                                 </p>
                             </div>
                         </div>
