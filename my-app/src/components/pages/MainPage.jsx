@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, BarChart3, Users, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../hooks/AuthContext';
@@ -17,6 +17,20 @@ const MainPage = () => {
         { icon: Users, label: '협업공간', path: '/workspace', color: 'from-violet-400 to-purple-400', description: '다른 사용자와 함께 작업하세요' },
         { icon: MessageSquare, label: '커뮤니티', path: '/community', color: 'from-pink-400 to-rose-400', description: '다른 사용자와 소통하세요' }
     ];
+
+    useEffect(() => {
+        const hash = window.location.hash;
+        if (hash) {
+            const params = new URLSearchParams(hash.substring(1));
+            const accessToken = params.get('token');
+
+            if (accessToken) {
+                localStorage.setItem('accessToken', accessToken);
+                window.history.replaceState(null, '', window.location.pathname);
+                window.location.reload();
+            }
+        }
+    }, []);
 
     return (
         <div className="flex-1 overflow-y-auto bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">

@@ -49,7 +49,7 @@ const AuthPage = () => {
                 window.history.replaceState(null, '', window.location.pathname);
 
                 alert('구글 로그인 성공!');
-                window.location.reload(); // 새로고침
+                window.location.href = '/main';
             }
         }
     }, []);
