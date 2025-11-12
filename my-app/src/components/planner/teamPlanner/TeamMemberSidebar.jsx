@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useTeamPlanner } from "../../../hooks/TeamPlannerProvider";
 import MemberCard from "./MemberCard";
 import AddMemberModal from "./AddMemberModal";
-import { Users, UserPlus } from "lucide-react";
+import { Users, UserPlus, Funnel } from "lucide-react";
 import { useAuth } from "../../../hooks/AuthContext";
 
 const TeamMemberSidebar = ({ plannerId }) => {
@@ -10,7 +10,7 @@ const TeamMemberSidebar = ({ plannerId }) => {
     useTeamPlanner();
   const { user } = useAuth();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-
+  const [memberScFilterMode, setMemberScFilterMode] = useState(false);
   // 플래너가 선택되면 멤버 목록 불러오기
   useEffect(() => {
     if (plannerId) {
@@ -26,7 +26,19 @@ const TeamMemberSidebar = ({ plannerId }) => {
     <div className="w-80 border-l bg-white h-full overflow-y-auto">
       {/* 헤더 */}
       <div className="p-4 border-b sticky top-0 bg-white z-10">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2 pb-3 border-b">
+          <Funnel size={20} className="text-gray-600" />
+          <h2 className="font-bold text-lg">팀원별 일정 보기</h2>
+          <button onClick={() => setMemberScFilterMode(!memberScFilterMode)}>
+            <input
+              type="checkbox"
+              checked={memberScFilterMode}
+              onChange={(e) => setMemberScFilterMode(e.target.checked)}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </button>
+        </div>
+        <div className="flex items-center justify-between mb-2 pt-3">
           <div className="flex items-center gap-2">
             <Users size={20} className="text-gray-600" />
             <h2 className="font-bold text-lg">팀원 관리</h2>
