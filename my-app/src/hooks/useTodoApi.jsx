@@ -369,11 +369,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
     }, [isAuthenticated, user, getAuthHeaders]);
 
     /**
-     * 2.5 반복 To-Do 자동 생성 : 임시
-     * @param {number} userId - 사용자 ID
-     * @param {Object} params - 생성 파라미터
-     * @param {Date} params.targetDate - 생성 대상 날짜 (기본값: 오늘)
-     * @returns {Promise<{generatedTodos: Array, targetDate: Date}>}
+     * 2.5 반복 To-Do 자동 생성
      */
     const generateRecurringTodos = useCallback(async (userId, params = {}) => {
         checkAuth();
