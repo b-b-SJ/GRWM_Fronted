@@ -301,7 +301,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
             title: recurringTodoData.title,
             description: recurringTodoData.description,
             startDate: recurringTodoData.startDate || recurringTodoData.date,
-            active: recurringTodoData.active ?? recurringTodoData.active ?? true,
+            active: recurringTodoData.active,
             repeatRange: recurringTodoData.repeatRange || recurringTodoData.recurrenceType,
             // 개별 필드로 전송
             daily: recurringTodoData.daily || 0,
