@@ -1,5 +1,6 @@
 // src/hooks/AuthContext.js
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { requestFCMToken } from './useFCM'
 
 const AuthContext = createContext();
 
@@ -53,10 +54,13 @@ export const AuthProvider = ({ children }) => {
         setError('');
 
         try {
+            const fcmToken = await requestFCMToken();
+            console.log('FCM 토큰 발급:', fcmToken || '토큰 없음');
+
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ loginId, password })
+                body: JSON.stringify({ loginId, password, fcmToken })
             });
 
             if (response.ok) {

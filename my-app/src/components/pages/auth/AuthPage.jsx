@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/AuthContext';
 import useLoginId from '../../../hooks/useLoginId';
+import { setupFCMListener } from '../../../hooks/useFCM';
 
 // 분리된 컴포넌트 import
 import MainAuthPage from './MainAuthPage';
@@ -30,6 +31,10 @@ const AuthPage = () => {
         isAvailable: loginIdAvailable,
         resetState: resetLoginIdState
     } = useLoginId();
+
+    useEffect(() => {
+        setupFCMListener();
+    }, []);
 
     // OAuth 콜백 처리 로직 추가
     useEffect(() => {
@@ -71,9 +76,11 @@ const AuthPage = () => {
 
     // 로그인 관리
     const handleLogin = async () => {
+        // 로그인 시 FCM 토큰 발급 후 함께 전송
+        // AuthContext의 login 함수가 알아서 처리
         const result = await login(formData.loginId, formData.password);
+
         if (result.success) {
-            // 로그인 성공 시 사용자 정보 표시
             const welcomeMessage = result.data.username
                 ? `환영합니다, ${result.data.username}님! 메인 페이지로 이동합니다.`
                 : '로그인 성공! 메인 페이지로 이동합니다.';
