@@ -181,6 +181,12 @@ export const useStudyRoomState = () => {
                             currentMembers: (prev.currentMembers || 0) + 1
                         }));
                     }
+                    if (joinedStudyRoom) {
+                        setJoinedStudyRoom(prev => ({
+                            ...prev,
+                            currentMembers: (prev.currentMembers || 0) + 1
+                        }));
+                    }
                     console.log('사용자 입장:', event.user);
                     break;
 
@@ -214,7 +220,7 @@ export const useStudyRoomState = () => {
             removeRoomHandler();
         };
     }, [addTodoHandler, addReactionHandler, addVoteHandler, addRoomHandler,
-        currentStudyRoom, disconnectWebSocket]);
+        currentStudyRoom, joinedStudyRoom, disconnectWebSocket]);
 
     // ========== 스터디룸 API ==========
 
@@ -338,7 +344,7 @@ export const useStudyRoomState = () => {
                 category: data.category || '일반',
                 isPrivate : data.private ||  data.isPrivate,
                 status: 'ACTIVE', // 참여 중이면 활성 상태
-                currentMembers: 1, // 본인만 표시하거나 백엔드에서 받은 값 사용
+                currentMembers: data.currentMembers || 1, // 본인만 표시하거나 백엔드에서 받은 값 사용
                 maxMembers: data.maxMember || data.maxMembers || 8,
                 endTime: data.endTime,
                 startTime: data.startTime,
