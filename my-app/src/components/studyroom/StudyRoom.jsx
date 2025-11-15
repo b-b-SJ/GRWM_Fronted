@@ -11,7 +11,7 @@ import { useAuth } from '../../hooks/AuthContext';
  * 2. WebSocket 이벤트 핸들러 등록
  * 3. 컴포넌트 언마운트 시 명시적 disconnect
  */
-const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
+const StudyRoom = ({ studyRoomId, onBack = () => {}, onExtended }) => {
     const { user } = useAuth();
     const {
         currentStudyRoom,
@@ -55,15 +55,12 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
         requiredVotes: 0
     });
     const [hasVoted, setHasVoted] = useState(false);
+    const [manualExtensionMinutes, setManualExtensionMinutes] = useState(0);
+    const [hasExtended, setHasExtended] = useState(false); // 연장 여부 추적
 
     // WebSocket 이벤트 핸들러 등록
     useEffect(() => {
         if (!studyRoomId) return;
-
-        console.log('[StudyRoom] WebSocket 이벤트 핸들러 등록');
-
-        // To-do와 리액션은 WebSocket 이벤트를 받지 않으므로,
-        // CRUD 작업 후 수동으로 fetchTodos 호출
 
         // 투표 이벤트 핸들러
         const removeVoteHandler = addVoteHandler((event) => {
@@ -73,41 +70,46 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                 // 백엔드가 보내는 데이터 구조에 맞게 수정
                 setVoteStatus(prev => ({
                     ...prev,
-                    totalVotes: event.votedCount || event.agreeCount || 0, // data.currentVotes 대신
-                    votedUsers: event.votedUserIds || [], // data.votedUserIds 대신
-                    requiredVotes: event.totalParticipants ? Math.ceil(event.totalParticipants / 2) : prev.requiredVotes
-                })); if (event.isCompleted) {
-                    console.log('[StudyRoom] 투표 완료:', event.result);
+                    totalVotes: event.votedCount || event.agreeCount || 0,
+                    votedUsers: event.votedUserIds || [],
+                    requiredVotes: event.totalParticipants ? Math.ceil(event.totalParticipants / 2) : prev.requiredVotes,
+                    isVoting: !event.isCompleted || !event.completed  // 투표 완료되면 isVoting을 false로
+                }));
+
+                const isCompleted = event.isCompleted || event.completed;
+
+                console.log('[StudyRoom] 계산된 isCompleted:', isCompleted);
+
+                // 투표 완료 처리
+                if (isCompleted) {
+                    console.log('[StudyRoom] 투표 완료 처리 시작, result:', event.result);
 
                     // 투표 결과에 따라 처리
                     if (event.result) {
-                        // 투표 통과 - ROOM_EXTENDED 이벤트를 기다리지 않고 바로 처리
-                        setTimeout(() => {
-                            alert(`투표가 통과되었습니다! ${currentStudyRoom?.extensionTime || 10}분 연장됩니다.`);
-                            setShowVoteAlert(false);
-                            setVoteStatus({
-                                isVoting: false,
-                                votedUsers: [],
-                                totalVotes: 0,
-                                requiredVotes: 0
-                            });
-                            setHasVoted(false);
-                            fetchStudyRoomDetail(studyRoomId);
-                        }, 500);
+                        // 투표 통과
+                        const extensionTime = currentStudyRoom?.extensionTime || 10;
+                        setManualExtensionMinutes(prev => prev + extensionTime);
+                        setHasExtended(true);
+                        alert(`투표가 통과되었습니다! ${currentStudyRoom?.extensionTime || 10}분 연장됩니다.`);
+                        fetchStudyRoomDetail(studyRoomId);
+
+                        if (onExtended) {
+                            onExtended(studyRoomId, extensionTime);
+                        }
                     } else {
                         // 투표 부결
-                        setTimeout(() => {
-                            alert('투표가 부결되었습니다. 스터디룸이 예정대로 종료됩니다.');
-                            setShowVoteAlert(false);
-                            setVoteStatus({
-                                isVoting: false,
-                                votedUsers: [],
-                                totalVotes: 0,
-                                requiredVotes: 0
-                            });
-                            setHasVoted(false);
-                        }, 500);
+                        alert('투표가 부결되었습니다. 스터디룸이 예정대로 종료됩니다.');
+                        setHasExtended(true);
                     }
+
+                    setShowVoteAlert(false);
+                    setVoteStatus({
+                        isVoting: false,
+                        votedUsers: [],
+                        totalVotes: 0,
+                        requiredVotes: 0
+                    });
+                    setHasVoted(false);
                 }
             } else if (event.type === 'ROOM_EXTENDED') {
                 console.log('[StudyRoom] 스터디룸 연장 완료');
@@ -224,13 +226,14 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                 }
 
                 const diff = endTime - now;
-                const minutes = Math.floor(diff / 1000 / 60);
+                const baseMinutes = Math.floor(diff / 1000 / 60);
+                const minutes = baseMinutes + manualExtensionMinutes;
 
                 console.log('[StudyRoom] 남은 시간:', minutes, '분', '(endTime:', endTime.toISOString(), ')');
                 setRemainingTime(minutes);
 
                 // 5분 전 투표 시작
-                if (minutes === 5 && !voteStatus.isVoting && !showVoteAlert) {
+                if (minutes === 5 && !voteStatus.isVoting && !showVoteAlert && !hasExtended) {
                     console.log('[StudyRoom] 연장 투표 시작');
                     setShowVoteAlert(true);
                     const requiredVotes = Math.ceil(currentStudyRoom.currentMembers / 2);
@@ -246,7 +249,6 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                 // 시간 종료
                 if (minutes <= 0) {
                     console.log('[StudyRoom] 스터디룸 시간 종료');
-                    alert('스터디룸 시간이 종료되었습니다.');
                     disconnect();
                     leaveStudyRoom(studyRoomId);
                     onBack();
@@ -267,7 +269,7 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
             console.log('[StudyRoom] 타이머 정리');
             clearInterval(timer);
         };
-    }, [currentStudyRoom, voteStatus.isVoting, showVoteAlert, studyRoomId, leaveStudyRoom, onBack, disconnect]);
+    }, [currentStudyRoom, voteStatus.isVoting, showVoteAlert, hasExtended, studyRoomId, leaveStudyRoom, onBack, disconnect]);
 
     // 사용자별 To-Do 그룹화
     const participantTodos = useCallback(() => {
@@ -410,31 +412,6 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                 isVoting: !result.isCompleted,
                 requiredVotes: result.totalParticipants ? Math.ceil(result.totalParticipants / 2) : prev.requiredVotes
             }));
-
-            // 내가 마지막 투표자인 경우 즉시 결과 표시
-            if (result.isCompleted) {
-                if (result.result) {
-                    alert(`투표가 통과되었습니다! ${currentStudyRoom.extensionTime}분 연장됩니다.`);
-                } else {
-                    alert('투표가 부결되었습니다. 스터디룸이 예정대로 종료됩니다.');
-                }
-
-                setShowVoteAlert(false);
-                setVoteStatus({
-                    isVoting: false,
-                    votedUsers: [],
-                    totalVotes: 0,
-                    requiredVotes: 0
-                });
-                setHasVoted(false);
-
-                // 통과된 경우 스터디룸 정보 새로고침
-                if (result.result) {
-                    setTimeout(() => {
-                        fetchStudyRoomDetail(studyRoomId);
-                    }, 1000);
-                }
-            }
         }
     };
 

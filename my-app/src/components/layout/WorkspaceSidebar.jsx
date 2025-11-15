@@ -2,9 +2,14 @@ import React from 'react';
 import { X, Search, Hash, Lock, Crown, MessageCircle, BookOpen, Plus, RefreshCw } from 'lucide-react';
 
 // 남은 시간 계산 헬퍼 함수
-const calculateTimeRemaining = (endTime) => {
+const calculateTimeRemaining = (endTime, extensionMinutes= 0) => {
     const now = new Date();
     const end = new Date(endTime);
+
+    if (extensionMinutes > 0) {
+        end.setMinutes(end.getMinutes() + extensionMinutes);
+    }
+
     const diff = end - now;
 
     if (diff <= 0) return '종료됨';
@@ -38,7 +43,8 @@ const WorkspaceSidebar = ({
                               isLoadingRooms = false,
                               onRefreshRooms,
                               onRefreshStudyRooms,
-                              unreadCounts = {}
+                              unreadCounts = {},
+                              studyRoomExtensions = {}
                           }) => {
     // 컴포넌트 렌더링 시 로그
     console.log('[WorkspaceSidebar] 렌더링');
@@ -266,7 +272,11 @@ const WorkspaceSidebar = ({
                         const studyRoomId = room.studyRoomId || room.id;
                         const roomName = room.name || '이름 없는 스터디룸';
                         const isActive = room.status === 'ACTIVE' || room.status === 'active';
-                        const timeRemaining = room.endTime ? calculateTimeRemaining(room.endTime) : null;
+                        const extensionMinutes = studyRoomExtensions[studyRoomId] || 0;
+                        const timeRemaining = room.endTime
+                            ? calculateTimeRemaining(room.endTime, extensionMinutes)
+                            : null;
+
                         const isSelected = selectedRoom === studyRoomId;
 
                         if (!studyRoomId) {
@@ -299,9 +309,11 @@ const WorkspaceSidebar = ({
                                                         {room.category}
                                                     </span>
                                                 )}
+                                                {/*
                                                 <span className="text-sm text-gray-500">
                                                     {room.currentMembers || room.userCount || 0}명
                                                 </span>
+                                                */}
                                             </div>
                                         </div>
                                     </div>
