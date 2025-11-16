@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, {useState, useEffect, useCallback} from "react";
 import TodoList from "../planner/TodoList";
 import ScheduleListSidebar from "../planner/ScheduleListSidebar";
 import {
@@ -10,6 +10,10 @@ import {
 import MonthlyGrid from "../planner/MonthlyGrid";
 import { useCalendar } from "../../hooks/useCalendar";
 import { useScheduleFilter } from "../../hooks/useScheduleFilter";
+import TodoSidebarWidget from "../../components/tracker/TodoSidebarWidget";
+import {useNavigate} from "react-router-dom";
+import useTodoApi from "../../hooks/useTodoApi";
+import { useAuth } from "../../hooks/AuthContext";
 
 const PlannerSidebar = ({
   sidebarClassName,
@@ -36,6 +40,18 @@ const PlannerSidebar = ({
   const sideDate = new Date(tempDate);
   const calendar = useCalendar();
   const scFilter = useScheduleFilter({ nowPlanner, currentDate });
+
+  // to-do modal 관련 추가
+  const { user, isAuthenticated, getAuthHeaders } = useAuth();
+  const { loading, getTodos, createTodo, updateTodo, deleteTodo, completeTodo } =
+      useTodoApi(user, isAuthenticated, getAuthHeaders);
+  const navigate = useNavigate();
+
+  const [todayTodos, setTodayTodos] = useState([]);
+  const [modalState, setModalState] = useState({ isOpen: false, todo: null });
+
+  const currentUserId = user?.userId;
+  // to-do modal 관련 추가 끝
 
   //useCalendar에서 직접 그냥 가져옴; - 메인 캘린더랑 분리를 위해서
   const firstDayOfMonth = new Date(
@@ -71,10 +87,69 @@ const PlannerSidebar = ({
 
   const sideWeeks = calendar.groupDatesByWeek(startDay, endDay);
 
+  // To-do 데이터 가져오기
+  const fetchTodayTodos = useCallback(async () => {
+    if (!currentUserId) {
+      setTodayTodos([]);
+      return;
+    }
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const fetchedTodos = await getTodos(currentUserId, { date: today });
+
+      if (fetchedTodos) {
+        const normalizedTodos = Array.isArray(fetchedTodos)
+            ? fetchedTodos.map(todo => ({
+              ...todo,
+              id: todo.todoId,
+              date: new Date(todo.date).toISOString().split('T')[0]
+            }))
+            : [];
+        setTodayTodos(normalizedTodos);
+      }
+    } catch (error) {
+      console.error('오늘의 투두 로드 실패:', error);
+    }
+  }, [currentUserId, getTodos]);
+
+  // To-do 완료/미완료 토글
+  const handleToggleComplete = async (todoId) => {
+    if (!currentUserId) return;
+
+    try {
+      const todo = todayTodos.find(t => t.id === todoId);
+      if (!todo) return;
+
+      if (!todo.completed) {
+        await completeTodo(currentUserId, todoId);
+      } else {
+        await updateTodo(currentUserId, todoId, {
+          title: todo.title,
+          description: todo.description,
+          date: todo.date,
+          completed: false,
+          postponed: todo.postponed,
+        });
+      }
+
+      await fetchTodayTodos();
+    } catch (error) {
+      console.error("Todo 완료 처리 실패:", error);
+    }
+  };
+
   //메인 플래너 날짜가 바뀌면 따라감
   useEffect(() => {
     setTempDate(currentDate);
   }, [currentDate]);
+
+  // to-do 불러오기
+  useEffect(() => {
+    if (isAuthenticated && currentUserId) {
+      fetchTodayTodos();
+    }
+  }, [isAuthenticated, currentUserId, fetchTodayTodos]);
 
   return (
     <div className={`${sidebarClassName}`}>
@@ -158,10 +233,24 @@ const PlannerSidebar = ({
               }`}
             />
           </button>
-          {/**나중에 공간 늘리면 됨 */}
-          <div className=" ">
-            {todoOpen === true && <TodoList className="max-h-60 min-h-60" />}
-          </div>
+          {/* 기존 TodoList 대신 todowidget으로 교체 */}
+          {todoOpen && (
+              <div className="max-h-60 min-h-60 overflow-y-auto p-2">
+                {isAuthenticated ? (
+                    <TodoSidebarWidget
+                        todos={todayTodos}
+                        onToggleComplete={handleToggleComplete}
+                        onOpenAddModal={() => setModalState({ isOpen: true, todo: null })}
+                        onNavigateToTracker={() => navigate('/tracker?mode=todo')}
+                        loading={loading}
+                    />
+                ) : (
+                    <div className="text-center py-6 text-sm text-gray-500">
+                      로그인 후 사용 가능합니다
+                    </div>
+                )}
+              </div>
+          )}
         </div>
       </div>
     </div>

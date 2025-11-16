@@ -15,26 +15,6 @@ const TodoSidebarWidget = ({
 
     return (
         <div className="space-y-3">
-            {/* 헤더 버튼 영역 */}
-            <div className="flex items-center justify-between px-2">
-                <div className="flex items-center space-x-1">
-                    <button
-                        onClick={onOpenAddModal}
-                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                        title="할일 추가"
-                    >
-                        <Plus size={16} />
-                    </button>
-                    <button
-                        onClick={onNavigateToTracker}
-                        className="p-1.5 text-gray-600 hover:bg-gray-100 rounded transition-colors"
-                        title="Tracker로 이동"
-                    >
-                        <ChevronRight size={16} />
-                    </button>
-                </div>
-            </div>
-
             {loading ? (
                 <div className="text-center py-6 text-sm text-gray-500">
                     로딩 중...
@@ -122,13 +102,14 @@ const TodoSidebarWidget = ({
                     {/* 빈 상태 */}
                     {todayTodos.length === 0 && completedTodos.length === 0 && (
                         <div className="text-center py-6 px-2">
-                            <Clock size={32} className="text-gray-300 mx-auto mb-2" />
-                            <p className="text-xs text-gray-500 mb-2">오늘 할일이 없습니다</p>
+                            <Clock size={32} className="text-gray-300 mx-auto mb-2"/>
+                            <p className="text-s text-gray-500 mb-2">오늘 할일이 없습니다</p>
                             <button
-                                onClick={onOpenAddModal}
-                                className="text-xs text-blue-600 hover:text-blue-700"
+                                onClick={onNavigateToTracker}
+                                className="text-xs p-5 text-blue-600 hover:bg-gray-100 rounded transition-colors"
+                                title="Tracker로 이동"
                             >
-                                할일 추가하기
+                                트래커에서 To-do 추가하기
                             </button>
                         </div>
                     )}
