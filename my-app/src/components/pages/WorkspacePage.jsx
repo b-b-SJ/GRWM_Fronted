@@ -333,6 +333,10 @@ const WorkspacePage = () => {
     const [selectedChatRoom, setSelectedChatRoom] = useState(null);
     const [selectedStudyRoom, setSelectedStudyRoom] = useState(null);
 
+    // 스터디룸 연장 시간
+    // Workspace.jsx 상단
+    const [studyRoomExtensions, setStudyRoomExtensions] = useState({});
+
     const {
         chatRooms,
         isLoadingRooms,
@@ -587,6 +591,7 @@ const WorkspacePage = () => {
                     onRefreshRooms={handleRefreshRooms}
                     onRefreshStudyRooms={handleRefreshRooms}
                     unreadCounts={unreadCounts}
+                    studyRoomExtensions={studyRoomExtensions}
                 />
 
                 {/* 오버레이 */}
@@ -635,6 +640,12 @@ const WorkspacePage = () => {
                         <StudyRoom
                             studyRoomId={selectedStudyRoom}
                             onBack={handleBackFromRoom}
+                            onExtended={(roomId, minutes) => {
+                                setStudyRoomExtensions(prev => ({
+                                    ...prev,
+                                    [roomId]: (prev[roomId] || 0) + minutes
+                                }));
+                            }}
                         />
                     ) : (
                         // 기본 화면

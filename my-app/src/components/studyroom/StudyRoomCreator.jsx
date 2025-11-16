@@ -79,6 +79,7 @@ const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
                 duration: formData.duration,
                 extensionTime: formData.extensionTime,
                 maxMembers: formData.maxMembers,
+                private : formData.private,
                 ...(formData.private && { password: formData.password })
             };
 
@@ -93,7 +94,11 @@ const StudyRoomCreator = ({ onRoomCreated, onCancel }) => {
             setLoadingMessage('스터디룸에 참여하고 있습니다...');
 
             // 2. 생성된 스터디룸에 자동 참여
-            const joinSuccess = await joinStudyRoom(studyRoomId);
+            const joinSuccess = await joinStudyRoom(
+                studyRoomId,
+                formData.private,      // 비공개 여부
+                formData.password      // 비밀번호
+            );
 
             if (!joinSuccess) {
                 throw new Error('스터디룸 참여에 실패했습니다.');

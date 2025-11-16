@@ -77,17 +77,22 @@ const RecurringTodoManager = () => {
             // 디버깅 3: 리스트 크기 로깅
             console.log(`Fetched list size: ${recurringTodosList.length}`);
 
+            const normalizedTodos = recurringTodosList.map(todo => {
+                // recurrenceConfig에서 정보 추출
+                const config = todo.recurrenceConfig || {};
 
-            const normalizedTodos = recurringTodosList.map(todo => ({
-                ...todo.todoDto, // todoDto의 필드들 (title, description, date 등)
-                recurringId: todo.recurringId,
-                repeatRange: todo.repeatRange,
-                active: todo.active,
+                return {
+                    ...todo.todoDto, // todoDto의 필드들 (title, description, date 등)
+                    recurringId: todo.recurringId,
+                    repeatRange: todo.repeatRange,
+                    active: todo.active,
 
-                interval: todo.recurrenceConfig?.interval || 1, // 일간 반복 간격
-                weekly: todo.recurrenceConfig?.weekly || [],    // 주간 반복 요일 배열
-                monthly: todo.recurrenceConfig?.monthly || 1,   // 월간 반복 일자
-            }));
+                    // recurrenceConfig의 정보를 최상위로 올려서 저장
+                    interval: config.interval || 0,     // 일간 반복 간격
+                    weekly: config.weekly || [],        // 주간 반복 요일 배열
+                    monthly: config.monthly || 0,       // 월간 반복 일자
+                };
+            });
 
             // 디버깅 4: 정규화된 (state에 저장될) 데이터 로깅
             console.log("Normalized Todos (for state):", normalizedTodos);
@@ -200,54 +205,71 @@ const RecurringTodoManager = () => {
             return;
         }
 
-        let processedConfig = {
-            interval: 0,
-            weekly: [],
-            monthly: 0,
-        };
-
-        if (formData.recurrenceType === 'daily') {
-            processedConfig = {
-                daily: {
-                    repeatInterval: formData.recurrenceConfig.interval || 1
-                }
-            };
-        } else if (formData.recurrenceType === 'weekly') {
-            processedConfig = {
-                weekly: {
-                    daysOfWeek: formData.recurrenceConfig.daysOfWeek || []
-                }
-            };
-        } else if (formData.recurrenceType === 'monthly') {
-            processedConfig = {
-                monthly: {
-                    dayOfMonth: formData.recurrenceConfig.dayOfMonth || 1
-                }
-            };
-        }
-
         try {
-            const payload = {
-                title: formData.title,
-                description: formData.description,
-                recurrenceType: formData.recurrenceType,
-                recurrenceConfig: processedConfig,
-                startDate: formData.startDate,
-                active: formData.active,
-            };
-
-            console.log('Submitting payload:', payload);
-
             if (selectedTodo) {
-                const idToUpdate = selectedTodo.recurringId;
-                console.log('Updating todo:', idToUpdate);
+                // RecurringTodoUpdateDto 구조에 맞게
+                const updatePayload = {
+                    title: formData.title,
+                    description: formData.description,
+                    startDate: formData.startDate,
+                    active: formData.active,
+                    repeatRange: formData.recurrenceType,
+                    // 개별 필드로 전송
+                    daily: formData.recurrenceType === 'daily'
+                        ? (formData.recurrenceConfig.interval || 1)
+                        : 0,
+                    weekly: formData.recurrenceType === 'weekly'
+                        ? (formData.recurrenceConfig.daysOfWeek || [])
+                        : [],
+                    monthly: formData.recurrenceType === 'monthly'
+                        ? (formData.recurrenceConfig.dayOfMonth || 1)
+                        : 0
+                };
 
-                await updateRecurringTodo(currentUserId, idToUpdate, payload);
+                console.log('Updating todo with payload:', updatePayload);
 
+                await updateRecurringTodo(currentUserId, selectedTodo.recurringId, updatePayload);
                 await loadRecurringTodos();
             } else {
-                console.log('Creating new todo');
-                const created = await createRecurringTodo(currentUserId, payload);
+                // 생성 모드
+                let processedConfig = {
+                    interval: 0,
+                    weekly: [],
+                    monthly: 0,
+                };
+
+                if (formData.recurrenceType === 'daily') {
+                    processedConfig = {
+                        daily: {
+                            repeatInterval: formData.recurrenceConfig.interval || 1
+                        }
+                    };
+                } else if (formData.recurrenceType === 'weekly') {
+                    processedConfig = {
+                        weekly: {
+                            daysOfWeek: formData.recurrenceConfig.daysOfWeek || []
+                        }
+                    };
+                } else if (formData.recurrenceType === 'monthly') {
+                    processedConfig = {
+                        monthly: {
+                            dayOfMonth: formData.recurrenceConfig.dayOfMonth || 1
+                        }
+                    };
+                }
+
+                const createPayload = {
+                    title: formData.title,
+                    description: formData.description,
+                    recurrenceType: formData.recurrenceType,
+                    recurrenceConfig: processedConfig,
+                    startDate: formData.startDate,
+                    active: formData.active,
+                };
+
+                console.log('Creating new todo with payload:', createPayload);
+
+                const created = await createRecurringTodo(currentUserId, createPayload);
                 console.log('Created response:', created);
 
                 if (created) {
@@ -255,7 +277,7 @@ const RecurringTodoManager = () => {
                     const newRecurringTodo = {
                         ...created.todoDto,
                         recurringId: created.recurringId,
-                        title: formData.title, // 폼 데이터의 최신 값을 사용
+                        title: formData.title,
                         description: formData.description,
                         date: formData.startDate,
                         recurring: true,

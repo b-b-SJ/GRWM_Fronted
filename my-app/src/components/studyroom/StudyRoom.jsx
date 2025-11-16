@@ -11,7 +11,7 @@ import { useAuth } from '../../hooks/AuthContext';
  * 2. WebSocket 이벤트 핸들러 등록
  * 3. 컴포넌트 언마운트 시 명시적 disconnect
  */
-const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
+const StudyRoom = ({ studyRoomId, onBack = () => {}, onExtended }) => {
     const { user } = useAuth();
     const {
         currentStudyRoom,
@@ -55,37 +55,64 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
         requiredVotes: 0
     });
     const [hasVoted, setHasVoted] = useState(false);
+    const [manualExtensionMinutes, setManualExtensionMinutes] = useState(0);
+    const [hasExtended, setHasExtended] = useState(false); // 연장 여부 추적
 
     // WebSocket 이벤트 핸들러 등록
     useEffect(() => {
         if (!studyRoomId) return;
-
-        console.log('[StudyRoom] WebSocket 이벤트 핸들러 등록');
-
-        // To-do와 리액션은 WebSocket 이벤트를 받지 않으므로,
-        // CRUD 작업 후 수동으로 fetchTodos 호출
 
         // 투표 이벤트 핸들러
         const removeVoteHandler = addVoteHandler((event) => {
             console.log('[StudyRoom] 투표 이벤트 수신:', event);
 
             if (event.type === 'VOTE_UPDATED') {
+                // 백엔드가 보내는 데이터 구조에 맞게 수정
                 setVoteStatus(prev => ({
                     ...prev,
-                    totalVotes: event.data.currentVotes,
-                    votedUsers: event.data.votedUserIds || []
+                    totalVotes: event.votedCount || event.agreeCount || 0,
+                    votedUsers: event.votedUserIds || [],
+                    requiredVotes: event.totalParticipants ? Math.ceil(event.totalParticipants / 2) : prev.requiredVotes,
+                    isVoting: !event.isCompleted || !event.completed  // 투표 완료되면 isVoting을 false로
                 }));
-            } else if (event.type === 'ROOM_EXTENDED') {
-                alert(`투표가 통과되었습니다! ${currentStudyRoom.extensionTime}분 연장됩니다.`);
-                setShowVoteAlert(false);
-                setVoteStatus({
-                    isVoting: false,
-                    votedUsers: [],
-                    totalVotes: 0,
-                    requiredVotes: 0
-                });
-                setHasVoted(false);
 
+                const isCompleted = event.isCompleted || event.completed;
+
+                console.log('[StudyRoom] 계산된 isCompleted:', isCompleted);
+
+                // 투표 완료 처리
+                if (isCompleted) {
+                    console.log('[StudyRoom] 투표 완료 처리 시작, result:', event.result);
+
+                    // 투표 결과에 따라 처리
+                    if (event.result) {
+                        // 투표 통과
+                        const extensionTime = currentStudyRoom?.extensionTime || 10;
+                        setManualExtensionMinutes(prev => prev + extensionTime);
+                        setHasExtended(true);
+                        alert(`투표가 통과되었습니다! ${currentStudyRoom?.extensionTime || 10}분 연장됩니다.`);
+                        fetchStudyRoomDetail(studyRoomId);
+
+                        if (onExtended) {
+                            onExtended(studyRoomId, extensionTime);
+                        }
+                    } else {
+                        // 투표 부결
+                        alert('투표가 부결되었습니다. 스터디룸이 예정대로 종료됩니다.');
+                        setHasExtended(true);
+                    }
+
+                    setShowVoteAlert(false);
+                    setVoteStatus({
+                        isVoting: false,
+                        votedUsers: [],
+                        totalVotes: 0,
+                        requiredVotes: 0
+                    });
+                    setHasVoted(false);
+                }
+            } else if (event.type === 'ROOM_EXTENDED') {
+                console.log('[StudyRoom] 스터디룸 연장 완료');
                 // 스터디룸 정보 새로고침 (연장된 종료 시간 반영)
                 fetchStudyRoomDetail(studyRoomId);
             }
@@ -199,13 +226,14 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                 }
 
                 const diff = endTime - now;
-                const minutes = Math.floor(diff / 1000 / 60);
+                const baseMinutes = Math.floor(diff / 1000 / 60);
+                const minutes = baseMinutes + manualExtensionMinutes;
 
                 console.log('[StudyRoom] 남은 시간:', minutes, '분', '(endTime:', endTime.toISOString(), ')');
                 setRemainingTime(minutes);
 
                 // 5분 전 투표 시작
-                if (minutes === 5 && !voteStatus.isVoting && !showVoteAlert) {
+                if (minutes === 5 && !voteStatus.isVoting && !showVoteAlert && !hasExtended) {
                     console.log('[StudyRoom] 연장 투표 시작');
                     setShowVoteAlert(true);
                     const requiredVotes = Math.ceil(currentStudyRoom.currentMembers / 2);
@@ -221,7 +249,6 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                 // 시간 종료
                 if (minutes <= 0) {
                     console.log('[StudyRoom] 스터디룸 시간 종료');
-                    alert('스터디룸 시간이 종료되었습니다.');
                     disconnect();
                     leaveStudyRoom(studyRoomId);
                     onBack();
@@ -242,7 +269,7 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
             console.log('[StudyRoom] 타이머 정리');
             clearInterval(timer);
         };
-    }, [currentStudyRoom, voteStatus.isVoting, showVoteAlert, studyRoomId, leaveStudyRoom, onBack, disconnect]);
+    }, [currentStudyRoom, voteStatus.isVoting, showVoteAlert, hasExtended, studyRoomId, leaveStudyRoom, onBack, disconnect]);
 
     // 사용자별 To-Do 그룹화
     const participantTodos = useCallback(() => {
@@ -346,6 +373,23 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
             alert('자신의 To-Do에는 리액션을 추가할 수 없습니다.');
             return;
         }
+        // 이미 리액션을 눌렀는지 확인
+        const todo = todos.find(t => t.todoId === todoId);
+        if (!todo) return;
+
+        const myReaction = todo.reactions?.find(r => r.creatorId === user?.communityId);
+
+        if (myReaction) {
+            // 이미 눌렀으면 리액션 삭제
+            console.log('[StudyRoom] 리액션 삭제:', myReaction.reactionId);
+            // await deleteTodoReaction(studyRoomId, todoId, myReaction.reactionId);
+        } else {
+            // 리액션 추가
+            console.log('[StudyRoom] 리액션 추가:', todoId);
+            await addTodoReaction(studyRoomId, todoId);
+        }
+
+        await fetchTodos(studyRoomId);
     };
 
     // 연장 투표
@@ -360,29 +404,14 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
 
         if (result) {
             setHasVoted(true);
+
             setVoteStatus(prev => ({
                 ...prev,
-                totalVotes: result.agreeCount,
-                votedUsers: [...prev.votedUsers, user.communityId],
+                totalVotes: result.votedCount || result.agreeCount || 0,
+                votedUsers: result.votedUserIds || [...prev.votedUsers, user.communityId],
                 isVoting: !result.isCompleted,
-                requiredVotes: Math.ceil(result.totalParticipants / 2)
+                requiredVotes: result.totalParticipants ? Math.ceil(result.totalParticipants / 2) : prev.requiredVotes
             }));
-
-            // 투표 완료 처리
-            if (result.isCompleted) {
-                if (result.result) {
-                    console.log('투표 통과! 연장 요청 중...');
-                    const extensionResult = await extendStudyRoom(studyRoomId);
-                    if (extensionResult) {
-                        console.log('연장 성공:', extensionResult);
-                        // WebSocket으로 ROOM_EXTENDED 메시지가 올 것임
-                    }
-                } else {
-                    alert('투표가 부결되었습니다.');
-                    setShowVoteAlert(false);
-                    setVoteStatus(prev => ({ ...prev, isVoting: false }));
-                }
-            }
         }
     };
 
@@ -605,7 +634,7 @@ const StudyRoom = ({ studyRoomId, onBack = () => {} }) => {
                         <button
                             onClick={() => {
                                 clearError();
-                                joinStudyRoom(studyRoomId);
+                                joinStudyRoom(studyRoomId, false, null);
                             }}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                         >

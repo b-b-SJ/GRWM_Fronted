@@ -207,7 +207,7 @@ const SignupPage = ({
                                 )}
                         </div>
 
-                        {/* 약관 동의 */}
+                        {/* 약관 동의
                         <div className="flex items-start space-x-3">
                             <input
                                 type="checkbox"
@@ -222,7 +222,7 @@ const SignupPage = ({
                 </span>
                                 에 동의합니다.
                             </label>
-                        </div>
+                        </div> */}
 
                         {/* 회원가입 버튼 */}
                         <button
