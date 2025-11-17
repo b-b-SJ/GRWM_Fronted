@@ -128,7 +128,6 @@ const StudyRoom = ({ studyRoomId, onBack = () => {}, onExtended }) => {
                 fetchStudyRoomDetail(studyRoomId);
                 fetchTodos(studyRoomId);  // 이 줄 추가!
             } else if (event.type === 'ROOM_CLOSED') {
-                alert('스터디룸이 종료되었습니다.');
                 leaveStudyRoom(studyRoomId);
                 onBack();
             }
@@ -249,6 +248,7 @@ const StudyRoom = ({ studyRoomId, onBack = () => {}, onExtended }) => {
                 // 시간 종료
                 if (minutes <= 0) {
                     console.log('[StudyRoom] 스터디룸 시간 종료');
+                    alert('스터디룸이 종료되었습니다.');
                     disconnect();
                     leaveStudyRoom(studyRoomId);
                     onBack();
