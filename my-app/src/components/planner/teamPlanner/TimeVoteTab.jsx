@@ -31,6 +31,7 @@ const TimeVoteTab = ({ plannerId }) => {
     setLoading(true);
     try {
       const list = await fetchTimeVoteList(plannerId);
+      console.log("네네", list);
       setVoteList(list || []);
     } catch (error) {
       console.error("투표 목록 로드 실패:", error);
@@ -46,6 +47,7 @@ const TimeVoteTab = ({ plannerId }) => {
     setLoading(true);
     try {
       const detail = await fetchTimeVoteDetail(plannerId, voteId);
+      console.log("디테일을 줄게");
       setCurrentVote(detail);
     } catch (error) {
       console.error("투표 상세 로드 실패:", error);
@@ -70,7 +72,7 @@ const TimeVoteTab = ({ plannerId }) => {
   // 투표 제출
   const handleSubmitVote = async (selectedSlots) => {
     try {
-      await submitTimeVote(plannerId, currentVote.id, selectedSlots);
+      await submitTimeVote(plannerId, Number(currentVote.id), selectedSlots);
       alert("투표가 제출되었습니다!");
       loadVoteDetail(currentVote.id);
       setMode("view");
@@ -83,7 +85,7 @@ const TimeVoteTab = ({ plannerId }) => {
   // 재투표
   const handleUpdateVote = async (selectedSlots) => {
     try {
-      await updateTimeVote(plannerId, currentVote.id, selectedSlots);
+      await updateTimeVote(plannerId, Number(currentVote.id), selectedSlots);
       alert("투표가 수정되었습니다!");
       loadVoteDetail(currentVote.id);
       setMode("view");
