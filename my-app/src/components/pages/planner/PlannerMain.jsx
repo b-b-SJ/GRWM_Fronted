@@ -50,7 +50,7 @@ const PlannerMain = ({ sidebarOpen }) => {
 
   return (
     <div className="flex flex-1">
-      {sidebarOpen && <PlannerSidebar sidebarClassName="md:block hidden" />}
+      <PlannerSidebar sidebarOpen={sidebarOpen} />
       <div className="flex-1 flex flex-col">
         <PlannerHeaderWM />
       </div>

@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Routes, Route, useNavigate, Navigate } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  useNavigate,
+  Navigate,
+  useOutletContext,
+} from "react-router-dom";
 import { ChevronRight } from "lucide-react";
-import { useAuth } from "../../../hooks/AuthContext";
 import { PlannerProvider } from "../../../hooks/PlannerContext";
 
 //공통
@@ -11,42 +16,12 @@ import PlannerListPage from "./PlannerListPage";
 import PlannerMain from "./PlannerMain";
 
 const PlannerPage = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { user } = useAuth();
-
-  // 계정 전환 감지 및 localStorage 초기화
-  useEffect(() => {
-    if (user?.userId) {
-      console.log("사용자 감지:", user.userId);
-
-      const savedUserId = localStorage.getItem("lastUserId");
-
-      if (savedUserId && savedUserId !== String(user.userId)) {
-        console.log("다른 계정 감지! localStorage 초기화");
-        localStorage.removeItem("lastPlannerType");
-        localStorage.removeItem("lastPlanner_shared");
-        localStorage.removeItem("lastPlanner_personal");
-      }
-
-      localStorage.setItem("lastUserId", user.userId);
-    }
-  }, [user?.userId]);
-
+  const { plannerSidebarOpen, setPlannerSidebarOpen, togglePlannerSidebar } =
+    useOutletContext();
   return (
     <div className="relative flex-col flex flex-1">
       <div className="flex flex-1 overflow-y-auto">
         {/* 사이드바 토글 버튼 */}
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="text-md bg-orange-300"
-        >
-          <ChevronRight
-            size={16}
-            className={`transform transition-transform ${
-              sidebarOpen ? "scale-x-[-1]" : ""
-            }`}
-          />
-        </button>
 
         {/* 메인 콘텐츠 - 라우팅 */}
         <div className="flex-1 min-w-0">
@@ -60,7 +35,7 @@ const PlannerPage = () => {
               path="/personal/:plannerId"
               element={
                 <PlannerProvider plannerType="personal">
-                  <PlannerMain sidebarOpen={sidebarOpen} />
+                  <PlannerMain sidebarOpen={plannerSidebarOpen} />
                 </PlannerProvider>
               }
             />
@@ -71,7 +46,7 @@ const PlannerPage = () => {
               path="/shared/:plannerId"
               element={
                 <PlannerProvider plannerType="shared">
-                  <PlannerMain sidebarOpen={sidebarOpen} />
+                  <PlannerMain sidebarOpen={plannerSidebarOpen} />
                 </PlannerProvider>
               }
             />

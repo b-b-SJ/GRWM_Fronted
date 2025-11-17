@@ -12,7 +12,7 @@ import TodoSidebarWidget from "../../components/tracker/TodoSidebarWidget";
 import useTodoApi from "../../hooks/useTodoApi";
 import { useAuth } from "../../hooks/AuthContext";
 
-const PlannerSidebar = ({ sidebarClassName }) => {
+const PlannerSidebar = ({ sidebarOpen }) => {
   const { currentDate, setCurrentDate, viewMode, plannerType } =
     usePlannerContext();
 
@@ -167,7 +167,16 @@ const PlannerSidebar = ({ sidebarClassName }) => {
   }, [currentDate]);
 
   return (
-    <div className={`${sidebarClassName}`}>
+    <div
+      className={`
+      ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
+      lg:translate-x-0 
+      fixed lg:static inset-y-0 left-0 z-10
+      w-80 bg-white border-r shadow-lg lg:shadow-none
+      transition-transform duration-300 ease-in-out
+      flex flex-col
+    `}
+    >
       <div className="w-80 bg-white border-r flex flex-col h-auto">
         <div>
           {(viewMode === "daily" || viewMode === "weekly") && (

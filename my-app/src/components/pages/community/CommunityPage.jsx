@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { ChevronRight, MessageSquare, Users, CirclePlus } from "lucide-react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route, useNavigate, useOutletContext } from "react-router-dom";
 import ProfilePage from "./ProfilePage";
-//import MainTimeLine from "../../community/MainTimeLine";
 import TimeLinePage from "./TimeLinePage";
 import CommunitySidebar from "../../layout/CommunitySidebar";
 import SearchPage from "./SearchPage";
@@ -16,7 +15,12 @@ import DetailedPostPage from "./DetailedPostPage";
  *
  */
 const CommunityPage = () => {
-  const [comSidebarOpen, setComSidebarOpen] = useState(true);
+  const {
+    communitySidebarOpen,
+    setCommunitySidebarOpen,
+    toggleCommunitySidebar,
+  } = useOutletContext();
+
   const [isMyProfile, setIsMyProfile] = useState(true);
   const [openPostModal, setOpenPostModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0); // ✅ 새로고침 트리거
@@ -33,19 +37,7 @@ const CommunityPage = () => {
   return (
     <div className="relative flex-col flex flex-1 ">
       <div className="flex flex-1  overflow-y-auto">
-        <button
-          onClick={() => setComSidebarOpen(!comSidebarOpen)}
-          className="bg-rose-200"
-        >
-          <ChevronRight
-            size={16}
-            className={`transform transition-transform ${
-              comSidebarOpen === true ? "scale-x-[-1]" : ""
-            }`}
-          />
-        </button>
-
-        {comSidebarOpen === true && <CommunitySidebar />}
+        <CommunitySidebar sidebarOpen={communitySidebarOpen} />
 
         {/*메인콘텐츠 */}
         <div className="flex-1 min-w-0">

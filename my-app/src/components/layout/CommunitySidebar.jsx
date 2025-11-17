@@ -5,7 +5,7 @@ import { Search, X, Hash } from "lucide-react";
 import { useHashtag } from "../../hooks/useHashtag";
 import { useAuth } from "../../hooks/AuthContext";
 
-const CommunitySidebar = () => {
+const CommunitySidebar = ({ sidebarOpen }) => {
   const [keyword, setKeyword] = useState("");
   const navigate = useNavigate();
 
@@ -67,7 +67,16 @@ const CommunitySidebar = () => {
   };
 
   return (
-    <div className="xl:block hidden">
+    <div
+      className={`
+      ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
+      lg:translate-x-0 
+      fixed lg:static inset-y-0 left-0 z-10
+      w-80 bg-white border-r shadow-lg lg:shadow-none
+      transition-transform duration-300 ease-in-out
+      flex flex-col
+    `}
+    >
       <div className="min-w-80 border-r flex flex-col h-full bg-white p-4">
         {/*검색창 컨테이너 */}
         <div className="w-full my-4">
