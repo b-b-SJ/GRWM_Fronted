@@ -9,7 +9,7 @@ import {
   Filter,
 } from "lucide-react";
 import DailyPlanner from "./DailyPlanner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useCurrentPlanner } from "../../hooks/useCurrentPlanner";
 import { usePlannerContext } from "../../hooks/PlannerContext";
 import MonthlyGrid from "./MonthlyGrid";
@@ -26,7 +26,6 @@ const PlannerHeaderWM = () => {
     currentWeekNum,
     year,
     month,
-    nowPlanner,
     plannerType,
     selectedCategory,
     setSelectedCategory,
@@ -41,7 +40,8 @@ const PlannerHeaderWM = () => {
     fetchMonthlySchedules,
     fetchWeeklySchedules,
   } = useCurrentPlanner(plannerType);
-
+  const { plannerId } = useParams();
+  const nowPlanner = Number(plannerId);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -64,13 +64,7 @@ const PlannerHeaderWM = () => {
 
       try {
         if (viewMode === "monthly") {
-          console.log("일로 들어는 가나요");
           await fetchMonthlySchedules(nowPlanner, year, month + 1);
-          console.log(
-            "‼️먼슬리",
-            schedules,
-            await fetchMonthlySchedules(nowPlanner, year, month + 1)
-          );
         } else {
           await fetchWeeklySchedules(
             nowPlanner,
