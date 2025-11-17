@@ -24,7 +24,7 @@ const TeamMemberSidebar = ({ plannerId }) => {
     }
   }, []);
 
-  // ✅ 필터링 모드 꺼질 때 초기화
+  // 필터링 모드 꺼질 때 초기화
   useEffect(() => {
     if (!memberScFilterMode) {
       setSelectedMember(null);
@@ -36,7 +36,7 @@ const TeamMemberSidebar = ({ plannerId }) => {
   const currentUserMember = members.find((m) => m.userId === user?.userId);
   const isManager = currentUserMember?.role === "manager";
 
-  // ✅ 필터 적용 핸들러 (백엔드 API 호출)
+  // 필터 적용 핸들러 (백엔드 API 호출)
   const handleApplyFilter = async () => {
     if (selectedMember === null) {
       // 전체 보기 - 필터 초기화
@@ -46,20 +46,20 @@ const TeamMemberSidebar = ({ plannerId }) => {
 
     setApplyLoading(true);
     try {
-      console.log("🔍 멤버별 일정 검색:", {
+      console.log("멤버별 일정 검색:", {
         plannerId,
         userId: selectedMember,
       });
 
-      // ✅ 백엔드에서 해당 멤버가 참여 중인 일정만 가져오기
+      // 백엔드에서 해당 멤버가 참여 중인 일정만 가져오기
       const schedules = await searchSchedulesByUser(plannerId, selectedMember);
 
-      console.log("✅ 검색 결과:", schedules);
+      console.log("검색 결과:", schedules);
 
       // Context에 저장 (Monthly/Weekly에서 사용)
       setMemberFilteredSchedules(schedules);
     } catch (err) {
-      console.error("❌ 멤버별 일정 검색 실패:", err);
+      console.error(" 멤버별 일정 검색 실패:", err);
       alert("일정 검색에 실패했습니다: " + err.message);
     } finally {
       setApplyLoading(false);
@@ -116,7 +116,7 @@ const TeamMemberSidebar = ({ plannerId }) => {
             />
           </div>
 
-          {/* ✅ 필터링 모드일 때 적용 버튼 표시 */}
+          {/* 필터링 모드일 때 적용 버튼 표시 */}
           {memberScFilterMode && (
             <div className="mt-2">
               {/* 전체 보기 옵션 */}
@@ -147,15 +147,16 @@ const TeamMemberSidebar = ({ plannerId }) => {
       {/* ========== 멤버 카드 목록 (관리용) ========== */}
       <div className="p-4 space-y-3">
         {members.map((member) => (
+          //추후 라벨 추가로 선택 간편하게 변경할것!
           <MemberCard
             key={member.userId}
             member={member}
             plannerId={plannerId}
             isManager={isManager}
             user={user}
-            showRadio={memberScFilterMode} // ✅ 라디오 버튼 표시 여부
-            isSelected={selectedMember === member.userId} // ✅ 선택 상태
-            onSelect={() => setSelectedMember(member.userId)} // ✅ 선택 핸들러
+            showRadio={memberScFilterMode} // 라디오 버튼 표시 여부
+            isSelected={selectedMember === member.userId} // 선택 상태
+            onSelect={() => setSelectedMember(member.userId)} // 선택 핸들러
           />
         ))}
 
@@ -164,7 +165,7 @@ const TeamMemberSidebar = ({ plannerId }) => {
         )}
       </div>
 
-      {/* ✅ 적용 버튼 */}
+      {/* 적용 버튼 */}
       {memberScFilterMode && (
         <div className="p-4 bg-white z-10">
           <button
