@@ -99,13 +99,16 @@ const PlannerSidebar = ({
       const fetchedTodos = await getTodos(currentUserId, { date: today });
 
       if (fetchedTodos) {
-        const normalizedTodos = Array.isArray(fetchedTodos)
-            ? fetchedTodos.map(todo => ({
-              ...todo,
-              id: todo.todoId,
-              date: new Date(todo.date).toISOString().split('T')[0]
-            }))
-            : [];
+          const normalizedTodos = Array.isArray(fetchedTodos)
+              ? fetchedTodos
+                  .map(todo => ({
+                      ...todo,
+                      id: todo.todoId,
+                      date: new Date(todo.date).toISOString().split('T')[0]
+                  }))
+                  .filter(todo => todo.date === today)
+                  .filter(todo => !todo.postponed)
+              : [];
         setTodayTodos(normalizedTodos);
       }
     } catch (error) {
