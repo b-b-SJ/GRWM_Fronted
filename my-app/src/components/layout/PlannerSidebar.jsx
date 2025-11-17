@@ -1,88 +1,94 @@
-import React, {useState, useEffect, useCallback} from "react";
+// src/components/layout/PlannerSidebar.jsx
+import React, { useState, useEffect } from "react";
 import TodoList from "../planner/TodoList";
 import ScheduleListSidebar from "../planner/ScheduleListSidebar";
-import {
-  ChevronDown,
-  ChevronUp,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import MonthlyGrid from "../planner/MonthlyGrid";
 import { useCalendar } from "../../hooks/useCalendar";
-import { useScheduleFilter } from "../../hooks/useScheduleFilter";
-import TodoSidebarWidget from "../../components/tracker/TodoSidebarWidget";
-import {useNavigate} from "react-router-dom";
-import useTodoApi from "../../hooks/useTodoApi";
-import { useAuth } from "../../hooks/AuthContext";
+import { useCurrentPlanner } from "../../hooks/useCurrentPlanner";
+import ScheduleFormModal from "../planner/ScheduleFormModal";
+import { usePlannerContext } from "../../hooks/PlannerContext";
+import { useParams } from "react-router-dom";
+const PlannerSidebar = ({ sidebarClassName }) => {
+  const { currentDate, setCurrentDate, viewMode, plannerType } =
+    usePlannerContext();
 
-const PlannerSidebar = ({
-                          sidebarClassName,
-                          viewMode,
-                          //year = { year },
-                          // month = { month },
-                          currentDate,
-                          setCurrentDate,
-                          weeks,
-                          setViewMode,
-                          weekNames,
-                          nowPlanner,
-                          openScModal,
-                          setOpenScModal,
-                          selectedSc,
-                          setSelectedSc,
-                        }) => {
+  const { plannerId } = useParams();
+  const nowPlanner = Number(plannerId);
+  const {
+    todaySchedules,
+    loading,
+    fetchTodaySchedules,
+    fetchMonthlySchedules,
+  } = useCurrentPlanner(plannerType);
+
   const [scheduleOpen, setScheduleOpen] = useState(true);
   const [todoOpen, setTodoOpen] = useState(true);
   const [tempDate, setTempDate] = useState(currentDate);
-  //console.log("plannerSidebar", viewMode);
-  //const prevMonth = new Date(tempDate);
-  //const nextMonth = new Date(tempDate);
-  const sideDate = new Date(tempDate);
+  const [openAddModal, setOpenAddModal] = useState(false);
+
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
   const calendar = useCalendar();
-  const scFilter = useScheduleFilter({ nowPlanner, currentDate });
 
-  // to-do modal 관련 추가
-  const { user, isAuthenticated, getAuthHeaders } = useAuth();
-  const { loading, getTodos, createTodo, updateTodo, deleteTodo, completeTodo } =
-      useTodoApi(user, isAuthenticated, getAuthHeaders);
-  const navigate = useNavigate();
+  //  URL의 plannerId로 일정 로드
+  useEffect(() => {
+    if (!nowPlanner) {
+      return;
+    }
+    console.log(` [${plannerType}] 일정 로딩 (URL plannerId: ${nowPlanner})`);
 
-  const [todayTodos, setTodayTodos] = useState([]);
-  const [modalState, setModalState] = useState({ isOpen: false, todo: null });
+    fetchTodaySchedules(nowPlanner, year, month + 1, today.getDate());
+  }, [plannerId, plannerType]); //  plannerId 의존!
 
-  const currentUserId = user?.userId;
-  // to-do modal 관련 추가 끝
+  // 일정 생성 성공 후 - 함수 재호출!
+  const handleScheduleCreated = async () => {
+    console.log(" 일정 생성 성공! 새로고침");
 
-  //useCalendar에서 직접 그냥 가져옴; - 메인 캘린더랑 분리를 위해서
+    if (!nowPlanner) return;
+
+    // 그냥 함수 호출만 하면 Provider가 알아서 schedules 업데이트!
+    await fetchTodaySchedules(nowPlanner, year, month + 1, today.getDate());
+    await fetchMonthlySchedules(nowPlanner, year, month + 1);
+  };
+
+  //  일정 삭제 성공 후 - 함수 재호출!
+  const handleScheduleDeleted = async () => {
+    console.log(" 일정 삭제 성공! 새로고침");
+
+    if (!nowPlanner) return;
+
+    await fetchTodaySchedules(nowPlanner, year, month + 1, today.getDate());
+  };
+
+  // 캘린더 날짜 계산
+  const sideDate = new Date(tempDate);
   const firstDayOfMonth = new Date(
-      tempDate.getFullYear(),
-      tempDate.getMonth(),
-      1
+    tempDate.getFullYear(),
+    tempDate.getMonth(),
+    1
   );
-
   const lastDayOfMonth = new Date(
-      tempDate.getFullYear(),
-      tempDate.getMonth() + 1,
-      0
+    tempDate.getFullYear(),
+    tempDate.getMonth() + 1,
+    0
   );
-
-  //월요일기준정렬
   const setMonday = (firstDayOfMonth.getDay() + 6) % 7;
   const startDay = new Date(firstDayOfMonth);
-  startDay.setDate(1 - setMonday); //startDay 변경
-
+  startDay.setDate(1 - setMonday);
   const endDay = new Date(lastDayOfMonth);
   const remaining = 6 - ((lastDayOfMonth.getDay() + 6) % 7);
   endDay.setDate(endDay.getDate() + remaining);
 
-  //날짜 바꾸미
   const goPrev = () => {
     sideDate.setMonth(sideDate.getMonth() - 1);
-    setTempDate(sideDate);
+    setTempDate(new Date(sideDate));
   };
+
   const goNext = () => {
     sideDate.setMonth(sideDate.getMonth() + 1);
-    setTempDate(sideDate);
+    setTempDate(new Date(sideDate));
   };
 
   const sideWeeks = calendar.groupDatesByWeek(startDay, endDay);
@@ -95,24 +101,24 @@ const PlannerSidebar = ({
     }
 
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split("T")[0];
       const fetchedTodos = await getTodos(currentUserId, { date: today });
 
       if (fetchedTodos) {
-          const normalizedTodos = Array.isArray(fetchedTodos)
-              ? fetchedTodos
-                  .map(todo => ({
-                      ...todo,
-                      id: todo.todoId,
-                      date: new Date(todo.date).toISOString().split('T')[0]
-                  }))
-                  .filter(todo => todo.date === today)
-                  .filter(todo => !todo.postponed)
-              : [];
+        const normalizedTodos = Array.isArray(fetchedTodos)
+          ? fetchedTodos
+              .map((todo) => ({
+                ...todo,
+                id: todo.todoId,
+                date: new Date(todo.date).toISOString().split("T")[0],
+              }))
+              .filter((todo) => todo.date === today)
+              .filter((todo) => !todo.postponed)
+          : [];
         setTodayTodos(normalizedTodos);
       }
     } catch (error) {
-      console.error('오늘의 투두 로드 실패:', error);
+      console.error("오늘의 투두 로드 실패:", error);
     }
   }, [currentUserId, getTodos]);
 
@@ -121,7 +127,7 @@ const PlannerSidebar = ({
     if (!currentUserId) return;
 
     try {
-      const todo = todayTodos.find(t => t.id === todoId);
+      const todo = todayTodos.find((t) => t.id === todoId);
       if (!todo) return;
 
       if (!todo.completed) {
@@ -147,118 +153,109 @@ const PlannerSidebar = ({
     setTempDate(currentDate);
   }, [currentDate]);
 
-  // to-do 불러오기
-  useEffect(() => {
-    if (isAuthenticated && currentUserId) {
-      fetchTodayTodos();
-    }
-  }, [isAuthenticated, currentUserId, fetchTodayTodos]);
-
   return (
-      <div className={`${sidebarClassName}`}>
-        <div className="w-80 bg-white border-r flex flex-col">
-          <div>
-            {(viewMode === "daily" || viewMode === "weekly") && (
-                <div className="p-4 shadow-sm shadow-gray-200">
-                  {/**왔다갔다만 하고 선택전까지는 날짜 안바뀜 */}
-                  <div className="flex justify-center mb-2">
-                    {/**이 위에서 정렬관리*/}
-                    <button onClick={() => goPrev()}>
-                      <ChevronLeft className="hover:bg-gray-200 rounded-md" />
-                    </button>
-                    <h1 className="mx-4 text-xl font-semibold">
-                      {sideDate.getFullYear()}. {sideDate.getMonth() + 1}
-                    </h1>
-                    <button onClick={() => goNext()}>
-                      <ChevronRight className="hover:bg-gray-200 rounded-md" />
-                    </button>
-                  </div>
-                  <MonthlyGrid
-                      weeks={sideWeeks}
-                      month={tempDate.getMonth()}
-                      //viewMode={viewMode}
-                      setViewMode={setViewMode}
-                      setCurrentDate={setCurrentDate}
-                      weekNames={weekNames}
-                      totalDateStyle={
-                        "p-2 hover:rounded-full focus:outline-rose-200 text-center hover:bg-gray-100"
-                      }
-                      currentMonthStyle={"text-gray-800"}
-                      ncMonthStyle={
-                        "text-gray-300"
-                        //지금 월아닐때
-                      }
-                      onDateClick={(day) => {
-                        setCurrentDate(day);
-                        // setViewMode("daily");
-                      }}
-                  />
-                </div>
-            )}
-          </div>
-          <div className="flex flex-col flex-none text-left">
-            <button
-                onClick={() => setScheduleOpen(!scheduleOpen)}
-                className={` py-2.5 p-2 text-md text-left font-bold flex  shadow-sm shadow-gray-200
-    ${scheduleOpen ? "" : "hover:bg-gray-200"}`}
-            >
-              오늘의 일정
-              <ChevronDown
-                  size={20}
-                  className={`mt-1 ml-auto transition-transform ${
-                      scheduleOpen ? "" : "scale-y-[-1]"
-                  }`}
+    <div className={`${sidebarClassName}`}>
+      <div className="w-80 bg-white border-r flex flex-col h-auto">
+        {/* 캘린더 부분 */}
+        <div>
+          {(viewMode === "daily" || viewMode === "weekly") && (
+            <div className="p-4 shadow-sm shadow-gray-200">
+              <div className="flex justify-center mb-2">
+                <button onClick={goPrev}>
+                  <ChevronLeft className="hover:bg-gray-200 rounded-md" />
+                </button>
+                <h1 className="mx-4 text-xl font-semibold">
+                  {sideDate.getFullYear()}. {sideDate.getMonth() + 1}
+                </h1>
+                <button onClick={goNext}>
+                  <ChevronRight className="hover:bg-gray-200 rounded-md" />
+                </button>
+              </div>
+              <MonthlyGrid
+                weeks={sideWeeks}
+                month={tempDate.getMonth()}
+                totalDateStyle="p-2 hover:rounded-full text-center hover:bg-gray-100"
+                currentMonthStyle="text-gray-800"
+                ncMonthStyle="text-gray-300"
+                onDateClick={(day) => setCurrentDate(day)}
+                showSchedules={false}
               />
-            </button>
-            {scheduleOpen === true && (
-                <ScheduleListSidebar
-                    filtering={scFilter}
-                    //scDateFiltered={scTodayFiltered}
-                    className="max-h-60 min-h-60"
-                    openScModal={openScModal}
-                    setOpenScModal={setOpenScModal}
-                    selectedSc={selectedSc}
-                    setSelectedSc={setSelectedSc}
-                    currentDate={currentDate}
-                />
-            )}
+            </div>
+          )}
+        </div>
 
-            <button
-                onClick={() => setTodoOpen(!todoOpen)}
-                className={`py-2.5 p-2 text-md text-left font-bold flex  shadow-sm shadow-gray-200
-    ${todoOpen ? "" : "hover:bg-gray-200"}`}
-            >
-              오늘의 todo
-              <ChevronDown
-                  size={20}
-                  className={`mt-1 ml-auto transition-transform ${
-                      todoOpen ? "" : "scale-y-[-1]"
-                  }`}
+        {/* 일정 + 투두 */}
+        <div className="flex flex-col flex-none text-left">
+          {/* 일정 섹션 */}
+          <button
+            onClick={() => setScheduleOpen(!scheduleOpen)}
+            className={`py-2.5 p-2 text-md text-left font-bold flex shadow-sm shadow-gray-200 ${
+              scheduleOpen ? "" : "hover:bg-gray-200"
+            }`}
+          >
+            오늘의 일정
+            <ChevronDown
+              size={20}
+              className={`mt-1 ml-auto transition-transform ${
+                scheduleOpen ? "" : "scale-y-[-1]"
+              }`}
+            />
+          </button>
+
+          {scheduleOpen && (
+            <>
+              {/*  Provider의 schedules와 loading 사용! */}
+              <ScheduleListSidebar
+                className="max-h-60 min-h-60"
+                todaySc={todaySchedules}
+                isLoading={loading}
+                onScheduleDeleted={handleScheduleDeleted}
               />
-            </button>
-            {/* 기존 TodoList 대신 todowidget으로 교체 */}
-            {todoOpen && (
-                <div className="max-h-60 min-h-60 overflow-y-auto p-2">
-                  {isAuthenticated ? (
-                      <TodoSidebarWidget
-                          todos={todayTodos}
-                          onToggleComplete={handleToggleComplete}
-                          onOpenAddModal={() => setModalState({ isOpen: true, todo: null })}
-                          onNavigateToTracker={() => navigate('/tracker?mode=todo')}
-                          loading={loading}
-                      />
-                  ) : (
-                      <div className="text-center py-6 text-sm text-gray-500">
-                        로그인 후 사용 가능합니다
-                      </div>
-                  )}
-                </div>
-            )}
-          </div>
+              <button
+                className="text-sm text-left p-2 hover:bg-gray-100"
+                onClick={() => setOpenAddModal(true)}
+              >
+                + 일정 추가하기
+              </button>
+            </>
+          )}
+
+          {/* Todo 섹션 */}
+          <button
+            onClick={() => setTodoOpen(!todoOpen)}
+            className={`py-2.5 p-2 text-md text-left font-bold flex shadow-sm shadow-gray-200 ${
+              todoOpen ? "" : "hover:bg-gray-200"
+            }`}
+          >
+            오늘의 todo
+            <ChevronDown
+              size={20}
+              className={`mt-1 ml-auto transition-transform ${
+                todoOpen ? "" : "scale-y-[-1]"
+              }`}
+            />
+          </button>
+
+          {todoOpen && (
+            <>
+              <TodoList className="max-h-60 min-h-60" />
+              <button className="text-sm text-left p-2 hover:bg-gray-100">
+                + 할일 추가하기
+              </button>
+            </>
+          )}
         </div>
       </div>
+
+      {/* 일정 생성 모달 */}
+      <ScheduleFormModal
+        isOpen={openAddModal}
+        onClose={() => setOpenAddModal(false)}
+        mode="create"
+        onSuccess={handleScheduleCreated}
+      />
+    </div>
   );
 };
 
-// ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
 export default PlannerSidebar;
