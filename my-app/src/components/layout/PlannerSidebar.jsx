@@ -8,7 +8,6 @@ import { useCurrentPlanner } from "../../hooks/useCurrentPlanner";
 import ScheduleFormModal from "../planner/ScheduleFormModal";
 import { usePlannerContext } from "../../hooks/PlannerContext";
 import { useParams, useNavigate } from "react-router-dom";
-// ⭐ 팀원이 추가한 imports
 import TodoSidebarWidget from "../../components/tracker/TodoSidebarWidget";
 import useTodoApi from "../../hooks/useTodoApi";
 import { useAuth } from "../../hooks/AuthContext";
@@ -26,7 +25,7 @@ const PlannerSidebar = ({ sidebarClassName }) => {
     fetchMonthlySchedules,
   } = useCurrentPlanner(plannerType);
 
-  // ⭐ 팀원이 추가한 Todo 관련 hooks
+  // todo관련 훅
   const { user, isAuthenticated, getAuthHeaders } = useAuth();
   const {
     loading: todoLoading,
@@ -41,7 +40,7 @@ const PlannerSidebar = ({ sidebarClassName }) => {
   const [tempDate, setTempDate] = useState(currentDate);
   const [openAddModal, setOpenAddModal] = useState(false);
 
-  // ⭐ 팀원이 추가한 Todo state
+  // Todo state
   const [todayTodos, setTodayTodos] = useState([]);
   const [modalState, setModalState] = useState({ isOpen: false, todo: null });
   const currentUserId = user?.userId;
@@ -51,7 +50,7 @@ const PlannerSidebar = ({ sidebarClassName }) => {
   const month = today.getMonth();
   const calendar = useCalendar();
 
-  // 일정 관련 (내 코드)
+  // 일정 관련
   useEffect(() => {
     if (!nowPlanner) return;
     console.log(`[${plannerType}] 일정 로딩 (URL plannerId: ${nowPlanner})`);
@@ -71,7 +70,7 @@ const PlannerSidebar = ({ sidebarClassName }) => {
     await fetchTodaySchedules(nowPlanner, year, month + 1, today.getDate());
   };
 
-  // ⭐ 팀원이 추가한 Todo 관련 함수들
+  // Todo 관련 함수들
   const fetchTodayTodos = useCallback(async () => {
     if (!currentUserId) {
       setTodayTodos([]);
@@ -125,14 +124,14 @@ const PlannerSidebar = ({ sidebarClassName }) => {
     }
   };
 
-  // ⭐ 팀원이 추가한 Todo 불러오기
+  //  Todo 불러오기
   useEffect(() => {
     if (isAuthenticated && currentUserId) {
       fetchTodayTodos();
     }
   }, [isAuthenticated, currentUserId, fetchTodayTodos]);
 
-  // 캘린더 날짜 계산 (내 코드)
+  // 캘린더 날짜 계산
   const sideDate = new Date(tempDate);
   const firstDayOfMonth = new Date(
     tempDate.getFullYear(),
@@ -198,7 +197,7 @@ const PlannerSidebar = ({ sidebarClassName }) => {
         </div>
 
         <div className="flex flex-col flex-none text-left">
-          {/* 일정 섹션 (내 코드) */}
+          {/* 일정 섹션  */}
           <button
             onClick={() => setScheduleOpen(!scheduleOpen)}
             className={`py-2.5 p-2 text-md text-left font-bold flex shadow-sm shadow-gray-200 ${
@@ -231,7 +230,7 @@ const PlannerSidebar = ({ sidebarClassName }) => {
             </>
           )}
 
-          {/* ⭐ Todo 섹션 (팀원 코드 반영!) */}
+          {/*  Todo 섹션 (수지님 코드 반영!) */}
           <button
             onClick={() => setTodoOpen(!todoOpen)}
             className={`py-2.5 p-2 text-md text-left font-bold flex shadow-sm shadow-gray-200 ${
