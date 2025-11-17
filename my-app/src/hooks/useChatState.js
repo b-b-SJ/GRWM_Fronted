@@ -713,12 +713,10 @@ export const ChatStateProvider = ({ children }) => {
 
             if (canDeleteForEveryone) {
                 // 5분 이내 - WebSocket으로 모두에게서 삭제
-                /*
                 const sent = wsDeleteMessage(chatRoomId, messageId, currentUser.userId);
                 if (!sent) {
-                    throw new Error('WebSocket 연결이 끊어졌습니다.');
+                    throw new Error('WebSocket 연결이 끊어졌습니다. 다시 연결해주세요.');
                 }
-                */
 
                 console.log('메시지 삭제 WebSocket 전송 완료');
 
