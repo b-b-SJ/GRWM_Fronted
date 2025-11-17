@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import {Link} from "react-router-dom";
 
 const MainAuthPage = ({ setCurrentPage }) => {
     // 컴포넌트 마운트 상태 관리 (애니메이션 트리거용)
@@ -147,18 +146,6 @@ const MainAuthPage = ({ setCurrentPage }) => {
                         <div
                             className="absolute inset-0 bg-blue-600 opacity-0 group-hover:opacity-5 transition-opacity duration-300"></div>
                         <span className="relative">회원가입</span>
-                    </button>
-                </div>
-
-                {/* 개발용 임시 링크 */}
-                <div className={`mt-6 text-center transform transition-all duration-1000 delay-700 ${
-                    mounted ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
-                }`}>
-                    <button
-                        onClick={() => setCurrentPage('/main')}
-                        className="text-blue-500 hover:text-blue-700 text-sm underline transition-colors duration-200 bg-transparent border-none cursor-pointer"
-                    >
-                       <Link to="/main"> 임시 메인화면 이동용 링크입니다. </Link>
                     </button>
                 </div>
             </div>

@@ -108,6 +108,15 @@ const NotificationItem = ({ notification, onMarkAsRead }) => {
     );
 };
 
+
+// NotificationType 매핑
+const tabTypeMap = {
+    '전체': null,
+    '공유 플래너': 'SCHEDULE',
+    '트래커': 'FOR_ME_TOMORROW',
+    '커뮤니티': 'COMMUNITY'
+};
+
 /**
  * NotificationMenu 컴포넌트 - 알림 메뉴
  */
@@ -117,14 +126,6 @@ const NotificationMenu = ({ notificationAPI, onClose }) => {
     const [filteredNotifications, setFilteredNotifications] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
-
-    // NotificationType 매핑
-    const tabTypeMap = {
-        '전체': null,
-        '공유 플래너': 'SCHEDULE',
-        '트래커': 'FOR_ME_TOMORROW',
-        '커뮤니티': 'COMMUNITY'
-    };
 
     // 알림 로드 (최초 1회만)
     const loadNotifications = useCallback(async () => {
