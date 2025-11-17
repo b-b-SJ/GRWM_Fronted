@@ -1079,7 +1079,7 @@ export const TeamPlannerProvider = ({ children }) => {
       setError(null);
       try {
         const response = await fetch(
-          `/api/team-planner/${plannerId}/time-vote`,
+          `http://localhost:8080/api/team-planner/${plannerId}/time-vote`,
           {
             method: "POST",
             headers: {
@@ -1113,7 +1113,7 @@ export const TeamPlannerProvider = ({ children }) => {
       setError(null);
       try {
         const response = await fetch(
-          `/api/team-planner/${plannerId}/time-vote/${voteId}`,
+          `http://localhost:8080/api/team-planner/${plannerId}/time-vote/${voteId}`,
           {
             method: "POST",
             headers: {
@@ -1147,7 +1147,7 @@ export const TeamPlannerProvider = ({ children }) => {
       setError(null);
       try {
         const response = await fetch(
-          `/api/team-planner/${plannerId}/time-vote/${voteId}`,
+          `http://localhost:8080/api/team-planner/${plannerId}/time-vote/${voteId}`,
           {
             method: "PUT",
             headers: {
@@ -1173,15 +1173,46 @@ export const TeamPlannerProvider = ({ children }) => {
     [isAuthenticated, getAuthHeaders]
   );
 
+  const fetchTimeVoteList = useCallback(
+    async (plannerId) => {
+      checkAuth();
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(
+          `http://localhost:8080/api/team-planner/${plannerId}/time-vote`,
+          {
+            method: "GET",
+            headers: {
+              ...getAuthHeaders(),
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("타임테이블 조회에 실패했습니다.");
+        }
+
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        handleError(error, "타임테이블 조회 중 오류가 발생했습니다.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [isAuthenticated, getAuthHeaders]
+  );
   // 타임테이블 조회 (색상 입히기용)
-  const fetchTimeVoteTable = useCallback(
+  const fetchTimeVoteDetail = useCallback(
     async (plannerId, voteId) => {
       checkAuth();
       setLoading(true);
       setError(null);
       try {
         const response = await fetch(
-          `/api/team-planner/${plannerId}/time-vote/${voteId}`,
+          `http://localhost:8080/api/team-planner/${plannerId}/time-vote/${voteId}`,
           {
             method: "GET",
             headers: {
@@ -1337,7 +1368,8 @@ export const TeamPlannerProvider = ({ children }) => {
     createTimeVote,
     submitTimeVote,
     updateTimeVote,
-    fetchTimeVoteTable,
+    fetchTimeVoteList,
+    fetchTimeVoteDetail,
 
     // Search
     searchSchedulesByKeyword,
