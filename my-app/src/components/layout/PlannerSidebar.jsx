@@ -1,5 +1,4 @@
-// src/components/layout/PlannerSidebar.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import TodoList from "../planner/TodoList";
 import ScheduleListSidebar from "../planner/ScheduleListSidebar";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
@@ -8,7 +7,12 @@ import { useCalendar } from "../../hooks/useCalendar";
 import { useCurrentPlanner } from "../../hooks/useCurrentPlanner";
 import ScheduleFormModal from "../planner/ScheduleFormModal";
 import { usePlannerContext } from "../../hooks/PlannerContext";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+// ⭐ 팀원이 추가한 imports
+import TodoSidebarWidget from "../../components/tracker/TodoSidebarWidget";
+import useTodoApi from "../../hooks/useTodoApi";
+import { useAuth } from "../../hooks/AuthContext";
+
 const PlannerSidebar = ({ sidebarClassName }) => {
   const { currentDate, setCurrentDate, viewMode, plannerType } =
     usePlannerContext();
@@ -17,52 +21,118 @@ const PlannerSidebar = ({ sidebarClassName }) => {
   const nowPlanner = Number(plannerId);
   const {
     todaySchedules,
-    loading,
+    loading: scheduleLoading,
     fetchTodaySchedules,
     fetchMonthlySchedules,
   } = useCurrentPlanner(plannerType);
+
+  // ⭐ 팀원이 추가한 Todo 관련 hooks
+  const { user, isAuthenticated, getAuthHeaders } = useAuth();
+  const {
+    loading: todoLoading,
+    getTodos,
+    updateTodo,
+    completeTodo,
+  } = useTodoApi(user, isAuthenticated, getAuthHeaders);
+  const navigate = useNavigate();
 
   const [scheduleOpen, setScheduleOpen] = useState(true);
   const [todoOpen, setTodoOpen] = useState(true);
   const [tempDate, setTempDate] = useState(currentDate);
   const [openAddModal, setOpenAddModal] = useState(false);
 
+  // ⭐ 팀원이 추가한 Todo state
+  const [todayTodos, setTodayTodos] = useState([]);
+  const [modalState, setModalState] = useState({ isOpen: false, todo: null });
+  const currentUserId = user?.userId;
+
   const today = new Date();
   const year = today.getFullYear();
   const month = today.getMonth();
   const calendar = useCalendar();
 
-  //  URL의 plannerId로 일정 로드
+  // 일정 관련 (내 코드)
   useEffect(() => {
-    if (!nowPlanner) {
-      return;
-    }
-    console.log(` [${plannerType}] 일정 로딩 (URL plannerId: ${nowPlanner})`);
-
-    fetchTodaySchedules(nowPlanner, year, month + 1, today.getDate());
-  }, [plannerId, plannerType]); //  plannerId 의존!
-
-  // 일정 생성 성공 후 - 함수 재호출!
-  const handleScheduleCreated = async () => {
-    console.log(" 일정 생성 성공! 새로고침");
-
     if (!nowPlanner) return;
+    console.log(`[${plannerType}] 일정 로딩 (URL plannerId: ${nowPlanner})`);
+    fetchTodaySchedules(nowPlanner, year, month + 1, today.getDate());
+  }, [plannerId, plannerType]);
 
-    // 그냥 함수 호출만 하면 Provider가 알아서 schedules 업데이트!
+  const handleScheduleCreated = async () => {
+    console.log("일정 생성 성공! 새로고침");
+    if (!nowPlanner) return;
     await fetchTodaySchedules(nowPlanner, year, month + 1, today.getDate());
     await fetchMonthlySchedules(nowPlanner, year, month + 1);
   };
 
-  //  일정 삭제 성공 후 - 함수 재호출!
   const handleScheduleDeleted = async () => {
-    console.log(" 일정 삭제 성공! 새로고침");
-
+    console.log("일정 삭제 성공! 새로고침");
     if (!nowPlanner) return;
-
     await fetchTodaySchedules(nowPlanner, year, month + 1, today.getDate());
   };
 
-  // 캘린더 날짜 계산
+  // ⭐ 팀원이 추가한 Todo 관련 함수들
+  const fetchTodayTodos = useCallback(async () => {
+    if (!currentUserId) {
+      setTodayTodos([]);
+      return;
+    }
+
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const fetchedTodos = await getTodos(currentUserId, { date: today });
+
+      if (fetchedTodos) {
+        const normalizedTodos = Array.isArray(fetchedTodos)
+          ? fetchedTodos
+              .map((todo) => ({
+                ...todo,
+                id: todo.todoId,
+                date: new Date(todo.date).toISOString().split("T")[0],
+              }))
+              .filter((todo) => todo.date === today)
+              .filter((todo) => !todo.postponed)
+          : [];
+        setTodayTodos(normalizedTodos);
+      }
+    } catch (error) {
+      console.error("오늘의 투두 로드 실패:", error);
+    }
+  }, [currentUserId, getTodos]);
+
+  const handleToggleComplete = async (todoId) => {
+    if (!currentUserId) return;
+
+    try {
+      const todo = todayTodos.find((t) => t.id === todoId);
+      if (!todo) return;
+
+      if (!todo.completed) {
+        await completeTodo(currentUserId, todoId);
+      } else {
+        await updateTodo(currentUserId, todoId, {
+          title: todo.title,
+          description: todo.description,
+          date: todo.date,
+          completed: false,
+          postponed: todo.postponed,
+        });
+      }
+
+      await fetchTodayTodos();
+    } catch (error) {
+      console.error("Todo 완료 처리 실패:", error);
+    }
+  };
+
+  // ⭐ 팀원이 추가한 Todo 불러오기
+  useEffect(() => {
+    if (isAuthenticated && currentUserId) {
+      fetchTodayTodos();
+    }
+  }, [isAuthenticated, currentUserId, fetchTodayTodos]);
+
+  // 캘린더 날짜 계산 (내 코드)
   const sideDate = new Date(tempDate);
   const firstDayOfMonth = new Date(
     tempDate.getFullYear(),
@@ -93,62 +163,6 @@ const PlannerSidebar = ({ sidebarClassName }) => {
 
   const sideWeeks = calendar.groupDatesByWeek(startDay, endDay);
 
-  // To-do 데이터 가져오기
-  const fetchTodayTodos = useCallback(async () => {
-    if (!currentUserId) {
-      setTodayTodos([]);
-      return;
-    }
-
-    try {
-      const today = new Date().toISOString().split("T")[0];
-      const fetchedTodos = await getTodos(currentUserId, { date: today });
-
-      if (fetchedTodos) {
-        const normalizedTodos = Array.isArray(fetchedTodos)
-          ? fetchedTodos
-              .map((todo) => ({
-                ...todo,
-                id: todo.todoId,
-                date: new Date(todo.date).toISOString().split("T")[0],
-              }))
-              .filter((todo) => todo.date === today)
-              .filter((todo) => !todo.postponed)
-          : [];
-        setTodayTodos(normalizedTodos);
-      }
-    } catch (error) {
-      console.error("오늘의 투두 로드 실패:", error);
-    }
-  }, [currentUserId, getTodos]);
-
-  // To-do 완료/미완료 토글
-  const handleToggleComplete = async (todoId) => {
-    if (!currentUserId) return;
-
-    try {
-      const todo = todayTodos.find((t) => t.id === todoId);
-      if (!todo) return;
-
-      if (!todo.completed) {
-        await completeTodo(currentUserId, todoId);
-      } else {
-        await updateTodo(currentUserId, todoId, {
-          title: todo.title,
-          description: todo.description,
-          date: todo.date,
-          completed: false,
-          postponed: todo.postponed,
-        });
-      }
-
-      await fetchTodayTodos();
-    } catch (error) {
-      console.error("Todo 완료 처리 실패:", error);
-    }
-  };
-
-  //메인 플래너 날짜가 바뀌면 따라감
   useEffect(() => {
     setTempDate(currentDate);
   }, [currentDate]);
@@ -156,7 +170,6 @@ const PlannerSidebar = ({ sidebarClassName }) => {
   return (
     <div className={`${sidebarClassName}`}>
       <div className="w-80 bg-white border-r flex flex-col h-auto">
-        {/* 캘린더 부분 */}
         <div>
           {(viewMode === "daily" || viewMode === "weekly") && (
             <div className="p-4 shadow-sm shadow-gray-200">
@@ -184,9 +197,8 @@ const PlannerSidebar = ({ sidebarClassName }) => {
           )}
         </div>
 
-        {/* 일정 + 투두 */}
         <div className="flex flex-col flex-none text-left">
-          {/* 일정 섹션 */}
+          {/* 일정 섹션 (내 코드) */}
           <button
             onClick={() => setScheduleOpen(!scheduleOpen)}
             className={`py-2.5 p-2 text-md text-left font-bold flex shadow-sm shadow-gray-200 ${
@@ -204,11 +216,10 @@ const PlannerSidebar = ({ sidebarClassName }) => {
 
           {scheduleOpen && (
             <>
-              {/*  Provider의 schedules와 loading 사용! */}
               <ScheduleListSidebar
                 className="max-h-60 min-h-60"
                 todaySc={todaySchedules}
-                isLoading={loading}
+                isLoading={scheduleLoading}
                 onScheduleDeleted={handleScheduleDeleted}
               />
               <button
@@ -220,7 +231,7 @@ const PlannerSidebar = ({ sidebarClassName }) => {
             </>
           )}
 
-          {/* Todo 섹션 */}
+          {/* ⭐ Todo 섹션 (팀원 코드 반영!) */}
           <button
             onClick={() => setTodoOpen(!todoOpen)}
             className={`py-2.5 p-2 text-md text-left font-bold flex shadow-sm shadow-gray-200 ${
@@ -237,17 +248,28 @@ const PlannerSidebar = ({ sidebarClassName }) => {
           </button>
 
           {todoOpen && (
-            <>
-              <TodoList className="max-h-60 min-h-60" />
-              <button className="text-sm text-left p-2 hover:bg-gray-100">
-                + 할일 추가하기
-              </button>
-            </>
+            <div className="max-h-60 min-h-60 overflow-y-auto p-2">
+              {isAuthenticated ? (
+                <TodoSidebarWidget
+                  todos={todayTodos}
+                  onToggleComplete={handleToggleComplete}
+                  onOpenAddModal={() =>
+                    setModalState({ isOpen: true, todo: null })
+                  }
+                  onNavigateToTracker={() => navigate("/tracker?mode=todo")}
+                  loading={todoLoading}
+                />
+              ) : (
+                <div className="text-center py-6 text-sm text-gray-500">
+                  로그인 후 사용 가능합니다
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
 
-      {/* 일정 생성 모달 */}
+      {/* 일정 생성 모달 (내 코드) */}
       <ScheduleFormModal
         isOpen={openAddModal}
         onClose={() => setOpenAddModal(false)}
