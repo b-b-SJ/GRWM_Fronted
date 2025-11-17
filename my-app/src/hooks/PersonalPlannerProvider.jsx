@@ -818,7 +818,7 @@ export const PersonalPlannerProvider = ({ children }) => {
       setError(null);
       try {
         const response = await fetch(
-          `/api/personal-planner/${plannerId}/search?keyword=${encodeURIComponent(
+          `http://localhost:8080/api/personal-planner/${plannerId}/search?keyword=${encodeURIComponent(
             keyword
           )}`,
           {
@@ -838,39 +838,6 @@ export const PersonalPlannerProvider = ({ children }) => {
         return data;
       } catch (error) {
         handleError(error, "일정 검색 중 오류가 발생했습니다.");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [isAuthenticated, getAuthHeaders]
-  );
-
-  // 사용자별 일정 검색 (생성 & 참여)
-  const searchSchedulesByUser = useCallback(
-    async (plannerId, userId) => {
-      checkAuth();
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(
-          `/api/personal-planner/${plannerId}/search?userId=${userId}`,
-          {
-            method: "GET",
-            headers: {
-              ...getAuthHeaders(),
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("사용자별 일정 검색에 실패했습니다.");
-        }
-
-        const data = await response.json();
-        return data;
-      } catch (error) {
-        handleError(error, "사용자별 일정 검색 중 오류가 발생했습니다.");
       } finally {
         setLoading(false);
       }
@@ -925,7 +892,6 @@ export const PersonalPlannerProvider = ({ children }) => {
 
     // Search
     searchSchedulesByKeyword,
-    searchSchedulesByUser,
   };
 
   return (

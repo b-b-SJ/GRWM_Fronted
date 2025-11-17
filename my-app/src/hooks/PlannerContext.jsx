@@ -11,6 +11,9 @@ export const PlannerProvider = ({ children, plannerType = "personal" }) => {
   const [selectedSc, setSelectedSc] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [memberFilteredSchedules, setMemberFilteredSchedules] = useState(null);
+  const [searchedSchedules, setSearchedSchedules] = useState(null); // ✅ 추가
+  const [searchKeyword, setSearchKeyword] = useState(""); // ✅ 추가
 
   const STORAGE_KEY = `planner_last_${plannerType}_id`;
 
@@ -71,6 +74,15 @@ export const PlannerProvider = ({ children, plannerType = "personal" }) => {
         //멤버 선택
         selectedMember,
         setSelectedMember,
+
+        memberFilteredSchedules,
+        setMemberFilteredSchedules,
+        //검색
+        searchedSchedules,
+        setSearchedSchedules,
+        searchKeyword,
+        setSearchKeyword,
+
         // 모달
         openScModal,
         setOpenScModal,

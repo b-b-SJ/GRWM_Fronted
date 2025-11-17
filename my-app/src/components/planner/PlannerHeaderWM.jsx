@@ -7,6 +7,7 @@ import {
   Plus,
   Search,
   Filter,
+  X,
 } from "lucide-react";
 import DailyPlanner from "./DailyPlanner";
 import { useNavigate, useParams } from "react-router-dom";
@@ -29,6 +30,13 @@ const PlannerHeaderWM = () => {
     plannerType,
     selectedCategory,
     setSelectedCategory,
+    selectedMember,
+    setSelectedMember,
+    memberFilteredSchedules,
+    searchedSchedules, // ✅ 추가
+    setSearchedSchedules, // ✅ 추가
+    searchKeyword, // ✅ 추가
+    setSearchKeyword, // ✅ 추가
   } = usePlannerContext();
 
   const {
@@ -39,16 +47,18 @@ const PlannerHeaderWM = () => {
     fetchSchedulesByCategory,
     fetchMonthlySchedules,
     fetchWeeklySchedules,
+    searchSchedulesByKeyword,
   } = useCurrentPlanner(plannerType);
+
   const { plannerId } = useParams();
   const nowPlanner = Number(plannerId);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
-  const [searchKeyword, setSearchKeyword] = useState("");
+  const [isSearching, setIsSearching] = useState(false); // ✅ 추가
 
   const navigate = useNavigate();
 
-  //  주 번호 계산 함수
+  // 주 번호 계산 함수
   const getWeekNumber = (date) => {
     const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
     const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
@@ -83,15 +93,28 @@ const PlannerHeaderWM = () => {
 
     loadData();
   }, [nowPlanner, plannerType, viewMode, year, month, currentDate]);
+
   const findNowPlannerInfo = () => {
     return planners.find((planner) => planner.plannerId === nowPlanner);
   };
 
-  const filteredSchedules = selectedCategory
-    ? schedules?.filter(
+  // ✅ 검색 → 멤버 필터 → 카테고리 필터 순차 적용
+  const getFilteredSchedules = () => {
+    // 1. 검색 결과가 있으면 우선 사용
+    let baseSchedules =
+      searchedSchedules || memberFilteredSchedules || schedules;
+
+    // 2. 카테고리 필터 추가 적용
+    if (selectedCategory) {
+      return baseSchedules?.filter(
         (schedule) => schedule.category?.categoryId === selectedCategory
-      )
-    : schedules;
+      );
+    }
+
+    return baseSchedules;
+  };
+
+  const filteredSchedules = getFilteredSchedules();
 
   const nowPlannerInfo = findNowPlannerInfo();
 
@@ -105,10 +128,8 @@ const PlannerHeaderWM = () => {
   // 카테고리 필터 적용
   const handleApplyFilter = async () => {
     if (selectedCategory) {
-      // 선택된 카테고리로 필터링
       await fetchSchedulesByCategory(nowPlanner, selectedCategory);
     } else {
-      // 전체 일정 다시 불러오기
       await fetchMonthlySchedules(nowPlanner, year, month);
     }
     setShowCategoryDropdown(false);
@@ -122,19 +143,45 @@ const PlannerHeaderWM = () => {
 
   const selectedCategoryInfo = getSelectedCategoryInfo();
 
+  // ✅ 검색 기능 구현
   const handleSearch = async () => {
     if (!searchKeyword.trim()) {
       alert("검색어를 입력하세요");
       return;
     }
-    console.log("검색:", searchKeyword);
-    // TODO: 검색 API 호출
+
+    setIsSearching(true);
+    try {
+      console.log("🔍 검색 시작:", searchKeyword);
+
+      const results = await searchSchedulesByKeyword(nowPlanner, searchKeyword);
+
+      console.log("✅ 검색 결과:", results);
+
+      setSearchedSchedules(results);
+    } catch (error) {
+      console.error("❌ 검색 실패:", error);
+      alert("검색에 실패했습니다: " + error.message);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
       handleSearch();
     }
+  };
+
+  // ✅ 멤버 필터 초기화
+  const handleClearMemberFilter = () => {
+    setSelectedMember(null);
+  };
+
+  // ✅ 검색 초기화
+  const handleClearSearch = () => {
+    setSearchKeyword("");
+    setSearchedSchedules(null);
   };
 
   return (
@@ -222,8 +269,7 @@ const PlannerHeaderWM = () => {
           </div>
         </div>
 
-        {/* 오른쪽: 카테고리 필터 + 검색 */}
-
+        {/* 오른쪽: 카테고리 필터 */}
         <div className="ml-auto flex items-center gap-2">
           {/* 카테고리 드롭다운 */}
           <div className="relative">
@@ -281,6 +327,7 @@ const PlannerHeaderWM = () => {
               </div>
             )}
           </div>
+
           {/* 카테고리 관리 버튼 */}
           <button
             onClick={() => setShowCategoryManager(true)}
@@ -291,7 +338,8 @@ const PlannerHeaderWM = () => {
           </button>
         </div>
       </div>
-      {/* 검색창 - 나중에 수정 필요 */}
+
+      {/* 검색창 */}
       <div className="mt-3 px-4 flex justify-end">
         <div className="flex items-center gap-2 w-80">
           <input
@@ -304,13 +352,15 @@ const PlannerHeaderWM = () => {
           />
           <button
             onClick={handleSearch}
-            className="px-4 py-1.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 flex items-center gap-1"
+            disabled={isSearching}
+            className="px-4 py-1.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 flex items-center gap-1 disabled:opacity-50"
           >
             <Search size={16} />
-            검색
+            {isSearching ? "검색 중..." : "검색"}
           </button>
         </div>
       </div>
+
       {/* 뷰 모드별 플래너 표시 */}
       <div>
         {viewMode === "monthly" && (

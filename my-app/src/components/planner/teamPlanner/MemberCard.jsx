@@ -3,7 +3,14 @@ import { useTeamPlanner } from "../../../hooks/TeamPlannerProvider";
 import { useAuth } from "../../../hooks/AuthContext";
 import { Crown, User, Edit2, Trash2, Check, X } from "lucide-react";
 
-const MemberCard = ({ member, plannerId, isManager }) => {
+const MemberCard = ({
+  member,
+  plannerId,
+  isManager,
+  showRadio = false, // ✅ 라디오 버튼 표시 여부
+  isSelected = false, // ✅ 선택 상태
+  onSelect, // ✅ 선택 핸들러
+}) => {
   const { removeMember, updateMemberNickname } = useTeamPlanner();
   const { user } = useAuth(); //  현재 로그인 사용자
 
@@ -65,6 +72,16 @@ const MemberCard = ({ member, plannerId, isManager }) => {
 
   return (
     <div className="border rounded-lg p-3 hover:bg-gray-50 transition-colors">
+      {/* ✅ 필터링 모드일 때만 라디오 버튼 표시 */}
+      {showRadio && (
+        <input
+          type="radio"
+          name="memberFilter"
+          checked={isSelected}
+          onChange={onSelect}
+          className="w-4 h-4 flex-shrink-0"
+        />
+      )}
       {/* 프로필 영역 */}
       <div className="flex items-start gap-3">
         {/* 프로필 이미지 */}

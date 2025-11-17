@@ -1216,7 +1216,7 @@ export const TeamPlannerProvider = ({ children }) => {
       setError(null);
       try {
         const response = await fetch(
-          `/api/team-planner/${plannerId}/search?keyword=${encodeURIComponent(
+          `http://localhost:8080/api/team-planner/${plannerId}/search?keyword=${encodeURIComponent(
             keyword
           )}`,
           {
@@ -1251,7 +1251,7 @@ export const TeamPlannerProvider = ({ children }) => {
       setError(null);
       try {
         const response = await fetch(
-          `/api/team-planner/${plannerId}/search?userId=${userId}`,
+          `http://localhost:8080/api/team-planner/${plannerId}/search?userId=${userId}`,
           {
             method: "GET",
             headers: {
