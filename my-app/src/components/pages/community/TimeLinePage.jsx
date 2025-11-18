@@ -9,8 +9,7 @@ const TimeLinePage = () => {
 
   return (
     <div>
-      <h1 className="bg-fuchsia-300 text-3xl p-4">타임라인 헤더 - 수정 예정</h1>
-      <nav className="grid grid-cols-2 gap-4 p-4 bg-white w-full text-lg">
+      <nav className="mt-10 grid grid-cols-2 gap-4 p-4 bg-white w-full text-lg">
         <button
           className={`px-4 py-2 
     ${timeLine === "main" ? "bg-blue-400 text-white" : "bg-white"}`}
