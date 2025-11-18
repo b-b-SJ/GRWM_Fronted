@@ -1,7 +1,8 @@
 // TimeVoteCreate.jsx
 import React, { useState } from "react";
-import { X, Calendar, Users } from "lucide-react";
+import { X, Calendar, Users, Clock } from "lucide-react";
 import { useTeamPlanner } from "../../../../hooks/TeamPlannerProvider";
+import { getTimeSlots } from "./timeVoteUtils";
 
 /**
  * 새로운 시간 투표를 생성하는 컴포넌트
@@ -15,7 +16,12 @@ const TimeVoteCreate = ({ onSubmit, onCancel }) => {
     voteRange: [], // 선택된 날짜들
     finishTime: "",
     memberIds: [], // 참여할 멤버 ID들
+    startHour: 9, // 시작 시간 (기본값: 9시)
+    endHour: 18, // 종료 시간 (기본값: 18시)
   });
+
+  // 시간 옵션 생성 (0-24시)
+  const hourOptions = Array.from({ length: 25 }, (_, i) => i);
 
   // 날짜 선택/해제
   const toggleDate = (date) => {
@@ -24,10 +30,8 @@ const TimeVoteCreate = ({ onSubmit, onCancel }) => {
       const index = dates.indexOf(date);
 
       if (index > -1) {
-        // 이미 선택된 날짜면 제거
         dates.splice(index, 1);
       } else if (dates.length < 5) {
-        // 최대 5개까지만 추가
         dates.push(date);
       } else {
         alert("날짜는 최대 5개까지 선택 가능합니다.");
@@ -54,9 +58,30 @@ const TimeVoteCreate = ({ onSubmit, onCancel }) => {
     });
   };
 
+  // 시작 시간 변경
+  const handleStartHourChange = (hour) => {
+    const newStartHour = parseInt(hour);
+    setFormData((prev) => ({
+      ...prev,
+      startHour: newStartHour,
+      // 종료 시간이 시작 시간보다 작으면 자동 조정
+      endHour: prev.endHour <= newStartHour ? newStartHour + 1 : prev.endHour,
+    }));
+  };
+
+  // 종료 시간 변경
+  const handleEndHourChange = (hour) => {
+    const newEndHour = parseInt(hour);
+    // 종료 시간은 시작 시간보다 커야 함
+    if (newEndHour > formData.startHour) {
+      setFormData((prev) => ({ ...prev, endHour: newEndHour }));
+    } else {
+      alert("종료 시간은 시작 시간보다 늦어야 합니다.");
+    }
+  };
+
   // 폼 제출
   const handleSubmit = () => {
-    // 필수 항목 검증
     if (!formData.title.trim()) {
       alert("투표 제목을 입력해주세요.");
       return;
@@ -67,6 +92,10 @@ const TimeVoteCreate = ({ onSubmit, onCancel }) => {
     }
     if (!formData.finishTime) {
       alert("마감 시간을 설정해주세요.");
+      return;
+    }
+    if (formData.startHour >= formData.endHour) {
+      alert("시작 시간은 종료 시간보다 빨라야 합니다.");
       return;
     }
 
@@ -100,6 +129,54 @@ const TimeVoteCreate = ({ onSubmit, onCancel }) => {
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="예: 팀 미팅 시간 정하기"
           />
+        </div>
+
+        {/* 시간 범위 설정 */}
+        <div>
+          <label className="block font-semibold mb-2 flex items-center gap-2">
+            <Clock className="w-5 h-5" />
+            투표 시간 범위 <span className="text-red-500">*</span>
+          </label>
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <label className="block text-sm text-gray-600 mb-1">
+                시작 시간
+              </label>
+              <select
+                value={formData.startHour}
+                onChange={(e) => handleStartHourChange(e.target.value)}
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {hourOptions.slice(0, 23).map((hour) => (
+                  <option key={hour} value={hour}>
+                    {String(hour).padStart(2, "0")}:00
+                  </option>
+                ))}
+              </select>
+            </div>
+            <span className="text-gray-500 mt-6">~</span>
+            <div className="flex-1">
+              <label className="block text-sm text-gray-600 mb-1">
+                종료 시간
+              </label>
+              <select
+                value={formData.endHour}
+                onChange={(e) => handleEndHourChange(e.target.value)}
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {hourOptions.slice(formData.startHour + 1).map((hour) => (
+                  <option key={hour} value={hour}>
+                    {String(hour).padStart(2, "0")}:00
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <p className="text-sm text-gray-500 mt-2">
+            선택한 시간: {String(formData.startHour).padStart(2, "0")}:00 ~{" "}
+            {String(formData.endHour).padStart(2, "0")}:00 (
+            {formData.endHour - formData.startHour}시간)
+          </p>
         </div>
 
         {/* 날짜 선택 */}

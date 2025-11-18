@@ -1,19 +1,21 @@
 // timeVoteUtils.js
 
 /**
- * 0시부터 23시까지의 시간 슬롯 배열 생성
+ * 특정 시간 범위의 슬롯만 생성 (30분 단위)
+ * @param {number} startHour - 시작 시간 (기본: 0)
+ * @param {number} endHour - 종료 시간 (기본: 24)
  */
-export const getTimeSlots = () => {
+export const getTimeSlots = (startHour = 0, endHour = 24) => {
   const slots = [];
-  for (let hour = 0; hour < 24; hour++) {
+  for (let hour = startHour; hour < endHour; hour++) {
     slots.push(`${String(hour).padStart(2, "0")}:00`);
+    slots.push(`${String(hour).padStart(2, "0")}:30`);
   }
   return slots;
 };
-
 /**
  * 선택된 슬롯들을 API에 전송할 형식으로 변환
- * @param {string[]} selectedSlots - ['2025-01-15_09:00', '2025-01-15_10:00', ...]
+ * @param {string[]} selectedSlots - ['2025-01-15_09:00', '2025-01-15_09:30', ...]
  * @returns {AvailableDateTimeDto[]}
  */
 export const convertSlotsToDto = (selectedSlots) => {
@@ -40,6 +42,8 @@ export const convertSlotsToDto = (selectedSlots) => {
       }
 
       const nextTime = times[index + 1];
+
+      // 현재 시간과 다음 시간의 차이 계산 (분 단위)
       const currentMinutes =
         parseInt(time.split(":")[0]) * 60 + parseInt(time.split(":")[1]);
       const nextMinutes = nextTime
@@ -47,10 +51,16 @@ export const convertSlotsToDto = (selectedSlots) => {
           parseInt(nextTime.split(":")[1])
         : null;
 
-      // 다음 시간이 없거나 연속되지 않으면 interval 종료
-      if (!nextTime || nextMinutes - currentMinutes > 60) {
-        const endHour = parseInt(time.split(":")[0]) + 1;
-        const endTime = `${String(endHour).padStart(2, "0")}:00`;
+      // 🔧 30분 단위로 연속성 체크
+      if (!nextTime || nextMinutes - currentMinutes > 30) {
+        // 종료 시간 계산 (+30분)
+        const [hour, minute] = time.split(":").map(Number);
+        const endTotalMinutes = hour * 60 + minute + 30;
+        const endHour = Math.floor(endTotalMinutes / 60);
+        const endMinute = endTotalMinutes % 60;
+        const endTime = `${String(endHour).padStart(2, "0")}:${String(
+          endMinute
+        ).padStart(2, "0")}`;
 
         intervals.push({
           startTime: startTime,

@@ -1204,7 +1204,8 @@ export const TeamPlannerProvider = ({ children }) => {
     },
     [isAuthenticated, getAuthHeaders]
   );
-  // 타임테이블 조회 (색상 입히기용)
+
+  // 투표 상세 조회
   const fetchTimeVoteDetail = useCallback(
     async (plannerId, voteId) => {
       checkAuth();
@@ -1212,7 +1213,7 @@ export const TeamPlannerProvider = ({ children }) => {
       setError(null);
       try {
         const response = await fetch(
-          `http://localhost:8080/api/team-planner/${plannerId}/time-vote/${voteId}`,
+          `/api/team-planner/${plannerId}/time-vote/${voteId}`,
           {
             method: "GET",
             headers: {
@@ -1223,20 +1224,33 @@ export const TeamPlannerProvider = ({ children }) => {
         );
 
         if (!response.ok) {
-          throw new Error("타임테이블 조회에 실패했습니다.");
+          throw new Error("투표 상세 조회에 실패했습니다.");
         }
 
         const data = await response.json();
+
+        //  matrix의 시간 형식을 HH:mm로 정규화
+        if (data.matrix && Array.isArray(data.matrix)) {
+          data.matrix = data.matrix.map((slot) => ({
+            ...slot,
+            // "00:00:00" -> "00:00"
+            slotStart: slot.slotStart
+              ? slot.slotStart.slice(0, 5)
+              : slot.slotStart,
+            slotEnd: slot.slotEnd ? slot.slotEnd.slice(0, 5) : slot.slotEnd,
+          }));
+        }
+
         return data;
       } catch (error) {
-        handleError(error, "타임테이블 조회 중 오류가 발생했습니다.");
+        handleError(error, "투표 상세 조회 중 오류가 발생했습니다.");
+        return null;
       } finally {
         setLoading(false);
       }
     },
     [isAuthenticated, getAuthHeaders]
   );
-
   // ==================== 검색 ====================
 
   // 키워드로 일정 검색

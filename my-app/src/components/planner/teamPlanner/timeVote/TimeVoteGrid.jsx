@@ -21,20 +21,19 @@ const TimeVoteGrid = ({
   onModeChange,
   onBack,
 }) => {
-  // 선택된 시간 슬롯들 (투표 모드에서만 사용)
   const [selectedSlots, setSelectedSlots] = useState([]);
-
-  // 드래그 상태
   const [isDragging, setIsDragging] = useState(false);
-
-  // 투표자 정보 모달
   const [voterModal, setVoterModal] = useState({
     show: false,
     slotInfo: null,
   });
 
   const isExpired = new Date(vote.finishTime) < new Date();
-  const timeSlots = getTimeSlots(); // 0:00 ~ 23:00
+
+  // 시간 범위가 설정되어 있으면 사용, 없으면 기본값(0-24)
+  const startHour = vote.startHour !== undefined ? vote.startHour : 0;
+  const endHour = vote.endHour !== undefined ? vote.endHour : 24;
+  const timeSlots = getTimeSlots(startHour, endHour);
 
   // 슬롯 선택/해제 (드래그)
   const toggleSlot = (date, time) => {
@@ -107,6 +106,10 @@ const TimeVoteGrid = ({
             <h2 className="text-2xl font-bold">{vote.title}</h2>
           </div>
 
+          <p className="text-sm text-gray-600">
+            투표 시간: {String(startHour).padStart(2, "0")}:00 ~{" "}
+            {String(endHour).padStart(2, "0")}:00
+          </p>
           <p className="text-sm text-gray-600">
             마감: {new Date(vote.finishTime).toLocaleString("ko-KR")}
             {isExpired && <span className="text-red-500 ml-2">(마감됨)</span>}
