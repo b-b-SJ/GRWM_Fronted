@@ -55,27 +55,57 @@ const PlannerListPage = () => {
       <div></div>
       <div className="flex-1 p-8">
         {/* 헤더 */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="mb-8">
+          {/* 뒤로가기 버튼 */}
           <button
-            onClick={() => navigate(-1)} // 뒤로가기
-            className="p-2 hover:bg-gray-100 rounded"
+            onClick={() => navigate(-1)}
+            className="mb-4 p-2 hover:bg-gray-100 rounded-lg transition-colors inline-flex items-center gap-2 text-gray-600 hover:text-gray-900"
           >
             <ArrowLeft size={20} />
+            <span className="text-sm font-medium">뒤로가기</span>
           </button>
-          <div className="">
-            <button onClick={() => navigate("/planner/list/shared")}>
-              공유 플래너
-            </button>
-            <button onClick={() => navigate("/planner/list/personal")}>
-              개인 플래너
-            </button>
+
+          {/* 탭과 타이틀 */}
+          <div className="flex items-center justify-between">
+            {/* 왼쪽: 타이틀 */}
+            <h1 className="text-3xl font-bold text-gray-900">
+              {isShared ? "공유 플래너" : "개인 플래너"}
+            </h1>
+
+            {/* 오른쪽: 탭 전환 버튼 */}
+            <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+              <button
+                onClick={() => navigate("/planner/list/shared")}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  isShared
+                    ? "bg-white text-blue-600 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Users size={16} />
+                  <span>공유 플래너</span>
+                </div>
+              </button>
+              <button
+                onClick={() => navigate("/planner/list/personal")}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  !isShared
+                    ? "bg-white text-green-600 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <User size={16} />
+                  <span>개인 플래너</span>
+                </div>
+              </button>
+            </div>
           </div>
 
-          <h1 className="text-3xl font-bold">
-            {isShared ? "공유 플래너" : "개인 플래너"}
-          </h1>
+          {/* 구분선 */}
+          <div className="mt-6 border-b border-gray-200"></div>
         </div>
-
         {/* 공유 플래너 목록 */}
         {planners.length === 0 ? (
           // 플래너가 없을 때
