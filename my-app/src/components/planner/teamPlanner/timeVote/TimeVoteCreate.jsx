@@ -103,6 +103,12 @@ const TimeVoteCreate = ({ onSubmit, onCancel }) => {
       return;
     }
 
+    console.log("=== formData 확인 ===");
+    console.log("formData.memberIds:", formData.memberIds);
+    console.log("memberIds 타입:", typeof formData.memberIds);
+    console.log("memberIds 길이:", formData.memberIds?.length);
+    console.log("전체 formData:", formData);
+
     //  백엔드 형식에 맞게 데이터 변환
     const requestData = {
       title: formData.title,

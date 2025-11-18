@@ -1,10 +1,10 @@
 // TimeVoteTab.jsx
 import React, { useState, useEffect } from "react";
-import { useTeamPlanner } from "../../../hooks/TeamPlannerProvider";
+import { useTeamPlanner } from "../../../../hooks/TeamPlannerProvider";
 import { Clock, Plus, ChevronRight } from "lucide-react";
-import TimeVoteList from "./timeVote/TimeVoteLista";
-import TimeVoteCreate from "./timeVote/TimeVoteCreate";
-import TimeVoteGrid from "./timeVote/TimeVoteGrid";
+import TimeVoteList from "./TimeVoteLista";
+import TimeVoteCreate from "./TimeVoteCreate";
+import TimeVoteGrid from "./TimeVoteGrid";
 
 /**
  * 시간 투표 탭

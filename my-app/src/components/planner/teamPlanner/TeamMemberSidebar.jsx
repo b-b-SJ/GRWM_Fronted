@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Users, Clock } from "lucide-react";
 import TeamManagementTab from "./TeamManagementTab";
-import TimeVoteTab from "./TimeVoteTab";
+import TimeVoteTab from "./timeVote/TimeVoteTab";
 
 /**
  * 팀플래너 사이드바 메인 컴포넌트
