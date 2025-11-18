@@ -93,7 +93,7 @@ const PostList = ({ posts, onPostsChange }) => {
 
   if (!localPosts || localPosts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
+      <div className="flex flex-col items-center justify-center py-12 mt-20">
         <div className="text-center">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <PenLine />

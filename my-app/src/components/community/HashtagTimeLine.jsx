@@ -52,7 +52,7 @@ const HashtagTimeLine = () => {
   // 구독한 해시태그가 없거나 게시물이 없을 때
   if (!hashtagPosts || hashtagPosts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
+      <div className="flex flex-col items-center justify-center py-12 mt-20">
         <div className="text-center">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Tag />
