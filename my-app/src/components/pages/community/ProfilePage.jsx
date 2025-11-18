@@ -224,7 +224,7 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
         </div>
 
         {/* 프로필 정보 */}
-        <div className="mt-7 px-6 py-4 flex pb-12 border-b">
+        <div className="mt-7 px-6 py-4 flex pb-12 ">
           {/* 프로필 사진 */}
           <div>
             {profile.user.profileImage ? (
@@ -350,7 +350,9 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
 
         {/* 바이오 */}
         {profile.description && (
-          <div className="p-6 text-gray-700">{profile.description}</div>
+          <div className=" pb-6 px-6 text-gray-700 border-b">
+            {profile.description}
+          </div>
         )}
       </div>
 

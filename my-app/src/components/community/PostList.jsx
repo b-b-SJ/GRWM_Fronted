@@ -99,12 +99,17 @@ const PostList = ({ posts, onPostsChange }) => {
             <PenLine />
           </div>
           <p className="text-lg text-gray-600 mb-2">아직 게시물이 없습니다</p>
-          <p className="text-sm text-gray-500">
-            새로운 사람을 팔로우하거나 글을 작성해보세요!
-          </p>
         </div>
       </div>
     );
+  }
+  {
+    /**
+    
+              <p className="text-sm text-gray-500">
+            새로운 사람을 팔로우하거나 글을 작성해보세요!
+          </p>
+    */
   }
   return (
     <div>

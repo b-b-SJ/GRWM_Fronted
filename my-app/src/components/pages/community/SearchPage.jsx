@@ -2,13 +2,16 @@ import React, { useState, useEffect } from "react";
 import { useCommunitySearch } from "../../../hooks/useCommunitySearch";
 import { Search, UserRound, X, Plus, Check } from "lucide-react";
 import PostList from "../../community/PostList";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useHashtag } from "../../../hooks/useHashtag";
 import { useAuth } from "../../../hooks/AuthContext";
 
 const SearchPage = () => {
   const { keyword: urlKeyword } = useParams();
   const [keyword, setKeyword] = useState("");
+  const [searchParams] = useSearchParams(); // 쿼리 파라미터 읽기용 (/search?keyword=동물의숲)
+  const queryKeyword = searchParams.get("keyword"); //  ?keyword=값 가져오기
+
   const [searchType, setSearchType] = useState("post");
   const [isUser, setIsUser] = useState(false);
 
@@ -52,18 +55,33 @@ const SearchPage = () => {
     ? postHasMore
     : hashtagHasMore;
 
-  // ✅ 구독 목록 먼저 가져오기
+  // 구독 목록 먼저 가져오기
   useEffect(() => {
     if (user && user.userId) {
-      console.log("📋 구독 목록 로드 중...");
       getSubscribedHashtags();
     }
   }, [user]);
 
-  // URL 파라미터 감지
+  // 쿼리 파라미터 감지 - 일반 검색용
+  useEffect(() => {
+    if (queryKeyword) {
+      console.log(" 쿼리 파라미터로 일반 검색:", queryKeyword);
+
+      setKeyword(queryKeyword);
+      setSearchType("post"); // 게시글 검색으로 설정
+      setIsUser(false);
+      setPostResults([]);
+      setPostPage(0);
+
+      //  자동으로 게시글 검색 실행
+      executeSearch(queryKeyword, "post");
+    }
+  }, [queryKeyword]);
+
+  // URL 파라미터 감지 - 해시태그 검색용
   useEffect(() => {
     if (urlKeyword) {
-      console.log("🔄 URL 파라미터:", urlKeyword);
+      console.log("🔄 URL 파라미터로 해시태그 검색:", urlKeyword);
 
       setKeyword(urlKeyword);
       setSearchType("hashtag");
@@ -74,23 +92,28 @@ const SearchPage = () => {
       setHashtagPage(0);
 
       executeSearch(urlKeyword, "hashtag");
-    } else {
+    } else if (!queryKeyword) {
       setSearchType("post");
-      setKeyword(""); // ✅ 추가
+      setKeyword("");
     }
   }, [urlKeyword]);
 
-  // ✅ 해시태그 검색 결과 & 구독 목록이 모두 준비되면 구독 상태 확인
   useEffect(() => {
     const checkSubscription = () => {
-      if (!hashtagList || hashtagLoading || !keyword) return;
+      if (
+        !hashtagList ||
+        hashtagLoading ||
+        !keyword ||
+        searchType !== "hashtag"
+      )
+        return;
 
       const isCurrentlySubscribed = hashtagList.some((hashtag) => {
         const clean = hashtag.startsWith("#") ? hashtag.slice(1) : hashtag;
         return clean === keyword || hashtag === `#${keyword}`;
       });
 
-      console.log("🔍 구독 체크:", {
+      console.log(" 구독 체크:", {
         keyword,
         isCurrentlySubscribed,
         hashtagList,
@@ -99,7 +122,7 @@ const SearchPage = () => {
     };
 
     checkSubscription();
-  }, [keyword, hashtagList, hashtagLoading]);
+  }, [keyword, hashtagList, hashtagLoading, searchType]);
 
   const executeSearch = async (
     searchKeyword,
@@ -160,6 +183,13 @@ const SearchPage = () => {
   };
 
   const handleSearch = async (hasMore = false) => {
+    // 일반 검색일 때 URL 업데이트
+    if (searchType === "post" && keyword && !hasMore) {
+      navigate(`/community/search?keyword=${encodeURIComponent(keyword)}`, {
+        replace: true,
+      });
+    }
+
     // 해시태그 검색일 때 URL 업데이트
     if (searchType === "hashtag" && keyword && !hasMore) {
       navigate(`/community/search/${keyword}`, { replace: true });
@@ -167,7 +197,8 @@ const SearchPage = () => {
 
     executeSearch(keyword, searchType, hasMore);
   };
-  // ✅ 구독/구독취소 처리
+
+  //  구독/구독취소 처리
   const handleSubscribe = async () => {
     if (!user || !user.userId) {
       alert("로그인이 필요합니다");
@@ -198,7 +229,7 @@ const SearchPage = () => {
         // 구독 취소
         await unsubscribeHashtag(tagId);
 
-        // ✅ 성공 여부 상관없이 일단 상태 변경 & 목록 갱신
+        //  성공 여부 상관없이 일단 상태 변경 & 목록 갱신
         setIsSubscribed(false);
         await getSubscribedHashtags();
         window.dispatchEvent(new Event("hashtagSubscriptionChanged"));
@@ -206,7 +237,7 @@ const SearchPage = () => {
         alert("구독이 취소되었습니다");
       } else {
         //  구독
-        console.log("📤 구독 요청:", { userId: user.userId, tagId });
+        console.log("구독 요청:", { userId: user.userId, tagId });
         const success = await subscribeHashtag(user.userId, tagId);
 
         // 목록 갱신
@@ -221,7 +252,7 @@ const SearchPage = () => {
         }
       }
     } catch (error) {
-      console.error("❌ 구독 처리 실패:", error);
+      console.error("구독 처리 실패:", error);
       alert("구독 처리에 실패했습니다");
     }
   };

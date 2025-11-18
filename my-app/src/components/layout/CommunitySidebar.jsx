@@ -19,7 +19,7 @@ const CommunitySidebar = ({ sidebarOpen }) => {
     }
   }, [user]);
 
-  // ✅ 커스텀 이벤트 리스너 추가
+  //  커스텀 이벤트 리스너
   useEffect(() => {
     const handleSubscriptionChange = () => {
       console.log("🔔 구독 변경 감지! 사이드바 업데이트 중...");
@@ -48,7 +48,7 @@ const CommunitySidebar = ({ sidebarOpen }) => {
       alert("검색어를 입력해주세요!");
       return;
     }
-    navigate(`/community/search/${keyword.trim()}`);
+    navigate(`/community/search?keyword=${encodeURIComponent(keyword.trim())}`);
   };
 
   const handleClear = () => {
