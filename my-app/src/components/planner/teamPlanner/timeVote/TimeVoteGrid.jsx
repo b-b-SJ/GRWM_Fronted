@@ -1,5 +1,5 @@
 // TimeVoteGrid.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Users, Check, ChevronLeft } from "lucide-react";
 import {
   convertSlotsToDto,
@@ -8,11 +8,6 @@ import {
 } from "./timeVoteUtils";
 import VoterModal from "./VoterModal";
 
-/**
- * 시간 투표 그리드 - 투표하기/결과 보기
- * @param {object} vote - 투표 상세 정보
- * @param {string} mode - 'vote' | 'view'
- */
 const TimeVoteGrid = ({
   vote,
   mode,
@@ -30,10 +25,29 @@ const TimeVoteGrid = ({
 
   const isExpired = new Date(vote.finishTime) < new Date();
 
-  // 시간 범위가 설정되어 있으면 사용, 없으면 기본값(0-24)
-  const startHour = vote.startHour !== undefined ? vote.startHour : 0;
-  const endHour = vote.endHour !== undefined ? vote.endHour : 24;
+  // LocalTime 문자열을 숫자(시간)로 변환
+  const parseHourFromLocalTime = (localTimeStr) => {
+    if (typeof localTimeStr === "number") {
+      return localTimeStr;
+    }
+    if (typeof localTimeStr === "string") {
+      const hour = parseInt(localTimeStr.split(":")[0]);
+      return hour;
+    }
+    return 0;
+  };
+
+  const startHour =
+    vote.startHour !== undefined ? parseHourFromLocalTime(vote.startHour) : 0;
+  const endHour =
+    vote.endHour !== undefined ? parseHourFromLocalTime(vote.endHour) : 24;
+
   const timeSlots = getTimeSlots(startHour, endHour);
+
+  //  vote가 변경되면 selectedSlots 초기화
+  useEffect(() => {
+    setSelectedSlots([]);
+  }, [vote.voteId]); // voteId가 바뀌면 초기화
 
   // 슬롯 선택/해제 (드래그)
   const toggleSlot = (date, time) => {
@@ -86,6 +100,10 @@ const TimeVoteGrid = ({
     }
 
     const availableDateTimes = convertSlotsToDto(selectedSlots);
+
+    console.log("=== 투표 제출 데이터 ===");
+    console.log("selectedSlots:", selectedSlots);
+    console.log("변환 결과:", JSON.stringify(availableDateTimes, null, 2));
 
     if (mode === "vote") {
       onSubmitVote(availableDateTimes);

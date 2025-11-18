@@ -7,9 +7,15 @@
  */
 export const getTimeSlots = (startHour = 0, endHour = 24) => {
   const slots = [];
-  for (let hour = startHour; hour < endHour; hour++) {
-    slots.push(`${String(hour).padStart(2, "0")}:00`);
-    slots.push(`${String(hour).padStart(2, "0")}:30`);
+  // ✅ endHour를 포함하도록 수정 (< 대신 <=)
+  for (let hour = startHour; hour <= endHour; hour++) {
+    // 마지막 시간(endHour)일 때는 :00만 추가
+    if (hour === endHour) {
+      slots.push(`${String(hour).padStart(2, "0")}:00`);
+    } else {
+      slots.push(`${String(hour).padStart(2, "0")}:00`);
+      slots.push(`${String(hour).padStart(2, "0")}:30`);
+    }
   }
   return slots;
 };
@@ -28,7 +34,9 @@ export const convertSlotsToDto = (selectedSlots) => {
     if (!dateMap[date]) {
       dateMap[date] = [];
     }
-    dateMap[date].push(time);
+    //  시간 형식 정규화 (이미 초가 포함되어 있으면 제거)
+    const normalizedTime = time.split(":").slice(0, 2).join(":"); // "09:00:00:00" → "09:00"
+    dateMap[date].push(normalizedTime);
   });
 
   // 연속된 시간을 interval로 변환
@@ -39,37 +47,41 @@ export const convertSlotsToDto = (selectedSlots) => {
 
     times.forEach((time, index) => {
       if (!startTime) {
-        startTime = time;
+        startTime = time; // "09:00" (HH:mm 형식)
       }
 
       const nextTime = times[index + 1];
 
       // 현재 시간과 다음 시간의 차이 계산 (분 단위)
-      const currentMinutes =
-        parseInt(time.split(":")[0]) * 60 + parseInt(time.split(":")[1]);
+      const [currentHour, currentMinute] = time.split(":").map(Number);
+      const currentMinutes = currentHour * 60 + currentMinute;
+
       const nextMinutes = nextTime
-        ? parseInt(nextTime.split(":")[0]) * 60 +
-          parseInt(nextTime.split(":")[1])
+        ? (() => {
+            const [nextHour, nextMinute] = nextTime.split(":").map(Number);
+            return nextHour * 60 + nextMinute;
+          })()
         : null;
 
       // 30분 단위로 연속성 체크
       if (!nextTime || nextMinutes - currentMinutes > 30) {
-        // ✅ 종료 시간 계산 (+30분) - 초를 포함한 형식으로
+        // 종료 시간 계산 (+30분)
         const [hour, minute] = time.split(":").map(Number);
         const endTotalMinutes = hour * 60 + minute + 30;
         const endHour = Math.floor(endTotalMinutes / 60);
         const endMinute = endTotalMinutes % 60;
 
-        // ✅ startTime과 endTime 모두 HH:mm:ss 형식으로
-        const formattedStartTime = `${startTime}:00`; // "09:00" → "09:00:00"
+        //  HH:mm:ss 형식으로 변환
+        const formattedStartTime = `${startTime}:00`;
         const formattedEndTime = `${String(endHour).padStart(2, "0")}:${String(
           endMinute
-        ).padStart(2, "0")}:00`; // "09:30:00"
+        ).padStart(2, "0")}:00`;
 
         intervals.push({
           startTime: formattedStartTime,
           endTime: formattedEndTime,
         });
+
         startTime = null;
       }
     });
