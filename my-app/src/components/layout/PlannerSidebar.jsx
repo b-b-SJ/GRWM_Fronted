@@ -167,116 +167,118 @@ const PlannerSidebar = ({ sidebarOpen }) => {
   }, [currentDate]);
 
   return (
-    <div
-      className={`
+    <>
+      <div
+        className={`
       ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
       lg:translate-x-0 
       fixed lg:static inset-y-0 left-0 z-10
       w-80 bg-white border-r shadow-lg lg:shadow-none
       transition-transform duration-300 ease-in-out
       flex flex-col
+
     `}
-    >
-      <div className="w-80 bg-white border-r flex flex-col h-auto">
-        <div>
-          {(viewMode === "daily" || viewMode === "weekly") && (
-            <div className="p-4 shadow-sm shadow-gray-200">
-              <div className="flex justify-center mb-2">
-                <button onClick={goPrev}>
-                  <ChevronLeft className="hover:bg-gray-200 rounded-md" />
-                </button>
-                <h1 className="mx-4 text-xl font-semibold">
-                  {sideDate.getFullYear()}. {sideDate.getMonth() + 1}
-                </h1>
-                <button onClick={goNext}>
-                  <ChevronRight className="hover:bg-gray-200 rounded-md" />
-                </button>
-              </div>
-              <MonthlyGrid
-                weeks={sideWeeks}
-                month={tempDate.getMonth()}
-                totalDateStyle="p-2 hover:rounded-full text-center hover:bg-gray-100"
-                currentMonthStyle="text-gray-800"
-                ncMonthStyle="text-gray-300"
-                onDateClick={(day) => setCurrentDate(day)}
-                showSchedules={false}
-              />
-            </div>
-          )}
-        </div>
-
-        <div className="flex flex-col flex-none text-left">
-          {/* 일정 섹션  */}
-          <button
-            onClick={() => setScheduleOpen(!scheduleOpen)}
-            className={`py-2.5 p-2 text-md text-left font-bold flex shadow-sm shadow-gray-200 ${
-              scheduleOpen ? "" : "hover:bg-gray-200"
-            }`}
-          >
-            오늘의 일정
-            <ChevronDown
-              size={20}
-              className={`mt-1 ml-auto transition-transform ${
-                scheduleOpen ? "" : "scale-y-[-1]"
-              }`}
-            />
-          </button>
-
-          {scheduleOpen && (
-            <>
-              <ScheduleListSidebar
-                className="max-h-60 min-h-60"
-                todaySc={todaySchedules}
-                isLoading={scheduleLoading}
-                onScheduleDeleted={handleScheduleDeleted}
-              />
-              <button
-                className="text-sm text-left p-2 hover:bg-gray-100"
-                onClick={() => setOpenAddModal(true)}
-              >
-                + 일정 추가하기
-              </button>
-            </>
-          )}
-
-          {/*  Todo 섹션 (수지님 코드 반영!) */}
-          <button
-            onClick={() => setTodoOpen(!todoOpen)}
-            className={`py-2.5 p-2 text-md text-left font-bold flex shadow-sm shadow-gray-200 ${
-              todoOpen ? "" : "hover:bg-gray-200"
-            }`}
-          >
-            오늘의 todo
-            <ChevronDown
-              size={20}
-              className={`mt-1 ml-auto transition-transform ${
-                todoOpen ? "" : "scale-y-[-1]"
-              }`}
-            />
-          </button>
-
-          {todoOpen && (
-            <div className="max-h-60 min-h-60 overflow-y-auto p-2">
-              {isAuthenticated ? (
-                <TodoSidebarWidget
-                  todos={todayTodos}
-                  onToggleComplete={handleToggleComplete}
-                  onOpenAddModal={() =>
-                    setModalState({ isOpen: true, todo: null })
-                  }
-                  onNavigateToTracker={() => navigate("/tracker?mode=todo")}
-                  loading={todoLoading}
-                />
-              ) : (
-                <div className="text-center py-6 text-sm text-gray-500">
-                  로그인 후 사용 가능합니다
+      >
+        <div className="w-80 bg-white border-r flex flex-col h-auto">
+          <div>
+            {(viewMode === "daily" || viewMode === "weekly") && (
+              <div className="p-4 shadow-sm shadow-gray-200">
+                <div className="flex justify-center mb-2">
+                  <button onClick={goPrev}>
+                    <ChevronLeft className="hover:bg-gray-200 rounded-md" />
+                  </button>
+                  <h1 className="mx-4 text-xl font-semibold">
+                    {sideDate.getFullYear()}. {sideDate.getMonth() + 1}
+                  </h1>
+                  <button onClick={goNext}>
+                    <ChevronRight className="hover:bg-gray-200 rounded-md" />
+                  </button>
                 </div>
-              )}
-            </div>
-          )}
+                <MonthlyGrid
+                  weeks={sideWeeks}
+                  month={tempDate.getMonth()}
+                  totalDateStyle="p-2 hover:rounded-full text-center hover:bg-gray-100"
+                  currentMonthStyle="text-gray-800"
+                  ncMonthStyle="text-gray-300"
+                  onDateClick={(day) => setCurrentDate(day)}
+                  showSchedules={false}
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col flex-none text-left">
+            {/* 일정 섹션  */}
+            <button
+              onClick={() => setScheduleOpen(!scheduleOpen)}
+              className={`py-2.5 p-2 text-md text-left font-bold flex shadow-sm shadow-gray-200 ${
+                scheduleOpen ? "" : "hover:bg-gray-200"
+              }`}
+            >
+              오늘의 일정
+              <ChevronDown
+                size={20}
+                className={`mt-1 ml-auto transition-transform ${
+                  scheduleOpen ? "" : "scale-y-[-1]"
+                }`}
+              />
+            </button>
+
+            {scheduleOpen && (
+              <>
+                <ScheduleListSidebar
+                  className="max-h-60 min-h-60"
+                  todaySc={todaySchedules}
+                  isLoading={scheduleLoading}
+                  onScheduleDeleted={handleScheduleDeleted}
+                />
+                <button
+                  className="text-sm text-left p-2 hover:bg-gray-100"
+                  onClick={() => setOpenAddModal(true)}
+                >
+                  + 일정 추가하기
+                </button>
+              </>
+            )}
+
+            {/*  Todo 섹션 (수지님 코드 반영!) */}
+            <button
+              onClick={() => setTodoOpen(!todoOpen)}
+              className={`py-2.5 p-2 text-md text-left font-bold flex shadow-sm shadow-gray-200 ${
+                todoOpen ? "" : "hover:bg-gray-200"
+              }`}
+            >
+              오늘의 todo
+              <ChevronDown
+                size={20}
+                className={`mt-1 ml-auto transition-transform ${
+                  todoOpen ? "" : "scale-y-[-1]"
+                }`}
+              />
+            </button>
+
+            {todoOpen && (
+              <div className="max-h-60 min-h-60 overflow-y-auto p-2">
+                {isAuthenticated ? (
+                  <TodoSidebarWidget
+                    todos={todayTodos}
+                    onToggleComplete={handleToggleComplete}
+                    onOpenAddModal={() =>
+                      setModalState({ isOpen: true, todo: null })
+                    }
+                    onNavigateToTracker={() => navigate("/tracker?mode=todo")}
+                    loading={todoLoading}
+                  />
+                ) : (
+                  <div className="text-center py-6 text-sm text-gray-500">
+                    로그인 후 사용 가능합니다
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-
       {/* 일정 생성 모달 (내 코드) */}
       <ScheduleFormModal
         isOpen={openAddModal}
@@ -284,7 +286,7 @@ const PlannerSidebar = ({ sidebarOpen }) => {
         mode="create"
         onSuccess={handleScheduleCreated}
       />
-    </div>
+    </>
   );
 };
 
