@@ -170,7 +170,7 @@ const TeamManagementTab = ({ plannerId }) => {
       </div>
 
       {/* 멤버 목록 영역 (스크롤 가능) */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 bg-white">
         {loading && (
           <div className="flex items-center justify-center py-8">
             <div className="text-gray-500 text-sm">멤버 로딩 중...</div>
