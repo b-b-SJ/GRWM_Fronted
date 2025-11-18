@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import PostList from "./PostList";
 import { useHashtag } from "../../hooks/useHashtag";
-
+import { Tag } from "lucide-react";
 const HashtagTimeLine = () => {
   const { getSubscribedHashtagPosts, hashtagPosts, loading, error } =
     useHashtag();
@@ -50,12 +50,12 @@ const HashtagTimeLine = () => {
   }
 
   // 구독한 해시태그가 없거나 게시물이 없을 때
-  if (!hashtagPosts) {
+  if (!hashtagPosts || hashtagPosts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <div className="text-center">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-4xl">🏷️</span>
+            <Tag />
           </div>
           <p className="text-lg text-gray-600 mb-2">
             구독 중인 해시태그의 게시물이 없습니다

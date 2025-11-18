@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { usePost } from "../../hooks/usePost";
 import PostingStyle from "./PostingStyle";
-
+import { PenLine } from "lucide-react";
 const PostList = ({ posts, onPostsChange }) => {
   const { deletePost, likePost, cancelLike } = usePost();
   const [localPosts, setLocalPosts] = useState(posts);
@@ -93,12 +93,19 @@ const PostList = ({ posts, onPostsChange }) => {
 
   if (!localPosts || localPosts.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
-        <p className="text-lg">게시물이 없습니다</p>
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <PenLine />
+          </div>
+          <p className="text-lg text-gray-600 mb-2">아직 게시물이 없습니다</p>
+          <p className="text-sm text-gray-500">
+            새로운 사람을 팔로우하거나 글을 작성해보세요
+          </p>
+        </div>
       </div>
     );
   }
-
   return (
     <div>
       {localPosts.map((post) => (
