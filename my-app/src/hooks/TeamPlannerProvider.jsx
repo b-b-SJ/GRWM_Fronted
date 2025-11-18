@@ -1077,6 +1077,8 @@ export const TeamPlannerProvider = ({ children }) => {
       checkAuth();
       setLoading(true);
       setError(null);
+      console.log("보트 알아보기");
+      console.log(voteData);
       try {
         const response = await fetch(
           `http://localhost:8080/api/team-planner/${plannerId}/time-vote`,

@@ -79,7 +79,7 @@ const TimeVoteCreate = ({ onSubmit, onCancel }) => {
       alert("종료 시간은 시작 시간보다 늦어야 합니다.");
     }
   };
-  //  숫자를 LocalTime 문자열로 변환하는 헬퍼 함수
+  // 숫자를 LocalTime 문자열로 변환하는 헬퍼 함수
   const formatToLocalTime = (hour) => {
     return `${String(hour).padStart(2, "0")}:00:00`;
   };

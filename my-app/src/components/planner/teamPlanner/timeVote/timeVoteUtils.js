@@ -13,6 +13,7 @@ export const getTimeSlots = (startHour = 0, endHour = 24) => {
   }
   return slots;
 };
+
 /**
  * 선택된 슬롯들을 API에 전송할 형식으로 변환
  * @param {string[]} selectedSlots - ['2025-01-15_09:00', '2025-01-15_09:30', ...]
@@ -51,20 +52,23 @@ export const convertSlotsToDto = (selectedSlots) => {
           parseInt(nextTime.split(":")[1])
         : null;
 
-      // 🔧 30분 단위로 연속성 체크
+      // 30분 단위로 연속성 체크
       if (!nextTime || nextMinutes - currentMinutes > 30) {
-        // 종료 시간 계산 (+30분)
+        // ✅ 종료 시간 계산 (+30분) - 초를 포함한 형식으로
         const [hour, minute] = time.split(":").map(Number);
         const endTotalMinutes = hour * 60 + minute + 30;
         const endHour = Math.floor(endTotalMinutes / 60);
         const endMinute = endTotalMinutes % 60;
-        const endTime = `${String(endHour).padStart(2, "0")}:${String(
+
+        // ✅ startTime과 endTime 모두 HH:mm:ss 형식으로
+        const formattedStartTime = `${startTime}:00`; // "09:00" → "09:00:00"
+        const formattedEndTime = `${String(endHour).padStart(2, "0")}:${String(
           endMinute
-        ).padStart(2, "0")}`;
+        ).padStart(2, "0")}:00`; // "09:30:00"
 
         intervals.push({
-          startTime: startTime,
-          endTime: endTime,
+          startTime: formattedStartTime,
+          endTime: formattedEndTime,
         });
         startTime = null;
       }
