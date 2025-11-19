@@ -224,7 +224,7 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
         </div>
 
         {/* 프로필 정보 */}
-        <div className="mt-7 px-6 py-4 flex pb-12 border-b">
+        <div className="mt-7 px-6 py-4 flex pb-12 ">
           {/* 프로필 사진 */}
           <div>
             {profile.user.profileImage ? (
@@ -337,9 +337,9 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
           </div>
 
           {/**뱃지 */}
-          <button className="w-24 h-24  ml-auto rounded-full bg-rose-200 justify-center items-center grid">
+          <button className="w-24 h-24  ml-auto rounded-full bg-violet-200 justify-center items-center grid">
             <Award
-              className="text-rose-400 col-start-1 row-start-1"
+              className="text-violet-400 col-start-1 row-start-1"
               size={60}
             />
             <div className="font-bold text-4xl col-start-1 row-start-1 drop-shadow-md ">
@@ -350,7 +350,9 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
 
         {/* 바이오 */}
         {profile.description && (
-          <div className="p-6 text-gray-700">{profile.description}</div>
+          <div className=" pb-6 px-6 text-gray-700 border-b">
+            {profile.description}
+          </div>
         )}
       </div>
 

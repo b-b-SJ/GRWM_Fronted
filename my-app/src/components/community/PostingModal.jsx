@@ -225,7 +225,7 @@ const PostingModal = ({
             value={textContent}
             onChange={(e) => setTextContent(e.target.value)}
             placeholder="무슨 일이 일어나고 있나요?"
-            className="overflow-y-auto w-full p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-rose-400 overflow-hidden transition-all duration-300"
+            className="overflow-y-auto w-full p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-violet-400 overflow-hidden transition-all duration-300"
             rows={previewImages.length > 0 ? 3 : 6}
           />
 
@@ -233,7 +233,7 @@ const PostingModal = ({
             {hashtags.map((tag, index) => (
               <span
                 key={`${tag}-${index}`}
-                className="inline-flex items-center gap-1 px-3 py-1 bg-rose-100 text-rose-600 rounded-full"
+                className="inline-flex items-center gap-1 px-3 py-1 bg-violet-100 text-violet-600 rounded-full"
               >
                 #{tag}
                 <button
@@ -243,7 +243,7 @@ const PostingModal = ({
                     e.stopPropagation();
                     removeTag(index);
                   }}
-                  className="hover:text-rose-700 hover:bg-rose-200 rounded-full p-1 -m-1 transition-colors"
+                  className="hover:text-violet-700 hover:bg-violet-200 rounded-full p-1 -m-1 transition-colors"
                   title="해시태그 삭제"
                 >
                   <X size={15} />
@@ -252,7 +252,7 @@ const PostingModal = ({
             ))}
           </div>
 
-          <div className="border-b px-3 pb-3 pt-1 focus-within:border-b-2 focus-within:border-rose-400 flex group">
+          <div className="border-b px-3 pb-3 pt-1 focus-within:border-b-2 focus-within:border-violet-400 flex group">
             <span className="text-gray-400 p-2 text-lg group-focus-within:text-gray-700">
               #
             </span>
@@ -267,7 +267,7 @@ const PostingModal = ({
             <button
               onClick={handleButtonClick}
               disabled={isUploading}
-              className="flex items-center gap-2 p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 p-2 text-violet-500 hover:bg-violet-50 rounded-xl transition-colors disabled:opacity-50"
             >
               <Image size={22} />
               {isUploading && <span className="text-xs">업로드 중...</span>}
@@ -289,7 +289,7 @@ const PostingModal = ({
               onClick={() => setShowVisibilityMenu(!showVisibilityMenu)}
               className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
             >
-              <span className="text-rose-500">{selectedOption.icon}</span>
+              <span className="text-violet-500">{selectedOption.icon}</span>
               <span className="text-gray-700">{selectedOption.label}</span>
               <ChevronDown
                 size={14}
@@ -311,14 +311,14 @@ const PostingModal = ({
                     }}
                     className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-gray-50 transition-colors ${
                       visibility === option.value
-                        ? "bg-rose-50 text-rose-600"
+                        ? "bg-violet-50 text-violet-600"
                         : "text-gray-700"
                     }`}
                   >
                     <span
                       className={
                         visibility === option.value
-                          ? "text-rose-500"
+                          ? "text-violet-500"
                           : "text-gray-500"
                       }
                     >

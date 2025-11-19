@@ -57,6 +57,37 @@ const PostingStyle = ({
     setManageModal(!manageModal);
   };
 
+  // 시간 차이 계산 함수
+  const getTimeAgo = (createdAt) => {
+    if (!createdAt) return "방금 전";
+
+    const now = new Date(); // 현재 시간
+    const postTime = new Date(createdAt); // 게시물 작성 시간
+    const diffInMs = now - postTime; // 밀리초 단위 차이
+
+    // 밀리초 변환
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60)); // 분
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60)); // 시간
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24)); // 일
+
+    // 문자열 반환
+    if (diffInMinutes < 1) {
+      return "방금 전";
+    } else if (diffInMinutes < 60) {
+      return `${diffInMinutes}분 전`;
+    } else if (diffInHours < 24) {
+      return `${diffInHours}시간 전`;
+    } else if (diffInDays < 7) {
+      return `${diffInDays}일 전`;
+    } else {
+      // 7일 이상이면 날짜 형식으로 표시
+      return postTime.toLocaleDateString("ko-KR", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    }
+  };
   return (
     <>
       <div
@@ -101,7 +132,9 @@ const PostingStyle = ({
                   renderVisibilityIcon()
                 }
               </div>
-              <span className="text-gray-500 text-sm">몇분전인지 표시</span>
+              <span className="text-gray-500 text-sm">
+                {getTimeAgo(post.createdAt)}
+              </span>
             </div>
           </Link>
 
@@ -146,7 +179,7 @@ const PostingStyle = ({
             </div>
           )}
           {post.content.text && (
-            <p className="mb-3 whitespace-pre-wrap break-words text-gray-800">
+            <p className="my-3 whitespace-pre-wrap break-words text-gray-800">
               {post.content.text}
             </p>
           )}

@@ -114,7 +114,7 @@ const TimeVoteCreate = ({ onSubmit, onCancel }) => {
       title: formData.title,
       voteRange: formData.voteRange,
       finishTime: formData.finishTime,
-      MemberIds: formData.memberIds, // 대문자 M 주의!
+      memberIds: formData.memberIds, //소문자로 통일
       startHour: formatToLocalTime(formData.startHour), // "09:00:00"
       endHour: formatToLocalTime(formData.endHour), // "18:00:00"
     };

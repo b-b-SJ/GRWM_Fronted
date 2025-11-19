@@ -105,7 +105,7 @@ const CommentSection = ({ postId, postAuthorId }) => {
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           placeholder="댓글을 입력하세요"
-          className="w-full p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-violet-400"
           rows={3}
         />
 
@@ -122,7 +122,7 @@ const CommentSection = ({ postId, postAuthorId }) => {
           </label>
           <button
             onClick={handleCreateComment}
-            className="ml-auto mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            className="ml-auto mt-2 px-4 py-2 bg-violet-400 text-white rounded-lg hover:bg-violet-500"
           >
             댓글 등록
           </button>

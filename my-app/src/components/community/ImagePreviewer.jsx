@@ -104,7 +104,7 @@ const ImagePreviewer = ({
                   onClick={() => setCurrentImageIndex(idx)}
                   className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
                     idx === currentImageIndex
-                      ? "border-rose-500"
+                      ? "border-violet-500"
                       : "border-gray-300 opacity-60"
                   }`}
                 >

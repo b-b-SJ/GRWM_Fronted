@@ -25,6 +25,7 @@ const TimeVoteTab = ({ plannerId }) => {
   const [voteList, setVoteList] = useState([]);
   const [currentVote, setCurrentVote] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isEdited, setIsEdited] = useState(false);
 
   // 투표 목록 로드
   const loadVoteList = async () => {
@@ -238,6 +239,8 @@ const TimeVoteTab = ({ plannerId }) => {
           onUpdateVote={handleUpdateVote}
           onModeChange={setMode}
           onBack={() => setMode("list")}
+          isEdited={isEdited}
+          setIsEdited={setIsEdited}
         />
       )}
     </div>

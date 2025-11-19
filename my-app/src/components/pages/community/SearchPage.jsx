@@ -2,13 +2,16 @@ import React, { useState, useEffect } from "react";
 import { useCommunitySearch } from "../../../hooks/useCommunitySearch";
 import { Search, UserRound, X, Plus, Check } from "lucide-react";
 import PostList from "../../community/PostList";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useHashtag } from "../../../hooks/useHashtag";
 import { useAuth } from "../../../hooks/AuthContext";
 
 const SearchPage = () => {
   const { keyword: urlKeyword } = useParams();
   const [keyword, setKeyword] = useState("");
+  const [searchParams] = useSearchParams(); // 쿼리 파라미터 읽기용 (/search?keyword=동물의숲)
+  const queryKeyword = searchParams.get("keyword"); //  ?keyword=값 가져오기
+
   const [searchType, setSearchType] = useState("post");
   const [isUser, setIsUser] = useState(false);
 
@@ -52,18 +55,33 @@ const SearchPage = () => {
     ? postHasMore
     : hashtagHasMore;
 
-  // ✅ 구독 목록 먼저 가져오기
+  // 구독 목록 먼저 가져오기
   useEffect(() => {
     if (user && user.userId) {
-      console.log("📋 구독 목록 로드 중...");
       getSubscribedHashtags();
     }
   }, [user]);
 
-  // URL 파라미터 감지
+  // 쿼리 파라미터 감지 - 일반 검색용
+  useEffect(() => {
+    if (queryKeyword) {
+      console.log(" 쿼리 파라미터로 일반 검색:", queryKeyword);
+
+      setKeyword(queryKeyword);
+      setSearchType("post"); // 게시글 검색으로 설정
+      setIsUser(false);
+      setPostResults([]);
+      setPostPage(0);
+
+      //  자동으로 게시글 검색 실행
+      executeSearch(queryKeyword, "post");
+    }
+  }, [queryKeyword]);
+
+  // URL 파라미터 감지 - 해시태그 검색용
   useEffect(() => {
     if (urlKeyword) {
-      console.log("🔄 URL 파라미터:", urlKeyword);
+      console.log("🔄 URL 파라미터로 해시태그 검색:", urlKeyword);
 
       setKeyword(urlKeyword);
       setSearchType("hashtag");
@@ -74,23 +92,28 @@ const SearchPage = () => {
       setHashtagPage(0);
 
       executeSearch(urlKeyword, "hashtag");
-    } else {
+    } else if (!queryKeyword) {
       setSearchType("post");
-      setKeyword(""); // ✅ 추가
+      setKeyword("");
     }
   }, [urlKeyword]);
 
-  // ✅ 해시태그 검색 결과 & 구독 목록이 모두 준비되면 구독 상태 확인
   useEffect(() => {
     const checkSubscription = () => {
-      if (!hashtagList || hashtagLoading || !keyword) return;
+      if (
+        !hashtagList ||
+        hashtagLoading ||
+        !keyword ||
+        searchType !== "hashtag"
+      )
+        return;
 
       const isCurrentlySubscribed = hashtagList.some((hashtag) => {
         const clean = hashtag.startsWith("#") ? hashtag.slice(1) : hashtag;
         return clean === keyword || hashtag === `#${keyword}`;
       });
 
-      console.log("🔍 구독 체크:", {
+      console.log(" 구독 체크:", {
         keyword,
         isCurrentlySubscribed,
         hashtagList,
@@ -99,7 +122,7 @@ const SearchPage = () => {
     };
 
     checkSubscription();
-  }, [keyword, hashtagList, hashtagLoading]);
+  }, [keyword, hashtagList, hashtagLoading, searchType]);
 
   const executeSearch = async (
     searchKeyword,
@@ -160,6 +183,13 @@ const SearchPage = () => {
   };
 
   const handleSearch = async (hasMore = false) => {
+    // 일반 검색일 때 URL 업데이트
+    if (searchType === "post" && keyword && !hasMore) {
+      navigate(`/community/search?keyword=${encodeURIComponent(keyword)}`, {
+        replace: true,
+      });
+    }
+
     // 해시태그 검색일 때 URL 업데이트
     if (searchType === "hashtag" && keyword && !hasMore) {
       navigate(`/community/search/${keyword}`, { replace: true });
@@ -167,7 +197,8 @@ const SearchPage = () => {
 
     executeSearch(keyword, searchType, hasMore);
   };
-  // ✅ 구독/구독취소 처리
+
+  //  구독/구독취소 처리
   const handleSubscribe = async () => {
     if (!user || !user.userId) {
       alert("로그인이 필요합니다");
@@ -198,7 +229,7 @@ const SearchPage = () => {
         // 구독 취소
         await unsubscribeHashtag(tagId);
 
-        // ✅ 성공 여부 상관없이 일단 상태 변경 & 목록 갱신
+        //  성공 여부 상관없이 일단 상태 변경 & 목록 갱신
         setIsSubscribed(false);
         await getSubscribedHashtags();
         window.dispatchEvent(new Event("hashtagSubscriptionChanged"));
@@ -206,7 +237,7 @@ const SearchPage = () => {
         alert("구독이 취소되었습니다");
       } else {
         //  구독
-        console.log("📤 구독 요청:", { userId: user.userId, tagId });
+        console.log("구독 요청:", { userId: user.userId, tagId });
         const success = await subscribeHashtag(user.userId, tagId);
 
         // 목록 갱신
@@ -221,7 +252,7 @@ const SearchPage = () => {
         }
       }
     } catch (error) {
-      console.error("❌ 구독 처리 실패:", error);
+      console.error("구독 처리 실패:", error);
       alert("구독 처리에 실패했습니다");
     }
   };
@@ -261,7 +292,7 @@ const SearchPage = () => {
             onClick={() => setIsUser(!isUser)}
             className={`flex gap-2 px-3 py-2 rounded-lg items-center transition-colors ${
               isUser
-                ? "bg-rose-100 border-2 border-rose-400"
+                ? "bg-violet-100 border-2 border-violet-400"
                 : "bg-gray-100 border-2 border-gray-300"
             }`}
           >
@@ -273,7 +304,7 @@ const SearchPage = () => {
             />
             <UserRound
               size={24}
-              className={isUser ? "text-rose-500" : "text-gray-600"}
+              className={isUser ? "text-violet-500" : "text-gray-600"}
             />
           </button>
 
@@ -288,7 +319,7 @@ const SearchPage = () => {
                   ? "#없이 입력하세요 (예: 일상)"
                   : "검색어를 입력하세요"
               }
-              className="w-full px-5 py-3 pr-10 border border-gray-300 rounded-3xl focus:outline-none focus:ring-2 focus:ring-rose-400"
+              className="w-full px-5 py-3 pr-10 border border-gray-300 rounded-3xl focus:outline-none focus:ring-2 focus:ring-violet-400"
             />
             {keyword && (
               <button
@@ -299,7 +330,7 @@ const SearchPage = () => {
               </button>
             )}
             <button
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-rose-500 transition-colors"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-violet-500 transition-colors"
               onClick={() => handleSearch(false)}
               disabled={loading}
             >
@@ -315,7 +346,7 @@ const SearchPage = () => {
               className={`px-6 py-3 rounded-lg flex items-center gap-2 transition-colors font-medium ${
                 isSubscribed
                   ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  : "bg-rose-500 text-white hover:bg-rose-600"
+                  : "bg-violet-500 text-white hover:bg-violet-600"
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {isSubscribed ? (
@@ -343,7 +374,7 @@ const SearchPage = () => {
             onClick={() => setSearchType("post")}
             className={`px-4 py-2 transition-colors ${
               searchType === "post"
-                ? "border-b-2 border-rose-500 font-semibold text-rose-600"
+                ? "border-b-2 border-violet-500 font-semibold text-violet-600"
                 : "text-gray-600 hover:text-gray-800"
             }`}
           >
@@ -353,7 +384,7 @@ const SearchPage = () => {
             onClick={() => setSearchType("hashtag")}
             className={`px-4 py-2 transition-colors ${
               searchType === "hashtag"
-                ? "border-b-2 border-rose-500 font-semibold text-rose-600"
+                ? "border-b-2 border-violet-500 font-semibold text-violet-600"
                 : "text-gray-600 hover:text-gray-800"
             }`}
           >
@@ -448,8 +479,8 @@ const SearchPage = () => {
 
       {currentResults.length === 0 && !keyword && !loading && (
         <div className="text-center py-12">
-          <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Search size={32} className="text-rose-500" />
+          <div className="w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Search size={32} className="text-violet-500" />
           </div>
           <p className="text-gray-600 text-lg">
             검색어를 입력하고 검색해보세요!

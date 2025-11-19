@@ -70,7 +70,7 @@ const CommunityPage = () => {
         </div>
         {/* 글 새로 쓰는 버튼 */}
         <button
-          className="fixed flex bottom-7 right-7 w-20 h-20 rounded-full bg-gradient-to-r from-rose-400 to-rose-500 justify-center items-center"
+          className="fixed flex bottom-7 right-7 w-20 h-20 rounded-full bg-gradient-to-r from-violet-400 to-violet-500 justify-center items-center"
           onClick={() => setOpenPostModal(!openPostModal)}
         >
           <CirclePlus className="text-gray-50" size={55} />
