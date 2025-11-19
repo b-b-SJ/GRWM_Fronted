@@ -1,4 +1,3 @@
-// TimeVoteGrid.jsx
 import React, { useState, useEffect } from "react";
 import { X, Users, Check, ChevronLeft } from "lucide-react";
 import {
@@ -15,6 +14,8 @@ const TimeVoteGrid = ({
   onUpdateVote,
   onModeChange,
   onBack,
+  isEdited,
+  setIsEdited,
 }) => {
   const [selectedSlots, setSelectedSlots] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -105,9 +106,11 @@ const TimeVoteGrid = ({
     console.log("selectedSlots:", selectedSlots);
     console.log("변환 결과:", JSON.stringify(availableDateTimes, null, 2));
 
-    if (mode === "vote") {
+    if (mode === "vote" && !isEdited) {
+      console.log("첫 투표 드가자");
       onSubmitVote(availableDateTimes);
-    } else {
+    } else if (mode === "vote" && isEdited) {
+      console.log("투표 수정을 드가자");
       onUpdateVote(availableDateTimes);
     }
   };
@@ -260,7 +263,10 @@ const TimeVoteGrid = ({
           {mode === "vote" && !isExpired && (
             <div className="flex gap-3">
               <button
-                onClick={handleSubmit}
+                onClick={() => {
+                  setIsEdited(true);
+                  handleSubmit();
+                }}
                 disabled={selectedSlots.length === 0}
                 className="flex-1 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 flex items-center justify-center gap-2"
               >
@@ -276,18 +282,30 @@ const TimeVoteGrid = ({
             </div>
           )}
 
-          {mode === "view" && (
-            <button
-              onClick={() => {
-                setSelectedSlots([]);
-                onModeChange("vote");
-              }}
-              disabled={isExpired}
-              className="w-full py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300"
-            >
-              {isExpired ? "마감된 투표" : "내 투표 수정하기"}
-            </button>
-          )}
+          {mode === "view" &&
+            (!isEdited ? (
+              <button
+                onClick={() => {
+                  setSelectedSlots([]);
+                  onModeChange("vote");
+                }}
+                disabled={isExpired}
+                className="w-full py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300"
+              >
+                {isExpired ? "마감된 투표" : "내 투표 제출하기"}
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setIsEdited(true);
+                  onModeChange("vote");
+                }}
+                disabled={isExpired}
+                className="w-full py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300"
+              >
+                {isExpired ? "마감된 투표" : "내 투표 수정하기"}
+              </button>
+            ))}
         </div>
       </div>
 
