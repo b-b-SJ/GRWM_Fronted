@@ -224,19 +224,19 @@ const PlannerHeaderWM = () => {
           <div className="flex p-1.5 w-fit rounded-2xl text-sm font-bold text-gray-500 outline outline-2 mt-6">
             <button
               onClick={() => setViewMode("monthly")}
-              className={`px-4 py-2 rounded-xl ${
+              className={`px-6 py-2 rounded-xl ${
                 viewMode === "monthly" ? "bg-blue-400 text-white" : "bg-white"
               }`}
             >
-              monthly
+              월간
             </button>
             <button
               onClick={() => setViewMode("weekly")}
-              className={`px-4 py-2 rounded-xl ${
+              className={`px-6 py-2 rounded-xl ${
                 viewMode === "weekly" ? "bg-blue-400 text-white" : "bg-white"
               }`}
             >
-              weekly
+              주간
             </button>
           </div>
         </div>

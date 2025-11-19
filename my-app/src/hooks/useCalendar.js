@@ -8,7 +8,7 @@ export function useCalendar() {
 
   const [sortMon, setSortMon] = useState(true);
   //월
-  const monthNames = [
+  const monthNamesEnglish = [
     "January",
     "February",
     "March",
@@ -21,6 +21,20 @@ export function useCalendar() {
     "October",
     "November",
     "December",
+  ];
+  const monthNames = [
+    "1월",
+    "2월",
+    "3월",
+    "4월",
+    "5월",
+    "6월",
+    "7월",
+    "8월",
+    "9월",
+    "10월",
+    "11월",
+    "12월",
   ];
   const currentMonthName = monthNames[month];
   const timeNameEn = [
@@ -51,8 +65,10 @@ export function useCalendar() {
   ];
   //console.log(currentMonthName);
   //주차
-  const weekNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const weekNums = ["week 1", "week 2", "week 3", "week 4", "week 5"];
+  const weekNamesEnglish = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const weekNumsEnglish = ["week 1", "week 2", "week 3", "week 4", "week 5"];
+  const weekNames = ["월", "화", "수", "목", "금", "토", "일"];
+  const weekNums = ["1주차", "2주차", "3주차", "4주차", "5주차"];
   const currentWeekNum = weekNums[Math.floor(day / 7)]; //!!!!!!!!!!!고쳐야더ㅚ나?
 
   //달력 시작, 끝
