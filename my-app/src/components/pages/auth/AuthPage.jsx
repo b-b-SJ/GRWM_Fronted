@@ -24,7 +24,7 @@ const AuthPage = () => {
     });
 
     // Hooks
-    const { login, signup, isLoading, error, clearError } = useAuth();
+    const { login, signup, isLoading, error, clearError, handleOAuthLogin } = useAuth();
     const {
         checkLoginId,
         isChecking: loginIdChecking,
@@ -36,7 +36,7 @@ const AuthPage = () => {
         setupFCMListener();
     }, []);
 
-    // OAuth 콜백 처리 로직 추가
+    // OAuth 콜백 처리 로직 개선
     useEffect(() => {
         // URL fragment에서 토큰 추출
         const hash = window.location.hash;
@@ -44,20 +44,38 @@ const AuthPage = () => {
         if (hash) {
             console.log('감지된 URL hash:', hash);
 
+            // 1. URLSearchParams 객체 생성 시 '#' 제거
             const params = new URLSearchParams(hash.substring(1));
+
+            // 2. 4가지 정보 모두 파싱
             const accessToken = params.get('token');
+            const userId = params.get('userId');
+            const encodedUsername = params.get('username');
+            const encodedNickname = params.get('communityNickname'); // 인코딩된 닉네임 파싱
 
-            if (accessToken) {
-                console.log('OAuth 토큰 감지:', accessToken);
+            if (accessToken && userId && encodedUsername && encodedNickname) {
 
-                localStorage.setItem('accessToken', accessToken);
-                window.history.replaceState(null, '', window.location.pathname);
+                // 3. 이름 및 닉네임 디코딩 (두 값 모두 인코딩되어 넘어옴)
+                const username = decodeURIComponent(encodedUsername);
+                const communityNickname = decodeURIComponent(encodedNickname);
 
-                alert('구글 로그인 성공!');
-                window.location.href = '/main';
+                console.log('OAuth 정보 감지:', { accessToken, userId, username, communityNickname });
+
+                // 4. AuthContext로 디코딩된 정보 전달
+                handleOAuthLogin({ accessToken, userId, username, communityNickname }).then(result => {
+                    if (result.success) {
+                        // URL에서 hash 제거
+                        window.history.replaceState(null, '', window.location.pathname);
+
+                        navigate('/main', { replace: true });
+                    } else {
+                        alert('로그인 처리 중 오류가 발생했습니다.');
+                        window.history.replaceState(null, '', window.location.pathname);
+                    }
+                });
             }
         }
-    }, []);
+    }, [handleOAuthLogin, navigate]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -76,8 +94,6 @@ const AuthPage = () => {
 
     // 로그인 관리
     const handleLogin = async () => {
-        // 로그인 시 FCM 토큰 발급 후 함께 전송
-        // AuthContext의 login 함수가 알아서 처리
         const result = await login(formData.loginId, formData.password);
 
         if (result.success) {
@@ -171,7 +187,7 @@ const AuthPage = () => {
                 />
             );
         default:
-            return <MainAuthPage  setCurrentPage={(page) => {
+            return <MainAuthPage setCurrentPage={(page) => {
                 resetForm();
                 setCurrentPage(page);
             }}

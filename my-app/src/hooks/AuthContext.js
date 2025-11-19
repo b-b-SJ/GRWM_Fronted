@@ -1,6 +1,6 @@
 // src/hooks/AuthContext.js
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { requestFCMToken } from './useFCM'
+import React, {createContext, useCallback, useContext, useEffect, useState} from 'react';
+import {requestFCMToken} from './useFCM'
 
 const AuthContext = createContext();
 
@@ -44,6 +44,35 @@ export const AuthProvider = ({ children }) => {
         setCurrentStudyRoomId(null);
     }, []);
 
+    // OAuth 로그인 처리 (토큰과 사용자 정보를 직접 받을 때)
+    const handleOAuthLogin = useCallback(async ({ accessToken, userId, username, communityNickname }) => {
+        console.log('[Auth] OAuth 토큰 및 정보 처리 시작');
+
+        if (accessToken && userId) {
+            const userData = {
+                // userId가 문자열로 오므로 숫자로 변환
+                userId: parseInt(userId, 10),
+                username: username,
+                communityNickname: communityNickname,
+                loginId: null, // 소셜 로그인이므로 loginId는 null 처리
+                communityId: parseInt(userId, 10)
+            };
+
+            localStorage.setItem('accessToken', accessToken);
+            localStorage.setItem('userData', JSON.stringify(userData));
+
+            setIsAuthenticated(true);
+            setUser(userData);
+
+            console.log('[Auth] OAuth 로그인 성공:', userData);
+            return { success: true, userData };
+        } else {
+            console.error('[Auth] OAuth 로그인 실패: 필수 정보 없음');
+            clearAllStorage();
+            return { success: false };
+        }
+    }, [clearAllStorage]);
+
     const login = async (loginId, password) => {
         if (!loginId || !password) {
             setError('아이디와 비밀번호를 모두 입력해주세요.');
@@ -72,13 +101,12 @@ export const AuthProvider = ({ children }) => {
                     return { success: false, error: '서버 응답 오류' };
                 }
 
-                // 새로운 사용자 정보 저장
                 const userData = {
                     userId: userId,
                     username: username,
                     loginId: loginId,
                     communityNickname: communityNickname,
-                    communityId: userId // communityId 추가 (스터디룸에서 사용)
+                    communityId: userId
                 };
 
                 localStorage.setItem('accessToken', accessToken);
@@ -162,8 +190,7 @@ export const AuthProvider = ({ children }) => {
 
     // 스터디룸 퇴장 정보 제거
     const clearJoinedStudyRoom = useCallback(() => {
-        console.log('[Auth] 스터디룸 참여 정보 제거');
-        setCurrentStudyRoomId(null);
+       setCurrentStudyRoomId(null);
         localStorage.removeItem('currentStudyRoomId');
     }, []);
 
@@ -224,8 +251,9 @@ export const AuthProvider = ({ children }) => {
             getAuthHeaders,
             validateToken,
             clearAllStorage,
-            setJoinedStudyRoom, // 스터디룸 참여 정보 저장
-            clearJoinedStudyRoom // 스터디룸 참여 정보 제거
+            setJoinedStudyRoom,
+            clearJoinedStudyRoom,
+            handleOAuthLogin // OAuth 로그인 처리 함수 추가
         }}>
             {children}
         </AuthContext.Provider>
