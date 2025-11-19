@@ -292,7 +292,7 @@ const SearchPage = () => {
             onClick={() => setIsUser(!isUser)}
             className={`flex gap-2 px-3 py-2 rounded-lg items-center transition-colors ${
               isUser
-                ? "bg-rose-100 border-2 border-rose-400"
+                ? "bg-violet-100 border-2 border-violet-400"
                 : "bg-gray-100 border-2 border-gray-300"
             }`}
           >
@@ -304,7 +304,7 @@ const SearchPage = () => {
             />
             <UserRound
               size={24}
-              className={isUser ? "text-rose-500" : "text-gray-600"}
+              className={isUser ? "text-violet-500" : "text-gray-600"}
             />
           </button>
 
@@ -319,7 +319,7 @@ const SearchPage = () => {
                   ? "#없이 입력하세요 (예: 일상)"
                   : "검색어를 입력하세요"
               }
-              className="w-full px-5 py-3 pr-10 border border-gray-300 rounded-3xl focus:outline-none focus:ring-2 focus:ring-rose-400"
+              className="w-full px-5 py-3 pr-10 border border-gray-300 rounded-3xl focus:outline-none focus:ring-2 focus:ring-violet-400"
             />
             {keyword && (
               <button
@@ -330,7 +330,7 @@ const SearchPage = () => {
               </button>
             )}
             <button
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-rose-500 transition-colors"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-violet-500 transition-colors"
               onClick={() => handleSearch(false)}
               disabled={loading}
             >
@@ -346,7 +346,7 @@ const SearchPage = () => {
               className={`px-6 py-3 rounded-lg flex items-center gap-2 transition-colors font-medium ${
                 isSubscribed
                   ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  : "bg-rose-500 text-white hover:bg-rose-600"
+                  : "bg-violet-500 text-white hover:bg-violet-600"
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {isSubscribed ? (
@@ -374,7 +374,7 @@ const SearchPage = () => {
             onClick={() => setSearchType("post")}
             className={`px-4 py-2 transition-colors ${
               searchType === "post"
-                ? "border-b-2 border-rose-500 font-semibold text-rose-600"
+                ? "border-b-2 border-violet-500 font-semibold text-violet-600"
                 : "text-gray-600 hover:text-gray-800"
             }`}
           >
@@ -384,7 +384,7 @@ const SearchPage = () => {
             onClick={() => setSearchType("hashtag")}
             className={`px-4 py-2 transition-colors ${
               searchType === "hashtag"
-                ? "border-b-2 border-rose-500 font-semibold text-rose-600"
+                ? "border-b-2 border-violet-500 font-semibold text-violet-600"
                 : "text-gray-600 hover:text-gray-800"
             }`}
           >
@@ -479,8 +479,8 @@ const SearchPage = () => {
 
       {currentResults.length === 0 && !keyword && !loading && (
         <div className="text-center py-12">
-          <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Search size={32} className="text-rose-500" />
+          <div className="w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Search size={32} className="text-violet-500" />
           </div>
           <p className="text-gray-600 text-lg">
             검색어를 입력하고 검색해보세요!
