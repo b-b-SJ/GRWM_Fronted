@@ -259,7 +259,7 @@ const VoteCard = ({ vote, onClick }) => {
   return (
     <div
       onClick={onClick}
-      className="border rounded-lg p-3 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group"
+      className="border rounded-lg p-3 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer group "
     >
       <div className="flex items-start justify-between mb-2">
         <h4 className="font-semibold text-sm group-hover:text-blue-600 transition-colors">

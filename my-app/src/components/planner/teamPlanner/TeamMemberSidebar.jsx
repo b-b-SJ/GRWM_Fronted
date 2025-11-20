@@ -26,7 +26,7 @@ const TeamPlannerSidebar = ({ plannerId }) => {
   ];
 
   return (
-    <div className="w-80 border-l bg-blue h-full flex flex-col ">
+    <div className="w-80 border-l bg-blue h-full flex flex-col bg-white">
       {/* 탭 헤더 */}
       <div className="border-b bg-gray-50">
         <div className="flex">

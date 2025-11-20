@@ -85,7 +85,7 @@ const WeeklyPlanner = ({
       <div className="grid-cols-7 grid p-2">
         {/* 요일 헤더 */}
         {weekNames.map((wn, k) => (
-          <div key={k} className="text-gray-900 font-semibold text-center">
+          <div key={k} className="text-gray-900 font-semibold text-center mb-2">
             {wn}
           </div>
         ))}
@@ -103,10 +103,10 @@ const WeeklyPlanner = ({
             <div
               key={d}
               onClick={() => onDateClick(day)}
-              className="p-3 border border-gray-200 min-h-[600px] hover:bg-gray-50"
+              className="bg-white p-3 border border-gray-200 min-h-[600px] hover:bg-gray-50"
             >
               <div>{day instanceof Date ? day.getDate() : day}</div>
-              <div className="flex flex-col gap-2 mt-2 bg-white">
+              <div className="flex flex-col gap-2 mt-2">
                 {daySchedules.map((sc, idx) => (
                   <button
                     key={sc.scheduleId || sc.id || idx}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X, Users, Check, ChevronLeft } from "lucide-react";
+import { useAuth } from "../../../../hooks/AuthContext";
 import {
   convertSlotsToDto,
   getTimeSlots,
@@ -24,6 +25,7 @@ const TimeVoteGrid = ({
     slotInfo: null,
   });
 
+  const { user } = useAuth();
   const isExpired = new Date(vote.finishTime) < new Date();
 
   // LocalTime 문자열을 숫자(시간)로 변환
@@ -37,6 +39,11 @@ const TimeVoteGrid = ({
     }
     return 0;
   };
+
+  // ✅ 현재 사용자가 참여 멤버인지 확인
+  const isMember = vote.members?.some(
+    (member) => member.userId === user?.userId
+  );
 
   const startHour =
     vote.startHour !== undefined ? parseHourFromLocalTime(vote.startHour) : 0;
@@ -156,7 +163,7 @@ const TimeVoteGrid = ({
         </div>
 
         {/* 그리드 */}
-        <div className="p-6 overflow-x-auto">
+        <div className="p-6 overflow-x-auto max-h-[435px] overflow-y-auto">
           <table className="border-collapse w-full">
             <thead>
               <tr>
@@ -289,10 +296,14 @@ const TimeVoteGrid = ({
                   setSelectedSlots([]);
                   onModeChange("vote");
                 }}
-                disabled={isExpired}
+                disabled={isExpired || !isMember}
                 className="w-full py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300"
               >
-                {isExpired ? "마감된 투표" : "내 투표 제출하기"}
+                {isExpired
+                  ? "마감된 투표"
+                  : !isMember
+                  ? "투표 대상자가 아닙니다"
+                  : "내 투표 제출하기"}
               </button>
             ) : (
               <button

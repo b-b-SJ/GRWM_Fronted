@@ -186,7 +186,7 @@ const PlannerHeaderWM = () => {
 
   return (
     <div className="pt-4">
-      <div className="mt-2 ml-24 flex items-start p-3 outline outline-gray-800 font-bold rounded-r-3xl rounded-tl-3xl w-fit pl-5 pr-5">
+      <div className="mt-2 ml-24 flex items-start p-3 outline outline-gray-800 font-bold rounded-r-3xl rounded-tl-3xl w-fit pl-5 pr-5 bg-white">
         {nowPlannerInfo?.title}
       </div>
 
@@ -215,8 +215,8 @@ const PlannerHeaderWM = () => {
                 />
               )}
             </button>
-            <div className="absolute left-0 top-full mt-2 w-48 bg-white border rounded-lg shadow-lg hidden group-hover:block">
-              달력 바꾸미
+            <div className="absolute left-5 top-full mt-2 w-32 text-sm  bg-white border hidden group-hover:block">
+              클릭하여 달력 바꾸기
             </div>
           </div>
 
@@ -270,12 +270,12 @@ const PlannerHeaderWM = () => {
         </div>
 
         {/* 오른쪽: 카테고리 필터 */}
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex items-center gap-2 ml-auto mr-3">
           {/* 카테고리 드롭다운 */}
           <div className="relative">
             <button
               onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-              className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50"
+              className="bg-white flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50"
             >
               <Filter size={18} />
               {selectedCategoryInfo ? (
@@ -328,10 +328,10 @@ const PlannerHeaderWM = () => {
             )}
           </div>
 
-          {/* 카테고리 관리 버튼 */}
+          {/* 카테고리 추가 및 관리 버튼 */}
           <button
             onClick={() => setShowCategoryManager(true)}
-            className="p-2 border rounded-lg hover:bg-gray-50"
+            className="p-2 border rounded-lg bg-white hover:bg-gray-50"
             title="카테고리 관리"
           >
             <Plus size={20} />

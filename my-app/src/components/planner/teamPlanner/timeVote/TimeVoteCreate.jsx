@@ -102,12 +102,10 @@ const TimeVoteCreate = ({ onSubmit, onCancel }) => {
       alert("시작 시간은 종료 시간보다 빨라야 합니다.");
       return;
     }
-
-    console.log("=== formData 확인 ===");
-    console.log("formData.memberIds:", formData.memberIds);
-    console.log("memberIds 타입:", typeof formData.memberIds);
-    console.log("memberIds 길이:", formData.memberIds?.length);
-    console.log("전체 formData:", formData);
+    if (formData.memberIds.length === 0) {
+      alert("최소 1명의 팀원이 포함되어야 합니다");
+      return;
+    }
 
     //  백엔드 형식에 맞게 데이터 변환
     const requestData = {
@@ -159,7 +157,7 @@ const TimeVoteCreate = ({ onSubmit, onCancel }) => {
         <div>
           <label className="block font-semibold mb-2 flex items-center gap-2">
             <Clock className="w-5 h-5" />
-            투표 시간 범위 <span className="text-red-500">*</span>
+            투표 시간 범위
           </label>
           <div className="flex items-center gap-4">
             <div className="flex-1">
@@ -256,7 +254,7 @@ const TimeVoteCreate = ({ onSubmit, onCancel }) => {
         <div>
           <label className="block font-semibold mb-2 flex items-center gap-2">
             <Users className="w-5 h-5" />
-            참여 멤버 선택
+            참여 멤버 선택<span className="text-red-500">*</span>
           </label>
           <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
             {members.map((member) => (
