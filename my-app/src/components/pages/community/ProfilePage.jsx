@@ -29,7 +29,7 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
   const [manageModal, setManageModal] = useState(false);
   const [openFollowListModal, setOpenFollowListModal] = useState(false);
   const [listViewMode, setListViewMode] = useState(null);
-
+  const [relationText, setRelationText] = useState("");
   // 초기 로드
   useEffect(() => {
     const loadProfile = async () => {
@@ -255,7 +255,8 @@ const ProfilePage = ({ isMyProfile, setIsMyProfile }) => {
                 </button>
               ) : (
                 <>
-                  {profile.relationship === "followedByMe" ? (
+                  {profile.relationship === "followedByMe" ? ( //||
+                    //   "FollowingEachOther"
                     <button
                       className="group px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-red-500 transition-colors"
                       onClick={() => unfollowUser(currentProfileId)}

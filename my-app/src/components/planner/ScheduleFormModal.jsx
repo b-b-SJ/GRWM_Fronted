@@ -186,12 +186,16 @@ const ScheduleFormModal = ({
         }
       } else {
         // ===== 일정 수정 =====
+        const selectedCategory = categories.find(
+          (cat) => cat.categoryId === Number(formData.categoryId)
+        );
         const updateData = {
           title: formData.title,
           category: formData.categoryId
             ? {
-                categoryId: formData.categoryId,
-                // 카테고리 이름과 색상은 백엔드가 알아서 채움
+                categoryId: selectedCategory.categoryId,
+                categoryName: selectedCategory.categoryName,
+                color: selectedCategory.color,
               }
             : null,
           startDateTime: formData.startDateTime,

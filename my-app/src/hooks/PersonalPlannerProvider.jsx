@@ -129,6 +129,10 @@ export const PersonalPlannerProvider = ({ children }) => {
         "자 이제 개인 플래너 업데이트를 드가를 드가겠슨니다",
         updateData
       );
+      const requestData = {
+        plannerId: plannerId, // 백엔드가 요구할 수 있음
+        ...updateData,
+      };
       try {
         const response = await fetch(
           `/api/personal-planner/list/${plannerId}/edit`,
@@ -138,7 +142,7 @@ export const PersonalPlannerProvider = ({ children }) => {
               ...getAuthHeaders(),
               "Content-Type": "application/json",
             },
-            body: JSON.stringify(plannerId, ...updateData),
+            body: JSON.stringify(requestData),
           }
         );
 
