@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Users,
+  User,
   Plus,
   Search,
   Filter,
@@ -199,7 +200,7 @@ const PlannerHeaderWM = () => {
               className={`w-20 h-20 rounded-full flex items-center justify-center bg-cover bg-center
                 ${
                   !nowPlannerInfo?.profileImage &&
-                  (plannerType === "shared" ? "bg-blue-100" : "bg-gray-100")
+                  (plannerType === "shared" ? "bg-blue-100" : "bg-gray-200")
                 }`}
               style={
                 nowPlannerInfo?.profileImage
@@ -207,13 +208,18 @@ const PlannerHeaderWM = () => {
                   : {}
               }
             >
-              {!nowPlannerInfo?.profileImage && (
-                <Users
-                  className={`w-10 h-10 ${
-                    plannerType === "shared" ? "text-blue-500" : "text-gray-500"
-                  }`}
-                />
-              )}
+              {!nowPlannerInfo?.profileImage &&
+                (plannerType === "shared" ? (
+                  <Users
+                    className="w-10 h-10 
+                   text-blue-500"
+                  />
+                ) : (
+                  <User
+                    className="w-10 h-10 
+                    text-gray-600"
+                  />
+                ))}
             </button>
             <div className="absolute left-5 top-full mt-2 w-32 text-sm  bg-white border hidden group-hover:block">
               클릭하여 달력 바꾸기

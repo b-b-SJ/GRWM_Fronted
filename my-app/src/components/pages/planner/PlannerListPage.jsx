@@ -110,7 +110,11 @@ const PlannerListPage = () => {
         {planners.length === 0 ? (
           // 플래너가 없을 때
           <div className="flex flex-col items-center justify-center h-96 text-center">
-            <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+            <div
+              className={`w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-4  ${
+                isShared ? "bg-blue-100" : "bg-green-100"
+              }`}
+            >
               {isShared ? (
                 <Users size={48} className="text-blue-500" />
               ) : (

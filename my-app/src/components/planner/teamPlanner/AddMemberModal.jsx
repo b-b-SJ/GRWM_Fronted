@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useTeamPlanner } from "../../../hooks/TeamPlannerProvider";
 import { X, Search } from "lucide-react";
-
+import { useAuth } from "../../../hooks/AuthContext";
 const AddMemberModal = ({ plannerId, onClose }) => {
   const { addMember, findUserIdByLoginId } = useTeamPlanner();
-
+  const { user } = useAuth();
   const [memberId, setMemberId] = useState("");
   const [role, setRole] = useState("member");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,6 +21,10 @@ const AddMemberModal = ({ plannerId, onClose }) => {
 
     try {
       const memberUserId = await findUserIdByLoginId(memberId);
+      if (memberUserId === user.userId) {
+        alert("이미 추가된 멤버는 더 추가 할 수 없습니다");
+        return;
+      }
       await addMember(plannerId, Number(memberUserId), role);
       alert("팀원이 추가되었습니다!");
       onClose();

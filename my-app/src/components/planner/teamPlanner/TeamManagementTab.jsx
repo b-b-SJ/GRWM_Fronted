@@ -177,12 +177,6 @@ const TeamManagementTab = ({ plannerId }) => {
           </div>
         )}
 
-        {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-            에러: {error}
-          </div>
-        )}
-
         {!loading && members.length === 0 && (
           <div className="text-center py-8">
             <Users size={48} className="mx-auto text-gray-300 mb-2" />
