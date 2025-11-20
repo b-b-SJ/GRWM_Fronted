@@ -99,7 +99,7 @@ const CommentItem = ({ comment, postId, onUpdate, onDelete, postAuthorId }) => {
               <textarea
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
-                className="w-full p-2 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-2 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-violet-500"
                 rows={3}
               />
               <div className="flex items-center gap-2 mt-2">
@@ -120,7 +120,7 @@ const CommentItem = ({ comment, postId, onUpdate, onDelete, postAuthorId }) => {
               <div className="flex gap-2 mt-2">
                 <button
                   onClick={handleSave}
-                  className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+                  className="px-3 py-1 bg-violet-500 text-white text-sm rounded hover:bg-violet-600"
                 >
                   저장
                 </button>
@@ -144,7 +144,7 @@ const CommentItem = ({ comment, postId, onUpdate, onDelete, postAuthorId }) => {
                 <div className="flex gap-3 mt-2">
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="flex items-center gap-1 text-sm text-gray-500 hover:text-blue-500 transition-colors"
+                    className="flex items-center gap-1 text-sm text-gray-500 hover:text-violet-500 transition-colors"
                   >
                     <Edit2 size={14} />
                     수정

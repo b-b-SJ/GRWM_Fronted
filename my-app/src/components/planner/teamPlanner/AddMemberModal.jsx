@@ -69,8 +69,7 @@ const AddMemberModal = ({ plannerId, onClose }) => {
               />
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              로그인에 사용되는 아이디를 입력해주세요! - 근데 지금은 그냥
-              userId로 되어있긴함
+              로그인에 사용되는 아이디를 입력해주세요!
             </p>
           </div>
 
