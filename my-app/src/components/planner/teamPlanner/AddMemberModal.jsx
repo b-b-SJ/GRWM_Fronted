@@ -3,7 +3,7 @@ import { useTeamPlanner } from "../../../hooks/TeamPlannerProvider";
 import { X, Search } from "lucide-react";
 import { useAuth } from "../../../hooks/AuthContext";
 const AddMemberModal = ({ plannerId, onClose }) => {
-  const { addMember, findUserIdByLoginId } = useTeamPlanner();
+  const { addMember, findUserIdByLoginId, members } = useTeamPlanner();
   const { user } = useAuth();
   const [memberId, setMemberId] = useState("");
   const [role, setRole] = useState("member");
@@ -21,15 +21,20 @@ const AddMemberModal = ({ plannerId, onClose }) => {
 
     try {
       const memberUserId = await findUserIdByLoginId(memberId);
-      if (memberUserId === user.userId) {
-        alert("이미 추가된 멤버는 더 추가 할 수 없습니다");
+      const isAlreadyMember = members.some(
+        (member) => member.userId === memberUserId
+      );
+
+      if (isAlreadyMember) {
+        alert("이미 팀에 있는 회원입니다");
+        setIsSubmitting(false);
         return;
       }
       await addMember(plannerId, Number(memberUserId), role);
       alert("팀원이 추가되었습니다!");
       onClose();
     } catch (error) {
-      alert("추가 실패: " + error.message);
+      alert("⚠️ 추가 실패: " + error.message);
     } finally {
       setIsSubmitting(false);
     }
