@@ -106,7 +106,7 @@ const WeeklyPlanner = ({
               className="p-3 border border-gray-200 min-h-[600px] hover:bg-gray-50"
             >
               <div>{day instanceof Date ? day.getDate() : day}</div>
-              <div className="flex flex-col gap-2 mt-2">
+              <div className="flex flex-col gap-2 mt-2 bg-white">
                 {daySchedules.map((sc, idx) => (
                   <button
                     key={sc.scheduleId || sc.id || idx}

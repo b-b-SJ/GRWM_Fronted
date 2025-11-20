@@ -221,7 +221,7 @@ const PlannerHeaderWM = () => {
           </div>
 
           {/* Monthly/Weekly 토글 */}
-          <div className="flex p-1.5 w-fit rounded-2xl text-sm font-bold text-gray-500 outline outline-2 mt-6">
+          <div className="flex p-1.5 w-fit rounded-2xl text-sm font-bold text-gray-500 outline outline-2 mt-6 bg-white">
             <button
               onClick={() => setViewMode("monthly")}
               className={`px-6 py-2 rounded-xl ${
@@ -257,7 +257,7 @@ const PlannerHeaderWM = () => {
               ) : (
                 <div>
                   {viewMode === "daily"
-                    ? currentMonthName + " " + currentDate.getDate()
+                    ? currentMonthName + " " + currentDate.getDate() + "일"
                     : currentMonthName}
                 </div>
               )}
