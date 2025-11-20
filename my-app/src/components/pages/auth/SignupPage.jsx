@@ -90,7 +90,7 @@ const SignupPage = ({
                                         name="loginId"
                                         value={formData.loginId}
                                         onChange={handleInputChange}
-                                        placeholder="로그인 ID를 입력하세요"
+                                        placeholder="영문 5자 이상"
                                         className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                         disabled={isLoading}
                                     />
@@ -103,8 +103,16 @@ const SignupPage = ({
                                     {loginIdChecking ? '확인중...' : '중복확인'}
                                 </button>
                             </div>
+                            {/* ID 형식 검증 */}
+                            {formData.loginId && !/^[a-zA-Z]{5,}$/.test(formData.loginId) && (
+                                <div className="mt-2 flex items-center space-x-2 text-sm text-red-600">
+                                    <X size={16} />
+                                    <span>영문 5자 이상 입력해주세요.</span>
+                                </div>
+                            )}
+
                             {/* 중복 확인 결과 */}
-                            {loginIdAvailable !== null && (
+                            {loginIdAvailable !== null && /^[a-zA-Z]{5,}$/.test(formData.loginId) && (
                                 <div
                                     className={`mt-2 flex items-center space-x-2 text-sm ${
                                         loginIdAvailable ? 'text-green-600' : 'text-red-600'
@@ -140,6 +148,13 @@ const SignupPage = ({
                                     disabled={isLoading}
                                 />
                             </div>
+                            {/* 이메일 형식 검증 */}
+                            {formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) && (
+                                <div className="mt-2 flex items-center space-x-2 text-sm text-red-600">
+                                    <X size={16} />
+                                    <span>올바른 이메일 형식이 아닙니다.</span>
+                                </div>
+                            )}
                         </div>
 
                         {/* 비밀번호 입력 */}
@@ -157,7 +172,7 @@ const SignupPage = ({
                                     name="password"
                                     value={formData.password}
                                     onChange={handleInputChange}
-                                    placeholder="비밀번호를 입력하세요"
+                                    placeholder="영문, 숫자, 특수문자 포함 8자 이상"
                                     className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                     disabled={isLoading}
                                 />
@@ -170,6 +185,13 @@ const SignupPage = ({
                                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                 </button>
                             </div>
+                            {/* 비밀번호 형식 검증 */}
+                            {formData.password && !/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/.test(formData.password) && (
+                                <div className="mt-2 flex items-center space-x-2 text-sm text-red-600">
+                                    <X size={16} />
+                                    <span>영문, 숫자, 특수문자를 포함하여 8자 이상 입력해주세요.</span>
+                                </div>
+                            )}
                         </div>
 
                         {/* 비밀번호 확인 */}
