@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useCurrentPlanner } from "../../../hooks/useCurrentPlanner";
-
+import { useAuth } from "../../../hooks/AuthContext";
 import { Plus, Users, User, ArrowLeft, Settings } from "lucide-react";
 import CreatePlannerModal from "../../planner/plannerBasicCRUD/CreatePlannerModal";
 import EditPlannerModal from "../../planner/plannerBasicCRUD/EditPlannerModal";
@@ -10,7 +10,7 @@ import EditPlannerModal from "../../planner/plannerBasicCRUD/EditPlannerModal";
 const PlannerListPage = () => {
   const { type } = useParams(); // "shared" 또는 "personal"
   const navigate = useNavigate();
-
+  const { user } = useAuth();
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
   const [selectedPlanner, setSelectedPlanner] = useState(null);
@@ -141,9 +141,14 @@ const PlannerListPage = () => {
               >
                 {/* 플래너 카드 내용 */}
                 <div
-                  onClick={() =>
-                    navigate(`/planner/${type}/${planner.plannerId}`)
-                  }
+                  onClick={() => {
+                    localStorage.setItem(
+                      `planner_last_${type}_id`,
+                      String(planner.plannerId)
+                    );
+                    localStorage.setItem("lastPlannerType", type);
+                    navigate(`/planner/${type}/${planner.plannerId}`);
+                  }}
                   className="flex items-center gap-6"
                 >
                   {/* 왼쪽: 플래너 이미지 */}
@@ -167,14 +172,15 @@ const PlannerListPage = () => {
                     <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                       {planner.description}
                     </p>
-                    {type === "shared" && (
-                      <p className="text-sm text-gray-500">
-                        참여자:{" "}
-                        {planner.members
-                          ?.map((m) => m.nickname || m.username)
-                          .join(", ") || "~~~~~~~"}
-                      </p>
-                    )}
+
+                    <p className="text-sm text-gray-500">
+                      참여자:{" "}
+                      {type === "shared"
+                        ? planner.members
+                            ?.map((m) => m.nickname || m.username)
+                            .join(", ") || "~~~~~~~"
+                        : user.username}
+                    </p>
                   </div>
                 </div>
 

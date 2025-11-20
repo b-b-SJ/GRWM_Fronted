@@ -53,7 +53,7 @@ const TeamManagementTab = ({ plannerId }) => {
     setApplyLoading(true);
     try {
       const schedules = await searchSchedulesByUser(plannerId, selectedMember);
-
+      console.log("시도하다", schedules);
       setMemberFilteredSchedules(schedules);
     } catch (err) {
       console.error("멤버별 일정 검색 실패:", err);

@@ -66,13 +66,13 @@ const ScheduleModal = () => {
         const detail = await fetchScheduleDetail(nowPlanner, selectedSc);
 
         if (detail) {
-          console.log("✅ 일정 상세 로드 성공:", detail);
+          console.log(" 일정 상세 로드 성공:", detail);
           setScheduleDetail(detail);
         } else {
           throw new Error("일정을 찾을 수 없습니다.");
         }
       } catch (err) {
-        console.error("❌ 일정 상세 로드 실패:", err);
+        console.error(" 일정 상세 로드 실패:", err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -132,13 +132,13 @@ const ScheduleModal = () => {
 
       await removeScheduleMember(nowPlanner, selectedSc);
 
-      console.log("✅ 나가기 성공!");
+      console.log("나가기 성공!");
 
       // 일정 상세 다시 불러오기
       const detail = await fetchScheduleDetail(nowPlanner, selectedSc);
       setScheduleDetail(detail);
     } catch (err) {
-      console.error("❌ 나가기 실패:", err);
+      console.error(" 나가기 실패:", err);
       alert("일정 나가기에 실패했습니다: " + err.message);
     } finally {
       setParticipantLoading(false);
@@ -235,7 +235,7 @@ const ScheduleModal = () => {
       </div>
     );
   }
-
+  console.log("카테고리 디테일", scheduleDetail);
   // ==================== Render ====================
   return (
     <>
@@ -255,15 +255,10 @@ const ScheduleModal = () => {
               size={24}
             />
 
-            {/* 카테고리 (있으면 표시) */}
-            {scheduleDetail.categoryName && (
-              <h1 className="font-medium text-sm text-gray-700">
-                📁 {scheduleDetail.categoryName}
-              </h1>
-            )}
-
             {/* 제목 */}
             <h1 className="font-bold text-2xl mb-6">{scheduleDetail.title}</h1>
+
+            {/* 작성자 표시 */}
 
             {/* 일정 상세 정보 */}
             <div className="text-md space-y-3 mt-6">
@@ -302,8 +297,13 @@ const ScheduleModal = () => {
                   </div>
                 </div>
               )}
-
-              {/* 🔥 공유 플래너일 때만 참여자 표시 */}
+              {/* 카테고리 (있으면 표시) */}
+              {scheduleDetail.category.categoryName && (
+                <h1 className=" text-sm text-gray-700 text-end">
+                  {`📂 ${scheduleDetail.category.categoryName}`}
+                </h1>
+              )}
+              {/*  공유 플래너일 때만 참여자 표시 */}
               {plannerType === "shared" && (
                 <div className="border-t pt-4 mt-4">
                   <div className="flex items-center justify-between mb-3">
@@ -312,6 +312,11 @@ const ScheduleModal = () => {
                       <h3 className="font-semibold">
                         참여자 ({scheduleDetail.members?.length || 0}명)
                       </h3>
+                      {scheduleDetail.creator && (
+                        <h1 className="font-medium text-xs text-gray-600">
+                          {`작성자: ${scheduleDetail.creator.username}`}
+                        </h1>
+                      )}
                     </div>
 
                     {/* 참여하기/나가기 버튼 */}

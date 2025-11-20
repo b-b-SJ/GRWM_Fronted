@@ -23,15 +23,15 @@ export const PlannerProvider = ({ children, plannerType = "personal" }) => {
     return stored ? Number(stored) : null;
   });
 
-  // 🔥 nowPlanner 변경 시 localStorage 저장
+  // nowPlanner 변경 시 localStorage 저장
   useEffect(() => {
     if (nowPlanner !== null) {
       localStorage.setItem(STORAGE_KEY, String(nowPlanner));
 
-      // 🔥 plannerType도 함께 저장!
+      //  plannerType도 함께 저장!
       localStorage.setItem("lastPlannerType", plannerType);
 
-      console.log(`💾 [${plannerType}] localStorage 저장:`, {
+      console.log(`[${plannerType}] localStorage 저장:`, {
         plannerId: nowPlanner,
         plannerType: plannerType,
       });
