@@ -25,9 +25,9 @@ const AppLayout = () => {
     setWorkspaceSidebarOpen(!workspaceSidebarOpen);
 
   //  플래너 사이드바
-  const [plannerSidebarOpen, setPlannerSidebarOpen] = useState(true); // 기본값 true (열림)
+  const [plannerSidebarOpen, setPlannerSidebarOpen] = useState(false); // 기본값 true (열림)
   const togglePlannerSidebar = () => setPlannerSidebarOpen(!plannerSidebarOpen);
-  const [communitySidebarOpen, setCommunitySidebarOpen] = useState(true); // 기본값 true (열림)
+  const [communitySidebarOpen, setCommunitySidebarOpen] = useState(false); // 기본값 true (열림)
   const toggleCommunitySidebar = () =>
     setCommunitySidebarOpen(!plannerSidebarOpen);
   // 현재 경로에 따른 페이지 결정

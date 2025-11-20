@@ -51,9 +51,8 @@ const PlannerListPage = () => {
   }
 
   return (
-    <div className="grid grid-cols-3 ">
-      <div></div>
-      <div className="flex-1 p-8">
+    <div className="flex justify-center min-h-screen bg-gray-50">
+      <div className="w-full max-w-3xl p-8">
         {/* 헤더 */}
         <div className="mb-8">
           {/* 뒤로가기 버튼 */}
@@ -106,19 +105,19 @@ const PlannerListPage = () => {
           {/* 구분선 */}
           <div className="mt-6 border-b border-gray-200"></div>
         </div>
-        {/* 공유 플래너 목록 */}
+        {/* 플래너 목록 */}
         {planners.length === 0 ? (
           // 플래너가 없을 때
           <div className="flex flex-col items-center justify-center h-96 text-center">
             <div
-              className={`w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-4  ${
+              className={`w-24 h-24 rounded-full flex items-center justify-center mb-4 ${
                 isShared ? "bg-blue-100" : "bg-green-100"
               }`}
             >
               {isShared ? (
                 <Users size={48} className="text-blue-500" />
               ) : (
-                <User size={48} className="text-green-500 " />
+                <User size={48} className="text-green-500" />
               )}
             </div>
             <p className="text-xl text-gray-500 mb-4">
@@ -147,7 +146,7 @@ const PlannerListPage = () => {
                   }
                   className="flex items-center gap-6"
                 >
-                  {/*  왼쪽: 플래너 이미지 */}
+                  {/* 왼쪽: 플래너 이미지 */}
                   <div className="flex-shrink-0">
                     {planner.profileImage ? (
                       <img
@@ -170,7 +169,7 @@ const PlannerListPage = () => {
                     </p>
                     {type === "shared" && (
                       <p className="text-sm text-gray-500">
-                        참여자 :{" "}
+                        참여자:{" "}
                         {planner.members
                           ?.map((m) => m.nickname || m.username)
                           .join(", ") || "~~~~~~~"}
@@ -204,22 +203,19 @@ const PlannerListPage = () => {
             </button>
           </div>
         )}
-
-        {/* 생성 모달 (공유 플래너만) */}
-
+        {/* 모달들 */}
         <CreatePlannerModal
           isOpen={openCreateModal}
           onClose={() => setOpenCreateModal(false)}
           onSuccess={handleCreateSuccess}
         />
-
         {openEditModal && (
           <EditPlannerModal
             isOpen={openEditModal}
             onClose={() => setOpenEditModal(false)}
             planner={selectedPlanner}
             onSuccess={() => {
-              fetchPlanners(); // 플래너 목록 새로고침
+              fetchPlanners();
             }}
           />
         )}

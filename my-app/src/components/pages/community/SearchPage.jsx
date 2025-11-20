@@ -393,13 +393,6 @@ const SearchPage = () => {
         </div>
       )}
 
-      {/* 에러 표시 */}
-      {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-          {error}
-        </div>
-      )}
-
       {/* 검색 결과 */}
       {currentResults.length > 0 && (
         <div>

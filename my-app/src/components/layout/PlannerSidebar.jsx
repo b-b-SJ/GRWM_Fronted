@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
-import TodoList from "../planner/TodoList";
+
 import ScheduleListSidebar from "../planner/ScheduleListSidebar";
-import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, X } from "lucide-react";
 import MonthlyGrid from "../planner/MonthlyGrid";
 import { useCalendar } from "../../hooks/useCalendar";
 import { useCurrentPlanner } from "../../hooks/useCurrentPlanner";
@@ -171,15 +171,16 @@ const PlannerSidebar = ({ sidebarOpen }) => {
       <div
         className={`
       ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
-      lg:translate-x-0 
-      fixed lg:static inset-y-0 left-0 z-10
-      w-80 bg-white border-r shadow-lg lg:shadow-none
+      xl:translate-x-0 
+      fixed xl:static inset-y-0 left-0 z-10
+      w-80 bg-white border-r shadow-lg xl:shadow-none
       transition-transform duration-300 ease-in-out
       flex flex-col
 
     `}
       >
         <div className="w-80 bg-white border-r flex flex-col h-auto">
+          {/* 미니 달력 */}
           <div>
             {(viewMode === "daily" || viewMode === "weekly") && (
               <div className="p-4 shadow-sm shadow-gray-200">
