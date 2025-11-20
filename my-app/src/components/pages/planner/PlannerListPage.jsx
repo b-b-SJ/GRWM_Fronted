@@ -168,12 +168,14 @@ const PlannerListPage = () => {
                     <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                       {planner.description}
                     </p>
-                    <p className="text-sm text-gray-500">
-                      참여자 :{" "}
-                      {planner.members
-                        ?.map((m) => m.nickname || m.username)
-                        .join(", ") || "~~~~~~~"}
-                    </p>
+                    {type === "shared" && (
+                      <p className="text-sm text-gray-500">
+                        참여자 :{" "}
+                        {planner.members
+                          ?.map((m) => m.nickname || m.username)
+                          .join(", ") || "~~~~~~~"}
+                      </p>
+                    )}
                   </div>
                 </div>
 

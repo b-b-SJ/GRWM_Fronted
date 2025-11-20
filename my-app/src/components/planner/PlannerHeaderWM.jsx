@@ -346,7 +346,7 @@ const PlannerHeaderWM = () => {
       </div>
 
       {/* 검색창 */}
-      <div className="mt-3 px-4 flex justify-end">
+      <div className="mt-1 px-4 flex justify-end">
         <div className="flex items-center gap-2 w-80">
           <input
             type="text"

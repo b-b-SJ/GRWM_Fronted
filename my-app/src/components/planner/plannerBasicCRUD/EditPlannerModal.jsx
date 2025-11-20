@@ -1,7 +1,6 @@
 // src/components/planner/groupPlanner/EditPlannerModal.jsx
 import React, { useState, useEffect } from "react";
 import { X, Users, Upload, Images, Trash2 } from "lucide-react";
-import { useTeamPlanner } from "../../../hooks/TeamPlannerProvider";
 import { useCurrentPlanner } from "../../../hooks/useCurrentPlanner";
 import { useImgConverter } from "../../../hooks/useImgConverter";
 import { useParams } from "react-router-dom";

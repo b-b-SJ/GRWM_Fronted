@@ -126,11 +126,13 @@ const WeeklyPlanner = ({
                       <div className="flex gap-1 align-middle">
                         <Clock size={14} />
                         {sc.label}
-                      </div>
-                      <div className="flex gap-1 mt-1">
-                        <MapPin size={14} />
-                        {sc.location}
-                      </div>
+                      </div>{" "}
+                      {sc.location && (
+                        <div className="flex gap-1 mt-1">
+                          <MapPin size={14} />
+                          {sc.location}
+                        </div>
+                      )}
                     </h3>
                   </button>
                 ))}
