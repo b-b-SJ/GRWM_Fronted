@@ -9,7 +9,8 @@ const MonthlyGrid = ({
   showSchedules = true,
   schedules, // props로 받기
 }) => {
-  const { weeks, month, weekNames } = usePlannerContext();
+  const { weeks, month, weekNames, setOpenScModal, setSelectedSc } =
+    usePlannerContext();
 
   // 날짜별로 그룹화 (useMemo로 최적화)
   const groupedSchedules = useMemo(() => {
@@ -17,7 +18,6 @@ const MonthlyGrid = ({
       return [];
     }
 
-    console.log("📅 그룹화 시작, 총 일정 수:", schedules.length);
     const grouped = {};
 
     schedules.forEach((schedule) => {
@@ -49,7 +49,6 @@ const MonthlyGrid = ({
         ),
       }));
 
-    console.log("📅 그룹화 완료:", result);
     return result;
   }, [schedules, showSchedules]);
 
@@ -77,7 +76,7 @@ const MonthlyGrid = ({
               return (
                 <div
                   key={di}
-                  onClick={() => onDateClick(day)}
+                  // onClick={() => onDateClick(day)}
                   className={`${totalDateStyle} ${
                     day.getMonth() === month ? currentMonthStyle : ncMonthStyle
                   }`}
@@ -91,9 +90,13 @@ const MonthlyGrid = ({
                       {daySchedules.slice(0, 2).map((sc, idx) => (
                         <div
                           key={sc.scheduleId || sc.id || idx}
-                          className="text-xs px-2 py-1 rounded truncate"
+                          className="text-xs px-2 py-1 rounded truncate hover:cursor-pointer"
                           style={{
                             backgroundColor: sc.category?.color || "#E5E7EB",
+                          }}
+                          onClick={() => {
+                            setOpenScModal(true);
+                            setSelectedSc(sc.scheduleId || sc.id);
                           }}
                         >
                           {sc.title}

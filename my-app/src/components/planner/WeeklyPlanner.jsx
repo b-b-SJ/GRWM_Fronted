@@ -102,7 +102,7 @@ const WeeklyPlanner = ({
           return (
             <div
               key={d}
-              onClick={() => onDateClick(day)}
+              // onClick={() => onDateClick(day)}
               className="bg-white p-3 border border-gray-200 min-h-[600px] hover:bg-gray-50"
             >
               <div>{day instanceof Date ? day.getDate() : day}</div>
