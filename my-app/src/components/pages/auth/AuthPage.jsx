@@ -65,7 +65,7 @@ const AuthPage = () => {
                 handleOAuthLogin({ accessToken, userId, username, communityNickname }).then(result => {
                     if (result.success) {
 
-                        refreshFcmToken(userId); // fcm 토큰
+                        refreshFcmToken(userId); // fcm 토큰 (loginId 없으니 userId로 대체)
                         // URL에서 hash 제거
                         window.history.replaceState(null, '', window.location.pathname);
 

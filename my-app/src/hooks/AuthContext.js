@@ -73,9 +73,9 @@ export const AuthProvider = ({ children }) => {
         }
     }, [clearAllStorage]);
 
-    // ⭐️ FCM 토큰 재발급 및 서버 업데이트 로직
-    const refreshFcmToken = async (loginId) => {
-        if (!loginId) {
+    // FCM 토큰 재발급 및 서버 업데이트 로직
+    const refreshFcmToken = async (userId) => {
+        if (!userId) {
             console.error('[FCM Refresh] 식별자(loginId)가 없습니다.');
             return;
         }
@@ -87,13 +87,13 @@ export const AuthProvider = ({ children }) => {
                 return;
             }
 
-            console.log(`[FCM Refresh] 식별자: ${loginId}, FCM Token: ${fcmToken}으로 서버 업데이트 시도.`);
+            console.log(`[FCM Refresh] 식별자: ${userId}, FCM Token: ${fcmToken}으로 서버 업데이트 시도.`);
 
             // POST /api/auth/token-refresh 호출
             const response = await fetch('/api/auth/token-refresh', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ loginId: loginId, fcmToken: fcmToken })
+                body: JSON.stringify({ userId: userId, fcmToken: fcmToken })
             });
 
             if (response.ok) {
