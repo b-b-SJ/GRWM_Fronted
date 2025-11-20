@@ -24,7 +24,7 @@ const AuthPage = () => {
     });
 
     // Hooks
-    const { login, signup, isLoading, error, clearError, handleOAuthLogin } = useAuth();
+    const { login, signup, isLoading, error, clearError, handleOAuthLogin, refreshFcmToken } = useAuth();
     const {
         checkLoginId,
         isChecking: loginIdChecking,
@@ -64,6 +64,8 @@ const AuthPage = () => {
                 // 4. AuthContext로 디코딩된 정보 전달
                 handleOAuthLogin({ accessToken, userId, username, communityNickname }).then(result => {
                     if (result.success) {
+
+                        refreshFcmToken(userId); // fcm 토큰
                         // URL에서 hash 제거
                         window.history.replaceState(null, '', window.location.pathname);
 
@@ -75,7 +77,7 @@ const AuthPage = () => {
                 });
             }
         }
-    }, [handleOAuthLogin, navigate]);
+    }, [handleOAuthLogin, navigate, refreshFcmToken]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;

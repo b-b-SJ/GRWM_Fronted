@@ -73,6 +73,39 @@ export const AuthProvider = ({ children }) => {
         }
     }, [clearAllStorage]);
 
+    // ⭐️ FCM 토큰 재발급 및 서버 업데이트 로직
+    const refreshFcmToken = async (loginId) => {
+        if (!loginId) {
+            console.error('[FCM Refresh] 식별자(loginId)가 없습니다.');
+            return;
+        }
+
+        try {
+            const fcmToken = await requestFCMToken();
+            if (!fcmToken) {
+                console.warn('[FCM Refresh] FCM 토큰 발급 실패. 서버에 업데이트하지 않습니다.');
+                return;
+            }
+
+            console.log(`[FCM Refresh] 식별자: ${loginId}, FCM Token: ${fcmToken}으로 서버 업데이트 시도.`);
+
+            // POST /api/auth/token-refresh 호출
+            const response = await fetch('/api/auth/token-refresh', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ loginId: loginId, fcmToken: fcmToken })
+            });
+
+            if (response.ok) {
+                console.log('[FCM Refresh] 서버에 FCM 토큰 저장 성공.');
+            } else {
+                console.error('[FCM Refresh] 서버에 FCM 토큰 저장 실패:', response.status);
+            }
+        } catch (error) {
+            console.error('[FCM Refresh] FCM 토큰 재발급 및 업데이트 중 오류 발생:', error);
+        }
+    };
+
     const login = async (loginId, password) => {
         if (!loginId || !password) {
             setError('아이디와 비밀번호를 모두 입력해주세요.');
@@ -244,6 +277,7 @@ export const AuthProvider = ({ children }) => {
             error,
             user,
             currentStudyRoomId, // 현재 참여 중인 방 ID
+            refreshFcmToken,
             login,
             signup,
             logout,
