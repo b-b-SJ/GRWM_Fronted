@@ -1,4 +1,3 @@
-// TeamManagementTab.jsx
 import { useState, useEffect } from "react";
 import { useTeamPlanner } from "../../../hooks/TeamPlannerProvider";
 import { useAuth } from "../../../hooks/AuthContext";
@@ -52,9 +51,25 @@ const TeamManagementTab = ({ plannerId }) => {
 
     setApplyLoading(true);
     try {
-      const schedules = await searchSchedulesByUser(plannerId, selectedMember);
-      console.log("시도하다", schedules);
-      setMemberFilteredSchedules(schedules);
+      const result = await searchSchedulesByUser(plannerId, selectedMember);
+      console.log("멤버별 일정 원본 데이터:", result);
+
+      // 합치다
+      const { createdSchedules = [], joinedSchedules = [] } = result;
+
+      const combinedSchedules = [
+        ...createdSchedules.map((sc) => ({
+          ...sc,
+          isCreator: true,
+        })),
+        ...joinedSchedules.map((sc) => ({
+          ...sc,
+          isCreator: false,
+        })),
+      ].sort((a, b) => new Date(a.startDateTime) - new Date(b.startDateTime));
+
+      console.log("합쳐진 일정:", combinedSchedules);
+      setMemberFilteredSchedules(combinedSchedules);
     } catch (err) {
       console.error("멤버별 일정 검색 실패:", err);
       alert("일정 검색에 실패했습니다.");
@@ -154,8 +169,7 @@ const TeamManagementTab = ({ plannerId }) => {
               <div className="flex items-center justify-between">
                 <span className="text-xs text-blue-700">
                   필터 적용 중:{" "}
-                  {members.find((m) => m.userId === selectedMember)?.nickname ||
-                    "멤버"}
+                  {members.find((m) => m.userId === selectedMember)?.username}
                 </span>
                 <button
                   onClick={handleResetFilter}

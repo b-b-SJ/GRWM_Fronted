@@ -7,26 +7,22 @@ const MemberCard = ({
   member,
   plannerId,
   isManager,
-  showRadio = false, // ✅ 라디오 버튼 표시 여부
-  isSelected = false, // ✅ 선택 상태
-  onSelect, // ✅ 선택 핸들러
+  showRadio = false,
+  isSelected = false,
+  onSelect,
 }) => {
   const { removeMember, updateMemberNickname } = useTeamPlanner();
-  const { user } = useAuth(); //  현재 로그인 사용자
+  const { user } = useAuth();
 
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [newNickname, setNewNickname] = useState(member.nickname || "");
 
-  // 본인인지 확인
   const isMe = Number(member.userId) === Number(user?.userId);
 
-  // 별명 수정/삭제 (빈 문자열도 허용)
   const handleSaveNickname = async () => {
-    // 별명이 비어있어도 OK (삭제 가능)
     const trimmedNickname = newNickname.trim();
 
     try {
-      // 빈 문자열이면 본명으로 돌아감
       await updateMemberNickname(
         plannerId,
         member.userId,
@@ -44,7 +40,6 @@ const MemberCard = ({
     }
   };
 
-  // 별명 삭제 (빈 문자열로 저장)
   const handleRemoveNickname = async () => {
     if (window.confirm("별명을 삭제하시겠습니까? 본명이 표시됩니다.")) {
       try {
@@ -58,7 +53,6 @@ const MemberCard = ({
     }
   };
 
-  // 멤버 삭제 (관리자만)
   const handleRemove = async () => {
     if (window.confirm(`${member.username}님을 팀에서 제거하시겠습니까?`)) {
       try {
@@ -70,20 +64,35 @@ const MemberCard = ({
     }
   };
 
+  // ✅ 카드 클릭 핸들러
+  const handleCardClick = () => {
+    if (showRadio && onSelect) {
+      onSelect();
+    }
+  };
+
   return (
-    <div className="border rounded-lg p-3 hover:bg-gray-50 transition-colors">
-      {/* ✅ 필터링 모드일 때만 라디오 버튼 표시 */}
-      {showRadio && (
-        <input
-          type="radio"
-          name="memberFilter"
-          checked={isSelected}
-          onChange={onSelect}
-          className="w-4 h-4 flex-shrink-0"
-        />
-      )}
-      {/* 프로필 영역 */}
+    <div
+      onClick={handleCardClick}
+      className={`border rounded-lg p-3 transition-colors ${
+        showRadio
+          ? "cursor-pointer hover:bg-blue-50 hover:border-blue-300"
+          : "hover:bg-gray-50"
+      } ${isSelected ? "bg-blue-50 border-blue-400" : ""}`}
+    >
       <div className="flex items-start gap-3">
+        {/* ✅ 라디오 버튼을 프로필 이미지 왼쪽으로 이동 */}
+        {showRadio && (
+          <input
+            type="radio"
+            name="memberFilter"
+            checked={isSelected}
+            onChange={onSelect}
+            onClick={(e) => e.stopPropagation()} // 라디오 버튼 클릭 시 카드 클릭 방지
+            className="w-5 h-5 mt-3 flex-shrink-0 cursor-pointer"
+          />
+        )}
+
         {/* 프로필 이미지 */}
         <div className="relative flex-shrink-0">
           {member.profileImage ? (
@@ -110,7 +119,10 @@ const MemberCard = ({
         <div className="flex-1 min-w-0">
           {/* 별명 수정 모드 */}
           {isEditingNickname ? (
-            <div className="space-y-2">
+            <div
+              className="space-y-2"
+              onClick={(e) => e.stopPropagation()} // 수정 모드에서는 카드 클릭 방지
+            >
               <div className="flex items-center gap-2">
                 <input
                   type="text"
@@ -145,7 +157,6 @@ const MemberCard = ({
                 </button>
               </div>
 
-              {/* 별명 삭제 버튼 */}
               {member.nickname && (
                 <button
                   onClick={handleRemoveNickname}
@@ -162,9 +173,12 @@ const MemberCard = ({
               </h3>
 
               {/* 본인만 별명 수정 가능 */}
-              {isMe && (
+              {isMe && !showRadio && (
                 <button
-                  onClick={() => setIsEditingNickname(true)}
+                  onClick={(e) => {
+                    e.stopPropagation(); // 수정 버튼 클릭 시 카드 클릭 방지
+                    setIsEditingNickname(true);
+                  }}
                   className="p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded"
                 >
                   <Edit2 size={14} />
@@ -173,14 +187,12 @@ const MemberCard = ({
             </div>
           )}
 
-          {/*  (별명이 있을 때만 별명 표시) */}
           {member.nickname && (
             <p className="text-xs text-gray-500 truncate">
               {`(${member.nickname})`}
             </p>
           )}
 
-          {/* 이메일 */}
           {member.email && (
             <p className="text-xs text-gray-400 truncate">{member.email}</p>
           )}
@@ -197,10 +209,12 @@ const MemberCard = ({
               {member.role === "manager" ? "관리자" : "멤버"}
             </span>
 
-            {/* 관리자는 다른 멤버 삭제 가능 (관리자끼리는 삭제 불가) */}
             {isManager && !isMe && member.role !== "manager" && (
               <button
-                onClick={handleRemove}
+                onClick={(e) => {
+                  e.stopPropagation(); // 삭제 버튼 클릭 시 카드 클릭 방지
+                  handleRemove();
+                }}
                 className="p-1 text-red-500 hover:bg-red-50 rounded"
                 title="팀에서 제거"
               >

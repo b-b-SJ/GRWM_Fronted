@@ -159,9 +159,13 @@ const PlannerListPage = () => {
                         alt={planner.title}
                         className="w-32 h-32 rounded-lg object-cover"
                       />
-                    ) : (
+                    ) : isShared ? (
                       <div className="w-32 h-32 bg-gradient-to-br from-pink-200 to-purple-300 rounded-lg flex items-center justify-center">
                         <Users size={48} className="text-white" />
+                      </div>
+                    ) : (
+                      <div className="w-32 h-32 bg-gradient-to-br from-green-200 to-indigo-300 rounded-lg flex items-center justify-center">
+                        <User size={48} className="text-white" />
                       </div>
                     )}
                   </div>
