@@ -55,7 +55,7 @@ const WorkspaceSidebar = ({
         { id: '스터디룸', label: '스터디룸', icon: BookOpen }
     ];
 
-    const isStudyRoomMode = workspaceMode === '스터디룸';
+    // const isStudyRoomMode = workspaceMode === '스터디룸';
 
     // 모드 전환 핸들러
     const handleModeChange = (newMode) => {
@@ -200,7 +200,7 @@ const WorkspaceSidebar = ({
                         )}
 
                     {/* 채팅방 목록 */}
-                    {!isLoadingRooms && workspaceMode === '채팅방' && chatRooms.map((room, index) => {
+                    {!isLoadingRooms && workspaceMode === '채팅방' && chatRooms.map((room) => {
                         // 안전한 ID 접근
                         const chatRoomId = room.chatRoomId || room.id || room.roomId;
                         const roomName = room.chatRoomName || room.roomName || room.name || '이름 없는 채팅방';
@@ -267,7 +267,7 @@ const WorkspaceSidebar = ({
                     })}
 
                     {/* 스터디룸 목록 */}
-                    {!isLoadingRooms && workspaceMode === '스터디룸' && joinedStudyRoom.map((room, index) => {
+                    {!isLoadingRooms && workspaceMode === '스터디룸' && joinedStudyRoom.map((room) => {
                         // ID 접근
                         const studyRoomId = room.studyRoomId || room.id;
                         const roomName = room.name || '이름 없는 스터디룸';

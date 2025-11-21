@@ -179,7 +179,7 @@ export const ChatStateProvider = ({ children }) => {
             setIsLoadingRooms(false);
             apiCallRef.current = false;
         }
-    }, [currentUser.userId, currentUser.username, currentUser.isTemporary, isAuthenticated, getAuthHeaders, checkTokenValidity, user]);
+    }, [currentUser.userId, isAuthenticated, getAuthHeaders, user]);
 
     // 메시지 추가 (내부 사용) - 시간순 정렬 유지
     const addMessage = useCallback((chatRoomId, message) => {
@@ -424,7 +424,7 @@ export const ChatStateProvider = ({ children }) => {
             console.error('JOIN API 에러:', error);
             throw error;
         }
-    }, [currentUser.userId, currentUser.communityNickname, currentUser.username, isAuthenticated, getAuthHeaders, fetchChatRooms, addMessage]);
+    }, [currentUser.userId, currentUser.communityNickname, currentUser.username, isAuthenticated, getAuthHeaders, fetchChatRooms]);
 
     // 채팅방 나가기 (UI 상태만 정리)
     const leaveRoom = useCallback(() => {
@@ -468,7 +468,7 @@ export const ChatStateProvider = ({ children }) => {
 
         await fetchChatRooms();
         return true;
-    }, [currentUser.userId, currentUser.communityNickname, currentUser.username, isAuthenticated, getAuthHeaders, selectedRoom, fetchChatRooms, leaveRoom, addMessage]);
+    }, [currentUser.userId, isAuthenticated, getAuthHeaders, selectedRoom, fetchChatRooms, leaveRoom]);
 
     // 채팅방 정보 조회
     const getChatRoomInfo = useCallback(async (chatRoomId) => {

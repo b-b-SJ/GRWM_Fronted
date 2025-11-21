@@ -12,6 +12,19 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [currentStudyRoomId, setCurrentStudyRoomId] = useState(null); // 현재 참여 중인 방 ID
 
+    // 모든 저장소 정리
+    const clearAllStorage = useCallback(() => {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("userData");
+        localStorage.removeItem("currentStudyRoomId");
+        localStorage.removeItem("planner_last_shared_id");
+        localStorage.removeItem("planner_last_personal_id");
+        localStorage.removeItem("lastPlannerType");
+        setIsAuthenticated(false);
+        setUser(null);
+        setCurrentStudyRoomId(null);
+    }, []);
+
     // 초기 로드 시 토큰 및 사용자 정보 복원
     useEffect(() => {
         const accessToken = localStorage.getItem('accessToken');
@@ -33,20 +46,8 @@ export const AuthProvider = ({ children }) => {
                 clearAllStorage();
             }
         }
-    }, []);
+    }, [clearAllStorage]);
 
-  // 모든 저장소 정리
-  const clearAllStorage = useCallback(() => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("userData");
-    localStorage.removeItem("currentStudyRoomId");
-    localStorage.removeItem("planner_last_shared_id");
-    localStorage.removeItem("planner_last_personal_id");
-    localStorage.removeItem("lastPlannerType");
-    setIsAuthenticated(false);
-    setUser(null);
-    setCurrentStudyRoomId(null);
-  }, []);
 
     // OAuth 로그인 처리 (토큰과 사용자 정보를 직접 받을 때)
     const handleOAuthLogin = useCallback(async ({ accessToken, userId, username, communityNickname }) => {

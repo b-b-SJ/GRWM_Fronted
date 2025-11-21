@@ -1,21 +1,18 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  User,
-  Settings,
-  HelpCircle,
-  Bell,
-  Moon,
-  Sun,
-  LogOut,
-  Edit3,
-  Users,
-  RefreshCw,
-  X,
-  Check,
-} from "lucide-react";
+    User,
+    Settings,
+    HelpCircle,
+    Bell,
+    LogOut,
+    Edit3,
+    Users,
+    RefreshCw,
+    X,
+} from 'lucide-react';
 import { useNavigate } from "react-router-dom";
-import { useNotificationAPI } from "../../hooks/notificationAPI";
-import { useAuth } from "../../hooks/AuthContext";
+import { useNotificationAPI } from '../../hooks/notificationAPI';
+import { useAuth } from '../../hooks/AuthContext';
 
 /**
  * FixedSidebar 컴포넌트
@@ -28,67 +25,65 @@ import { useAuth } from "../../hooks/AuthContext";
  * NotificationItem 컴포넌트 - 알림 메뉴 아이템
  */
 const NotificationItem = ({ notification, onMarkAsRead }) => {
-  // NotificationType enum을 한글로 매핑
-  const getTypeLabel = (type) => {
-    const typeMap = {
-      SCHEDULE: "공유 플래너",
-      FOR_ME_TOMORROW: "트래커",
-      COMMUNITY: "커뮤니티",
+    // NotificationType enum을 한글로 매핑
+    const getTypeLabel = (type) => {
+        const typeMap = {
+            'SCHEDULE': '공유 플래너',
+            'FOR_ME_TOMORROW': '트래커',
+            'COMMUNITY': '커뮤니티'
+        };
+        return typeMap[type] || type;
     };
-    return typeMap[type] || type;
-  };
 
-  // 시간 포맷팅 함수
-  const formatTime = (createdAt) => {
-    if (!createdAt) return "";
+    // 시간 포맷팅 함수
+    const formatTime = (createdAt) => {
+        if (!createdAt) return '';
 
-    const now = new Date();
-    const notificationTime = new Date(createdAt);
-    const diffMs = now - notificationTime;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
+        const now = new Date();
+        const notificationTime = new Date(createdAt);
+        const diffMs = now - notificationTime;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return "방금 전";
-    if (diffMins < 60) return `${diffMins}분 전`;
-    if (diffHours < 24) return `${diffHours}시간 전`;
-    if (diffDays < 7) return `${diffDays}일 전`;
+        if (diffMins < 1) return '방금 전';
+        if (diffMins < 60) return `${diffMins}분 전`;
+        if (diffHours < 24) return `${diffHours}시간 전`;
+        if (diffDays < 7) return `${diffDays}일 전`;
 
-    return notificationTime.toLocaleDateString();
-  };
+        return notificationTime.toLocaleDateString();
+    };
 
-  const isRead = notification.isRead;
+    const isRead = notification.isRead;
 
-  return (
-    <div
-      className={`px-4 py-3 hover:bg-gray-50 border-b border-gray-100 cursor-pointer group ${
-        !isRead ? "bg-blue-50" : ""
-      }`}
-      onClick={() => !isRead && onMarkAsRead && onMarkAsRead(notification.id)}
-    >
-      <div className="flex items-start space-x-3">
+    return (
         <div
-          className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${
-            !isRead ? "bg-blue-500" : "bg-gray-300"
-          }`}
-        ></div>
-        <div className="flex-1">
-          <p className="text-sm font-medium text-gray-900 mb-1">
-            {notification.title || "알림"}
-          </p>
-          {notification.body && (
-            <p className="text-sm text-gray-600">{notification.body}</p>
-          )}
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
-              {getTypeLabel(notification.type)}
-            </span>
-            <span className="text-xs text-gray-500">
-              {formatTime(notification.createdAt)}
-            </span>
-          </div>
-        </div>
-        {/* 읽음 처리 버튼 - API 준비되면 활성화
+            className={`px-4 py-3 hover:bg-gray-50 border-b border-gray-100 cursor-pointer group ${
+                !isRead ? 'bg-blue-50' : ''
+            }`}
+            onClick={() => !isRead && onMarkAsRead && onMarkAsRead(notification.id)}
+        >
+            <div className="flex items-start space-x-3">
+                <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${
+                    !isRead ? 'bg-blue-500' : 'bg-gray-300'
+                }`}></div>
+                <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900 mb-1">
+                        {notification.title || '알림'}
+                    </p>
+                    {notification.body && (
+                        <p className="text-sm text-gray-600">{notification.body}</p>
+                    )}
+                    <div className="flex items-center justify-between mt-2">
+                        <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                            {getTypeLabel(notification.type)}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                            {formatTime(notification.createdAt)}
+                        </span>
+                    </div>
+                </div>
+                {/* 읽음 처리 버튼 - API 준비되면 활성화
                 {!isRead && onMarkAsRead && (
                     <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
@@ -104,72 +99,67 @@ const NotificationItem = ({ notification, onMarkAsRead }) => {
                     </div>
                 )}
                 */}
-      </div>
-    </div>
-  );
+            </div>
+        </div>
+    );
 };
 
 // NotificationType 매핑
 const tabTypeMap = {
-  전체: null,
-  "공유 플래너": "SCHEDULE",
-  트래커: "FOR_ME_TOMORROW",
-  커뮤니티: "COMMUNITY",
+    '전체': null,
+    '공유 플래너': 'SCHEDULE',
+    '트래커': 'FOR_ME_TOMORROW',
+    '커뮤니티': 'COMMUNITY'
 };
 
 /**
  * NotificationMenu 컴포넌트 - 알림 메뉴
  */
-const NotificationMenu = ({ notificationAPI, onClose }) => {
-  const [activeTab, setActiveTab] = useState("전체");
-  const [allNotifications, setAllNotifications] = useState([]);
-  const [filteredNotifications, setFilteredNotifications] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+const NotificationMenu = ({ notificationAPI, }) => {
+    const [activeTab, setActiveTab] = useState('전체');
+    const [allNotifications, setAllNotifications] = useState([]);
+    const [filteredNotifications, setFilteredNotifications] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-  // 알림 로드 (최초 1회만)
-  const loadNotifications = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+    // 알림 로드 (최초 1회만)
+    const loadNotifications = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
 
-    try {
-      const data = await notificationAPI.getAllNotifications();
-      const notifications = Array.isArray(data) ? data : [];
-      setAllNotifications(notifications);
-      setFilteredNotifications(notifications);
-    } catch (error) {
-      console.error("알림 로드 실패:", error);
-      setError("알림을 불러오는데 실패했습니다.");
-      setAllNotifications([]);
-      setFilteredNotifications([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [notificationAPI]);
+        try {
+            const data = await notificationAPI.getAllNotifications();
+            const notifications = Array.isArray(data) ? data : [];
+            setAllNotifications(notifications);
+            setFilteredNotifications(notifications);
+        } catch (error) {
+            console.error('알림 로드 실패:', error);
+            setError('알림을 불러오는데 실패했습니다.');
+            setAllNotifications([]);
+            setFilteredNotifications([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [notificationAPI]);
 
-  // 탭별 필터링
-  const filterNotificationsByTab = useCallback(
-    (tab) => {
-      const type = tabTypeMap[tab];
+    // 탭별 필터링
+    const filterNotificationsByTab = useCallback((tab) => {
+        const type = tabTypeMap[tab];
 
-      if (!type) {
-        // 전체 탭
-        setFilteredNotifications(allNotifications);
-      } else {
-        // 특정 타입 필터링
-        const filtered = allNotifications.filter(
-          (notification) => notification.type === type
-        );
-        setFilteredNotifications(filtered);
-      }
-    },
-    [allNotifications, tabTypeMap]
-  );
+        if (!type) {
+            // 전체 탭
+            setFilteredNotifications(allNotifications);
+        } else {
+            // 특정 타입 필터링
+            const filtered = allNotifications.filter(notification => notification.type === type);
+            setFilteredNotifications(filtered);
+        }
+    }, [allNotifications]);
 
-  // 개별 알림 읽음 처리 (현재 API 없음 - 주석처리)
-  const handleMarkAsRead = useCallback(async (notificationId) => {
-    // TO-DO: 읽음 처리 API 연동 필요
-    /*
+    // 개별 알림 읽음 처리 (현재 API 없음 - 주석처리)
+    const handleMarkAsRead = useCallback(async (notificationId) => {
+        // TO-DO: 읽음 처리 API 연동 필요
+        /*
         try {
             if (notificationAPI.markAsRead) {
                 await notificationAPI.markAsRead(notificationId);
@@ -193,13 +183,13 @@ const NotificationMenu = ({ notificationAPI, onClose }) => {
             console.error('알림 읽음 처리 실패:', error);
         }
         */
-    console.log("읽음 처리 API 대기 중:", notificationId);
-  }, []);
+        console.log('읽음 처리 API 대기 중:', notificationId);
+    }, []);
 
-  // 모든 알림 읽음 처리 (현재 API 없음 - 주석처리)
-  const handleMarkAllAsRead = useCallback(async () => {
-    // TO-DO: 전체 읽음 처리 API 연동 필요
-    /*
+    // 모든 알림 읽음 처리 (현재 API 없음 - 주석처리)
+    const handleMarkAllAsRead = useCallback(async () => {
+        // TO-DO: 전체 읽음 처리 API 연동 필요
+        /*
         try {
             if (notificationAPI.markAllAsRead) {
                 await notificationAPI.markAllAsRead();
@@ -221,110 +211,104 @@ const NotificationMenu = ({ notificationAPI, onClose }) => {
             console.error('모든 알림 읽음 처리 실패:', error);
         }
         */
-    console.log("전체 읽음 처리 API 대기 중");
-  }, []);
+        console.log('전체 읽음 처리 API 대기 중');
+    }, []);
 
-  // 컴포넌트 마운트 시 알림 로드
-  useEffect(() => {
-    loadNotifications();
-  }, [loadNotifications]);
+    // 컴포넌트 마운트 시 알림 로드
+    useEffect(() => {
+        loadNotifications();
+    }, [loadNotifications]);
 
-  // 탭 변경 시 필터링
-  useEffect(() => {
-    filterNotificationsByTab(activeTab);
-  }, [activeTab, filterNotificationsByTab]);
+    // 탭 변경 시 필터링
+    useEffect(() => {
+        filterNotificationsByTab(activeTab);
+    }, [activeTab, filterNotificationsByTab]);
 
-  // 읽지 않은 알림이 있는지 확인
-  const hasUnreadNotifications = filteredNotifications.some((n) => !n.isRead);
+    // 읽지 않은 알림이 있는지 확인
+    const hasUnreadNotifications = filteredNotifications.some((n) => !n.isRead);
 
-  // 탭 목록
-  const tabs = ["전체", "공유 플래너", "트래커", "커뮤니티"];
+    // 탭 목록
+    const tabs = ['전체', '공유 플래너', '트래커', '커뮤니티'];
 
-  return (
-    <div className="absolute left-16 top-0 ml-2 bg-white rounded-lg shadow-xl border w-96 z-50">
-      {/* 헤더 */}
-      <div className="px-4 py-3 border-b flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-800">알림</h3>
-        <button
-          onClick={loadNotifications}
-          className="p-1 hover:bg-gray-100 rounded"
-          disabled={isLoading}
-        >
-          <RefreshCw
-            size={16}
-            className={`text-gray-500 ${isLoading ? "animate-spin" : ""}`}
-          />
-        </button>
-      </div>
+    return (
+        <div className="absolute left-16 top-0 ml-2 bg-white rounded-lg shadow-xl border w-96 z-50">
+            {/* 헤더 */}
+            <div className="px-4 py-3 border-b flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-800">알림</h3>
+                <button
+                    onClick={loadNotifications}
+                    className="p-1 hover:bg-gray-100 rounded"
+                    disabled={isLoading}
+                >
+                    <RefreshCw size={16} className={`text-gray-500 ${isLoading ? 'animate-spin' : ''}`} />
+                </button>
+            </div>
 
-      {/* 탭 메뉴 */}
-      <div className="flex border-b">
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-1 px-2 py-2 text-xs font-medium transition-colors ${
-              activeTab === tab
-                ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
-                : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
+            {/* 탭 메뉴 */}
+            <div className="flex border-b">
+                {tabs.map((tab) => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`flex-1 px-2 py-2 text-xs font-medium transition-colors ${
+                            activeTab === tab
+                                ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                        }`}
+                    >
+                        {tab}
+                    </button>
+                ))}
+            </div>
 
-      {/* 알림 목록 */}
-      <div className="max-h-96 overflow-y-auto">
-        {isLoading ? (
-          <div className="px-4 py-8 text-center">
-            <RefreshCw
-              size={24}
-              className="mx-auto mb-2 text-gray-300 animate-spin"
-            />
-            <p className="text-sm text-gray-500">로딩중...</p>
-          </div>
-        ) : error ? (
-          <div className="px-4 py-8 text-center text-red-500">
-            <p className="text-sm">{error}</p>
-            <button
-              onClick={loadNotifications}
-              className="mt-2 text-sm text-blue-600 hover:text-blue-800"
-            >
-              다시 시도
-            </button>
-          </div>
-        ) : filteredNotifications.length > 0 ? (
-          filteredNotifications.map((notification) => (
-            <NotificationItem
-              key={notification.id}
-              notification={notification}
-              onMarkAsRead={handleMarkAsRead}
-            />
-          ))
-        ) : (
-          <div className="px-4 py-8 text-center text-gray-500">
-            <Bell size={24} className="mx-auto mb-2 text-gray-300" />
-            <p className="text-sm">새로운 알림이 없습니다</p>
-          </div>
-        )}
-      </div>
+            {/* 알림 목록 */}
+            <div className="max-h-96 overflow-y-auto">
+                {isLoading ? (
+                    <div className="px-4 py-8 text-center">
+                        <RefreshCw size={24} className="mx-auto mb-2 text-gray-300 animate-spin" />
+                        <p className="text-sm text-gray-500">로딩중...</p>
+                    </div>
+                ) : error ? (
+                    <div className="px-4 py-8 text-center text-red-500">
+                        <p className="text-sm">{error}</p>
+                        <button
+                            onClick={loadNotifications}
+                            className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+                        >
+                            다시 시도
+                        </button>
+                    </div>
+                ) : filteredNotifications.length > 0 ? (
+                    filteredNotifications.map((notification) => (
+                        <NotificationItem
+                            key={notification.id}
+                            notification={notification}
+                            onMarkAsRead={handleMarkAsRead}
+                        />
+                    ))
+                ) : (
+                    <div className="px-4 py-8 text-center text-gray-500">
+                        <Bell size={24} className="mx-auto mb-2 text-gray-300" />
+                        <p className="text-sm">새로운 알림이 없습니다</p>
+                    </div>
+                )}
+            </div>
 
-      {/* 푸터 - 모두 읽음 처리 버튼 */}
-      {hasUnreadNotifications && (
-        <div className="px-4 py-2 border-t bg-gray-50">
-          <button
-            onClick={handleMarkAllAsRead}
-            className="w-full text-sm text-blue-600 hover:text-blue-800 font-medium"
-            disabled
-            title="읽음 처리 API 준비 중"
-          >
-            모든 알림 읽음 처리
-          </button>
+            {/* 푸터 - 모두 읽음 처리 버튼 */}
+            {hasUnreadNotifications && (
+                <div className="px-4 py-2 border-t bg-gray-50">
+                    <button
+                        onClick={handleMarkAllAsRead}
+                        className="w-full text-sm text-blue-600 hover:text-blue-800 font-medium"
+                        disabled
+                        title="읽음 처리 API 준비 중"
+                    >
+                        모든 알림 읽음 처리
+                    </button>
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 };
 
 /**
@@ -596,156 +580,146 @@ const SettingsModal = ({ settings, onSettingChange, onSave, onClose }) => {
  * FixedSidebar 메인 컴포넌트
  */
 const FixedSidebar = ({ currentUser }) => {
-  const [darkMode, setDarkMode] = useState(false);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [showNotificationMenu, setShowNotificationMenu] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
+    // const [darkMode, setDarkMode] = useState(false);
+    const [showProfileMenu, setShowProfileMenu] = useState(false);
+    const [showNotificationMenu, setShowNotificationMenu] = useState(false);
+    const [showSettingsModal, setShowSettingsModal] = useState(false);
+    const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
 
-  const { clearAllStorage } = useAuth();
+    const { clearAllStorage } = useAuth();
+    const navigate = useNavigate();
+    const notificationAPI = useNotificationAPI();
 
-  const navigate = useNavigate();
-  const notificationAPI = useNotificationAPI();
+    // 설정 상태
+    const [settings, setSettings] = useState({
+        username: currentUser?.username || '',
+        email: currentUser?.email || '',
+        communityNickname: currentUser?.communityNickname || '',
+        plannerNotifications: true,
+        trackerNotifications: true,
+        communityNotifications: true,
+        emailNotifications: false,
+        profileVisibility: 'public',
+    });
 
-  // 설정 상태
-  const [settings, setSettings] = useState({
-    username: currentUser?.username || "",
-    email: currentUser?.email || "",
-    communityNickname: currentUser?.communityNickname || "",
-    plannerNotifications: true,
-    trackerNotifications: true,
-    communityNotifications: true,
-    emailNotifications: false,
-    profileVisibility: "public",
-  });
+    const profileMenuRef = useRef(null);
+    const notificationMenuRef = useRef(null);
 
-  const profileMenuRef = useRef(null);
-  const notificationMenuRef = useRef(null);
+    // 읽지 않은 알림 여부 확인
+    const checkUnreadNotifications = useCallback(async () => {
+        try {
+            const data = await notificationAPI.getAllNotifications();
+            const notifications = Array.isArray(data) ? data : [];
+            const hasUnread = notifications.some(n => !n.isRead);
+            setHasUnreadNotifications(hasUnread);
+        } catch (error) {
+            console.error('읽지 않은 알림 확인 실패:', error);
+        }
+    }, [notificationAPI]);
 
-  // 읽지 않은 알림 여부 확인
-  const checkUnreadNotifications = useCallback(async () => {
-    try {
-      const data = await notificationAPI.getAllNotifications();
-      const notifications = Array.isArray(data) ? data : [];
-      const hasUnread = notifications.some((n) => !n.isRead);
-      setHasUnreadNotifications(hasUnread);
-    } catch (error) {
-      console.error("읽지 않은 알림 확인 실패:", error);
-    }
-  }, [notificationAPI]);
+    // 컴포넌트 마운트 시 읽지 않은 알림 확인
+    useEffect(() => {
+        checkUnreadNotifications();
 
-  // 컴포넌트 마운트 시 읽지 않은 알림 확인
-  useEffect(() => {
-    checkUnreadNotifications();
+        // 주기적으로 알림 확인 (30초마다)
+        const interval = setInterval(() => {
+            checkUnreadNotifications();
+        }, 30000);
 
-    // 주기적으로 알림 확인 (30초마다)
-    const interval = setInterval(() => {
-      checkUnreadNotifications();
-    }, 30000);
+        return () => clearInterval(interval);
+    }, [checkUnreadNotifications]);
 
-    return () => clearInterval(interval);
-  }, [checkUnreadNotifications]);
+    // 외부 클릭 감지
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+                setShowProfileMenu(false);
+            }
+            if (notificationMenuRef.current && !notificationMenuRef.current.contains(event.target)) {
+                setShowNotificationMenu(false);
+            }
+        };
 
-  // 외부 클릭 감지
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        profileMenuRef.current &&
-        !profileMenuRef.current.contains(event.target)
-      ) {
-        setShowProfileMenu(false);
-      }
-      if (
-        notificationMenuRef.current &&
-        !notificationMenuRef.current.contains(event.target)
-      ) {
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleProfileClick = () => {
+        setShowProfileMenu(!showProfileMenu);
         setShowNotificationMenu(false);
-      }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    const handleNotificationClick = () => {
+        setShowNotificationMenu(!showNotificationMenu);
+        setShowProfileMenu(false);
 
-  const handleProfileClick = () => {
-    setShowProfileMenu(!showProfileMenu);
-    setShowNotificationMenu(false);
-  };
+        if (!showNotificationMenu) {
+            // 알림 메뉴가 열릴 때 읽지 않은 알림 확인
+            checkUnreadNotifications();
+        }
+    };
 
-  const handleNotificationClick = () => {
-    setShowNotificationMenu(!showNotificationMenu);
-    setShowProfileMenu(false);
+    const handleSettingsClick = () => {
+        setShowSettingsModal(true);
+        setShowProfileMenu(false);
+        setShowNotificationMenu(false);
+    };
 
-    if (!showNotificationMenu) {
-      // 알림 메뉴가 열릴 때 읽지 않은 알림 확인
-      checkUnreadNotifications();
-    }
-  };
+    const handleLogout = () => {
+        clearAllStorage();
+        console.log('로그아웃');
+        navigate('/auth');
+    };
 
-  const handleSettingsClick = () => {
-    setShowSettingsModal(true);
-    setShowProfileMenu(false);
-    setShowNotificationMenu(false);
-  };
+    const handleSettingChange = (key, value) => {
+        setSettings(prev => ({ ...prev, [key]: value }));
+    };
 
-  const handleLogout = () => {
-    clearAllStorage();
-    console.log("로그아웃");
-    navigate("/auth");
-  };
+    const handleSaveSettings = () => {
+        // 설정 저장
+        setShowSettingsModal(false);
+    };
 
-  const handleSettingChange = (key, value) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
-  };
+    return (
+        <>
+            <div className="w-16 bg-white flex flex-col items-center py-4">
+                {/* 프로필 섹션 */}
+                <div className="relative mb-6" ref={profileMenuRef}>
+                    <button
+                        onClick={handleProfileClick}
+                        className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors group"
+                    >
+                        <User size={20} className="text-white" />
+                    </button>
 
-  const handleSaveSettings = () => {
-    // 설정 저장
-    setShowSettingsModal(false);
-  };
+                    {showProfileMenu && (
+                        <ProfileMenu currentUser={currentUser} onLogout={handleLogout} />
+                    )}
+                </div>
 
-  return (
-    <>
-      <div className="w-16 bg-white flex flex-col items-center py-4">
-        {/* 프로필 섹션 */}
-        <div className="relative mb-6" ref={profileMenuRef}>
-          <button
-            onClick={handleProfileClick}
-            className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors group"
-          >
-            <User size={20} className="text-white" />
-          </button>
+                {/* 메인 네비게이션 아이콘들 */}
+                <div className="flex-1 flex flex-col items-center space-y-4">
+                    {/* 알림 */}
+                    <div className="relative" ref={notificationMenuRef}>
+                        <button
+                            onClick={handleNotificationClick}
+                            className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors group relative"
+                        >
+                            <Bell size={18} className="text-gray-400 group-hover:text-white" />
+                            {hasUnreadNotifications && (
+                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
+                            )}
+                        </button>
 
-          {showProfileMenu && (
-            <ProfileMenu currentUser={currentUser} onLogout={handleLogout} />
-          )}
-        </div>
+                        {showNotificationMenu && (
+                            <NotificationMenu
+                                notificationAPI={notificationAPI}
+                                onClose={() => setShowNotificationMenu(false)}
+                            />
+                        )}
+                    </div>
 
-        {/* 메인 네비게이션 아이콘들 */}
-        <div className="flex-1 flex flex-col items-center space-y-4">
-          {/* 알림 */}
-          <div className="relative" ref={notificationMenuRef}>
-            <button
-              onClick={handleNotificationClick}
-              className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors group relative"
-            >
-              <Bell
-                size={18}
-                className="text-gray-400 group-hover:text-white"
-              />
-              {hasUnreadNotifications && (
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
-              )}
-            </button>
-
-            {showNotificationMenu && (
-              <NotificationMenu
-                notificationAPI={notificationAPI}
-                onClose={() => setShowNotificationMenu(false)}
-              />
-            )}
-          </div>
-
-          {/* 다크모드 토글 버튼
+                    {/* 다크모드 토글 버튼
                     <button
                         onClick={toggleDarkMode}
                         className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors group"
@@ -757,42 +731,36 @@ const FixedSidebar = ({ currentUser }) => {
                         )}
                     </button>
                      */}
-        </div>
+                </div>
 
-        {/* 하단 메뉴 */}
-        <div className="flex flex-col items-center space-y-4">
-          {/* 설정 */}
-          <button
-            onClick={handleSettingsClick}
-            className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors group"
-          >
-            <Settings
-              size={18}
-              className="text-gray-400 group-hover:text-white"
-            />
-          </button>
+                {/* 하단 메뉴 */}
+                <div className="flex flex-col items-center space-y-4">
+                    {/* 설정 */}
+                    <button
+                        onClick={handleSettingsClick}
+                        className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors group"
+                    >
+                        <Settings size={18} className="text-gray-400 group-hover:text-white" />
+                    </button>
 
-          {/* 도움말 */}
-          <button className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors group">
-            <HelpCircle
-              size={18}
-              className="text-gray-400 group-hover:text-white"
-            />
-          </button>
-        </div>
-      </div>
+                    {/* 도움말 */}
+                    <button className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors group">
+                        <HelpCircle size={18} className="text-gray-400 group-hover:text-white" />
+                    </button>
+                </div>
+            </div>
 
-      {/* 설정 모달 */}
-      {showSettingsModal && (
-        <SettingsModal
-          settings={settings}
-          onSettingChange={handleSettingChange}
-          onSave={handleSaveSettings}
-          onClose={() => setShowSettingsModal(false)}
-        />
-      )}
-    </>
-  );
+            {/* 설정 모달 */}
+            {showSettingsModal && (
+                <SettingsModal
+                    settings={settings}
+                    onSettingChange={handleSettingChange}
+                    onSave={handleSaveSettings}
+                    onClose={() => setShowSettingsModal(false)}
+                />
+            )}
+        </>
+    );
 };
 
 export default FixedSidebar;
