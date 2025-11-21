@@ -113,7 +113,12 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
     const loadMainAnnouncement = useCallback(async () => {
         try {
             const announcement = await getMainAnnouncement(chatRoomId);
-            setMainAnnouncement(announcement);
+            // 공지가 없거나 content가 없으면 null로 설정
+            if (!announcement || !announcement.content) {
+                setMainAnnouncement(null);
+            } else {
+                setMainAnnouncement(announcement);
+            }
         } catch (error) {
             console.error('공지 조회 실패:', error);
             setMainAnnouncement(null);
