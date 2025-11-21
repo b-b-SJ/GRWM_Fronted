@@ -10,6 +10,8 @@ import { useAuth } from './AuthContext';
  * - 참여자 입장/퇴장 알림
  */
 
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'; // 💡 API_BASE_URL 정의
+
 const StudyRoomWebSocketContext = createContext();
 
 // STOMP 메시지 파싱 유틸리티
@@ -196,12 +198,12 @@ export const StudyRoomWebSocketProvider = ({ children }) => {
         cleanupConnection();
         isConnectingRef.current = true;
 
-        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsHost = process.env.NODE_ENV === 'production'
-            ? window.location.host
-            : 'localhost:8080';
+        // WebSocket URL 설정 (API_BASE_URL 기반으로 수정)
+        const urlObject = new URL(API_BASE_URL);
+        const wsProtocol = urlObject.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsHost = urlObject.host;
 
-        const wsUrl = `${wsProtocol}//${wsHost}/ws/`;
+        const wsUrl = `${wsProtocol}//${wsHost}/ws/`; // STOMP 엔드포인트는 /ws/로 고정
         console.log('[StudyRoom] WebSocket 연결 URL:', wsUrl);
 
         setConnectionStatus('connecting');
@@ -261,13 +263,6 @@ destination:/topic/studyroom.${studyRoomId}.presence
                     ws.send(presenceSubscribeFrame);
                     subscriptionIdsRef.current.push(presenceSubId);
                     console.log('[StudyRoom] Presence 토픽 구독:', `/topic/studyroom.${studyRoomId}.presence`);
-
-                    setTimeout(() => {
-                        console.log('[StudyRoom] 구독 완료');
-                        setConnectionStatus('connected');
-                        isConnectingRef.current = false;
-                        setReconnectAttempts(0);
-                    }, 500);
 
                     // Extension 토픽 구독 추가
                     const extensionSubId = `sub-extension-${studyRoomId}-${Date.now()}`;
@@ -427,7 +422,7 @@ id:${subId}
         setCurrentStudyRoomId(null);
         setReconnectAttempts(0);
 
-        console.log('[StudyRoom] WebSocket 연결 해제 완료');
+        console.log('[StudyRoom] 연결 해제 완료');
     }, [cleanupConnection]);
 
     // To-do 업데이트 전송

@@ -3,6 +3,9 @@ import {useCallback, useState} from 'react';
 /**
  * To-Do API 연동을 위한 커스텀 훅
  */
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '';
+
 export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -13,12 +16,11 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         loginId: null,
     };
 
-    // 인증 체크
-    const checkAuth = () => {
+    const checkAuth = useCallback(() => {
         if (!isAuthenticated || !user) {
             throw new Error('로그인이 필요합니다.');
         }
-    };
+    }, [isAuthenticated, user]);
 
     // 에러 핸들링 헬퍼
     const handleError = (error, customMessage) => {
@@ -47,7 +49,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
             queryParams.append('limit', params.limit !== undefined ? params.limit : 100);  // 기본값 100
 
             const queryString = queryParams.toString();
-            const url = `/api/users/${userId}/todos?${queryString}`;  // ? 항상 포함
+            const url = `${API_BASE_URL}/api/users/${userId}/todos?${queryString}`;
 
             const response = await fetch(url, {  // url 변수 사용
                 method: 'GET',
@@ -67,34 +69,34 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         } finally {
             setLoading(false);
         }
-    }, [isAuthenticated, user, getAuthHeaders]);
+    }, [getAuthHeaders, checkAuth]);
 
     /**
      * 1.2 개인 To-Do 작성
      */
     const createTodo = useCallback(async (userId, todoData) => {
-            checkAuth();
-            setLoading(true);
-            setError(null);
+        checkAuth();
+        setLoading(true);
+        setError(null);
 
-            try {
-                const response = await fetch(`/api/users/${userId}/todos`, {
-                    method: 'POST',
-                    headers: {
-                        ...getAuthHeaders(),
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(todoData),
-                });
-                console.log(todoData);
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/users/${userId}/todos`, {
+                method: 'POST',
+                headers: {
+                    ...getAuthHeaders(),
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(todoData),
+            });
+            console.log(todoData);
 
-                return await response.json();
-            } catch (err) {
-                handleError(err, 'To-Do 작성 중 오류가 발생했습니다.');
-            } finally {
-                setLoading(false);
-            }
-        }, [isAuthenticated, user, getAuthHeaders]);
+            return await response.json();
+        } catch (err) {
+            handleError(err, 'To-Do 작성 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }, [getAuthHeaders, checkAuth]);
 
     /**
      * 1.3 개인 To-Do 수정
@@ -105,7 +107,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         setError(null);
 
         try {
-            const response = await fetch(`/api/users/${userId}/todos/${todoId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/users/${userId}/todos/${todoId}`, {
                 method: 'PUT',
                 headers: {
                     ...getAuthHeaders(),
@@ -124,7 +126,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         } finally {
             setLoading(false);
         }
-    }, [isAuthenticated, user, getAuthHeaders]);
+    }, [getAuthHeaders, checkAuth]);
 
     /**
      * 1.4 개인 To-Do 삭제
@@ -135,7 +137,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         setError(null);
 
         try {
-            const response = await fetch(`/api/users/${userId}/todos/${todoId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/users/${userId}/todos/${todoId}`, {
                 method: 'DELETE',
                 headers: {
                     ...getAuthHeaders(),
@@ -153,7 +155,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         } finally {
             setLoading(false);
         }
-    }, [isAuthenticated, user, getAuthHeaders]);
+    }, [getAuthHeaders, checkAuth]);
 
     /**
      * 개인 To-Do 완료 처리
@@ -164,7 +166,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         setError(null);
 
         try {
-            const response = await fetch(`/api/users/${userId}/todos/${todoId}/complete`, {
+            const response = await fetch(`${API_BASE_URL}/api/users/${userId}/todos/${todoId}/complete`, {
                 method: 'PATCH',
                 headers: {
                     ...getAuthHeaders(),
@@ -182,7 +184,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         } finally {
             setLoading(false);
         }
-    }, [isAuthenticated, user, getAuthHeaders]);
+    }, [getAuthHeaders, checkAuth]);
 
     // ==================== 반복 To-Do 관리 ====================
 
@@ -200,7 +202,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
             if (params.status) queryParams.append('status', params.status);
             const queryString = queryParams.toString();
 
-            const url = `/api/users/${userId}/recurring-todos?${queryString}`;
+            const url = `${API_BASE_URL}/api/users/${userId}/recurring-todos?${queryString}`;
 
             const response = await fetch(url, {
                 method: 'GET',
@@ -223,7 +225,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         } finally {
             setLoading(false);
         }
-    }, [isAuthenticated, user, getAuthHeaders]);
+    }, [getAuthHeaders, checkAuth]);
 
     /**
      * 2.2 반복 To-Do 생성
@@ -264,7 +266,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         };
 
         try {
-            const response = await fetch(`/api/users/${userId}/recurring-todos`, {
+            const response = await fetch(`${API_BASE_URL}/api/users/${userId}/recurring-todos`, {
                 method: 'POST',
                 headers: {
                     ...getAuthHeaders(),
@@ -287,7 +289,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         } finally {
             setLoading(false);
         }
-    }, [isAuthenticated, user, getAuthHeaders]);
+    }, [getAuthHeaders, checkAuth]);
 
     /**
      * 2.3 반복 To-Do 수정
@@ -313,7 +315,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         console.log('Update Request Data:', dataToSend); // 디버깅용
 
         try {
-            const response = await fetch(`/api/users/${userId}/recurring-todos/${recurringId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/users/${userId}/recurring-todos/${recurringId}`, {
                 method: 'PUT',
                 headers: {
                     ...getAuthHeaders(),
@@ -334,7 +336,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         } finally {
             setLoading(false);
         }
-    }, [isAuthenticated, user, getAuthHeaders]);
+    }, [getAuthHeaders, checkAuth]);
 
     /**
      * 2.4 반복 To-Do 삭제
@@ -345,7 +347,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         setError(null);
 
         try {
-            const response = await fetch(`/api/users/${userId}/recurring-todos/${recurringId}`, {
+            const response = await fetch(`${API_BASE_URL}/api/users/${userId}/recurring-todos/${recurringId}`, {
                 method: 'DELETE',
                 headers: {
                     ...getAuthHeaders(),
@@ -363,7 +365,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         } finally {
             setLoading(false);
         }
-    }, [isAuthenticated, user, getAuthHeaders]);
+    }, [getAuthHeaders, checkAuth]);
 
     /**
      * 2.5 반복 To-Do 자동 생성
@@ -379,7 +381,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
             processedParams.targetDate = processedParams.targetDate.toISOString().split('T')[0]; // "YYYY-MM-DD"
         }
         try {
-            const response = await fetch(`/api/users/${userId}/recurring-todos/generate`, {
+            const response = await fetch(`${API_BASE_URL}/api/users/${userId}/recurring-todos/generate`, {
                 method: 'POST',
                 headers: {
                     ...getAuthHeaders(),
@@ -398,7 +400,7 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         } finally {
             setLoading(false);
         }
-    }, [isAuthenticated, user, getAuthHeaders]);
+    }, [getAuthHeaders, checkAuth]);
 
     return {
         loading,

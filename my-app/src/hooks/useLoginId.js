@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '';
 
 // 중복 id 체크
 const useLoginId = () => {
@@ -7,7 +9,7 @@ const useLoginId = () => {
     const [error, setError] = useState('');
 
     // 로그인 ID 중복 체크
-    const checkLoginId = async (loginId) => {
+    const checkLoginId = useCallback(async (loginId) => {
         if (!loginId.trim()) {
             setError('로그인 ID를 입력해주세요.');
             return { success: false };
@@ -17,7 +19,7 @@ const useLoginId = () => {
         setError('');
 
         try {
-            const response = await fetch(`api/auth/check-id/${loginId}`);
+            const response = await fetch(`${API_BASE_URL}/api/auth/check-id/${loginId}`);
             const isDuplicate = await response.json();
             const available = !isDuplicate; // API가 중복이면 true, 사용가능하면 false 반환
 
@@ -30,13 +32,13 @@ const useLoginId = () => {
         } finally {
             setIsChecking(false);
         }
-    };
+    }, []); // loginId가 인수로 들어오므로 의존성 배열에서 제거
 
     // 상태 초기화
-    const resetState = () => {
+    const resetState = useCallback(() => {
         if (error !== '') setError('');
         if (isAvailable !== null) setIsAvailable(null);
-    };
+    }, [error, isAvailable]);
 
     return {
         checkLoginId,

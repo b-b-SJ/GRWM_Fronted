@@ -9,8 +9,10 @@ import { useStudyRoomWebSocket } from './StudyRoomWebSocketContext';
  * - WebSocket: To-do, 리액션, 투표, 참여자 실시간 동기화
  */
 
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '';
+
 export const useStudyRoomState = () => {
-    const { isAuthenticated, user } = useAuth();
+    const { isAuthenticated, } = useAuth();
 
     const {
         connectionStatus,
@@ -37,13 +39,6 @@ export const useStudyRoomState = () => {
         totalElement: 0
     });
 
-    const currentUser = user || {
-        userId: null,
-        username: '게스트',
-        loginId: null,
-        communityId : null
-    };
-
     // ========== API 유틸리티 ==========
 
     const getAuthHeaders = useCallback(() => {
@@ -57,7 +52,7 @@ export const useStudyRoomState = () => {
     const handleApiError = useCallback((error, context) => {
         console.error(`API 오류 (${context}):`, error);
 
-        let errorMessage = '요청 처리 중 오류가 발생했습니다.';
+        let errorMessage;
 
         if (error.response) {
             errorMessage = error.response.data?.message || `서버 오류 (${error.response.status})`;
@@ -238,7 +233,7 @@ export const useStudyRoomState = () => {
         setError(null);
 
         try {
-            const response = await fetch(`/api/study-rooms`, {
+            const response = await fetch(`${API_BASE_URL}/api/study-rooms`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
                 body: JSON.stringify(studyRoomData)
@@ -270,7 +265,7 @@ export const useStudyRoomState = () => {
 
         try {
             const response = await fetch(
-                `/api/study-rooms?page=${page}&limit=${limit}`,
+                `${API_BASE_URL}/api/study-rooms?page=${page}&limit=${limit}`,
                 {
                     method: 'GET',
                     headers: getAuthHeaders()
@@ -310,7 +305,7 @@ export const useStudyRoomState = () => {
 
         try {
             const response = await fetch(
-                `/api/study-rooms/joined`,
+                `${API_BASE_URL}/api/study-rooms/joined`,
                 {
                     method: 'GET',
                     headers: getAuthHeaders()
@@ -380,7 +375,7 @@ export const useStudyRoomState = () => {
 
         try {
             const response = await fetch(
-                `/api/study-rooms/${studyRoomId}`,
+                `${API_BASE_URL}/api/study-rooms/${studyRoomId}`,
                 {
                     method: 'GET',
                     headers: getAuthHeaders()
@@ -463,7 +458,7 @@ export const useStudyRoomState = () => {
 
         try {
             const response = await fetch(
-                `/api/study-rooms/${studyRoomId}/todos`,
+                `${API_BASE_URL}/api/study-rooms/${studyRoomId}/todos`,
                 {
                     method: 'GET',
                     headers: getAuthHeaders()
@@ -531,7 +526,7 @@ export const useStudyRoomState = () => {
             const requestBody = isPrivate ? { password } : {};
 
             const response = await fetch(
-                `/api/study-rooms/${studyRoomId}/join`,
+                `${API_BASE_URL}/api/study-rooms/${studyRoomId}/join`,
                 {
                     method: 'POST',
                     headers: getAuthHeaders(),
@@ -604,7 +599,7 @@ export const useStudyRoomState = () => {
 
         try {
             const response = await fetch(
-                `/api/study-rooms/${studyRoomId}/leave`,
+                `${API_BASE_URL}/api/study-rooms/${studyRoomId}/leave`,
                 {
                     method: 'POST',
                     headers: getAuthHeaders()
@@ -667,7 +662,7 @@ export const useStudyRoomState = () => {
             console.log('[useStudyRoomState] Todo 작성 요청:', requestBody);
 
             const response = await fetch(
-                `/api/study-rooms/${studyRoomId}/todos`,
+                `${API_BASE_URL}/api/study-rooms/${studyRoomId}/todos`,
                 {
                     method: 'POST',
                     headers: getAuthHeaders(),
@@ -719,7 +714,7 @@ export const useStudyRoomState = () => {
             console.log('[useStudyRoomState] Todo 수정 요청:', requestBody);
 
             const response = await fetch(
-                `/api/study-rooms/${studyRoomId}/todos/${todoId}`,
+                `${API_BASE_URL}/api/study-rooms/${studyRoomId}/todos/${todoId}`,
                 {
                     method: 'PUT',
                     headers: getAuthHeaders(),
@@ -763,7 +758,7 @@ export const useStudyRoomState = () => {
 
         try {
             const response = await fetch(
-                `/api/study-rooms/${studyRoomId}/todos/${todoId}`,
+                `${API_BASE_URL}/api/study-rooms/${studyRoomId}/todos/${todoId}`,
                 {
                     method: 'DELETE',
                     headers: getAuthHeaders()
@@ -806,7 +801,7 @@ export const useStudyRoomState = () => {
 
         try {
             const response = await fetch(
-                `/api/study-rooms/${studyRoomId}/todos/${todoId}/complete`,
+                `${API_BASE_URL}/api/study-rooms/${studyRoomId}/todos/${todoId}/complete`,
                 {
                     method: 'PATCH',
                     headers: getAuthHeaders()
@@ -851,7 +846,7 @@ export const useStudyRoomState = () => {
             console.log('[useStudyRoomState] 리액션 추가 요청:', { studyRoomId, todoId });
 
             const response = await fetch(
-                `/api/study-rooms/${studyRoomId}/todos/${todoId}/reactions`,
+                `${API_BASE_URL}/api/study-rooms/${studyRoomId}/todos/${todoId}/reactions`,
                 {
                     method: 'POST',
                     headers: getAuthHeaders()
@@ -895,7 +890,7 @@ export const useStudyRoomState = () => {
 
         try {
             const response = await fetch(
-                `/api/study-rooms/${studyRoomId}/todos/${todoId}/reactions/${reactionId}`,
+                `${API_BASE_URL}/api/study-rooms/${studyRoomId}/todos/${todoId}/reactions/${reactionId}`,
                 {
                     method: 'DELETE',
                     headers: getAuthHeaders()
@@ -945,7 +940,7 @@ export const useStudyRoomState = () => {
 
         try {
             const response = await fetch(
-                `/api/study-rooms/${studyRoomId}/extension-vote`,
+                `${API_BASE_URL}/api/study-rooms/${studyRoomId}/extension-vote`,
                 {
                     method: 'POST',
                     headers: getAuthHeaders(),
@@ -989,7 +984,7 @@ export const useStudyRoomState = () => {
 
         try {
             const response = await fetch(
-                `/api/study-rooms/${studyRoomId}/extend`,
+                `${API_BASE_URL}/api/study-rooms/${studyRoomId}/extend`,
                 {
                     method: 'POST',
                     headers: getAuthHeaders()
@@ -1027,7 +1022,7 @@ export const useStudyRoomState = () => {
 
         try {
             const response = await fetch(
-                `/api/study-rooms/${studyRoomId}/close`,
+                `${API_BASE_URL}/api/study-rooms/${studyRoomId}/close`,
                 {
                     method: 'POST',
                     headers: getAuthHeaders()

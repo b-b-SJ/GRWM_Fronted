@@ -2,6 +2,7 @@
 import React, {createContext, useCallback, useContext, useEffect, useState} from 'react';
 import {requestFCMToken} from './useFCM'
 
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -90,7 +91,7 @@ export const AuthProvider = ({ children }) => {
             console.log(`[FCM Refresh] 식별자: ${userId}, FCM Token: ${fcmToken}으로 서버 업데이트 시도.`);
 
             // POST /api/auth/token-refresh 호출
-            const response = await fetch('/api/auth/token-refresh', {
+            const response = await fetch(`${API_BASE_URL}/api/auth/token-refresh`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: userId, fcmToken: fcmToken })
@@ -119,7 +120,7 @@ export const AuthProvider = ({ children }) => {
             const fcmToken = await requestFCMToken();
             console.log('FCM 토큰 발급:', fcmToken || '토큰 없음');
 
-            const response = await fetch('/api/auth/login', {
+            const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ loginId, password, fcmToken })
@@ -182,7 +183,7 @@ export const AuthProvider = ({ children }) => {
         setError('');
 
         try {
-            const response = await fetch('/api/auth/signup', {
+            const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, loginId, password, email })
@@ -250,7 +251,7 @@ export const AuthProvider = ({ children }) => {
         }
 
         try {
-            const response = await fetch('/api/auth/validate', {
+            const response = await fetch(`${API_BASE_URL}/api/auth/validate`, {
                 method: 'GET',
                 headers: getAuthHeaders()
             });
