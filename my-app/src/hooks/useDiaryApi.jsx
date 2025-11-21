@@ -2,6 +2,9 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '';
+
 export const useDiaryApi = () => {
     const { getAuthHeaders, user } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
@@ -22,7 +25,8 @@ export const useDiaryApi = () => {
             queryParams.append('page', page);
             queryParams.append('limit', limit);
 
-            const url = `/api/users/${user.userId}/diaries/default?${queryParams.toString()}`;
+            // API_BASE_URL 적용
+            const url = `${API_BASE_URL}/api/users/${user.userId}/diaries/default?${queryParams.toString()}`;
             console.log('API_LOG: [GET] 전체 일기 목록 (default) 조회 요청 URL:', url);
 
             const response = await fetch(url, {
@@ -73,8 +77,9 @@ export const useDiaryApi = () => {
         setError('');
 
         try {
+            // API_BASE_URL 적용
             const response = await fetch(
-                `/api/users/${user.userId}/diaries/${diaryId}`,
+                `${API_BASE_URL}/api/users/${user.userId}/diaries/${diaryId}`,
                 {
                     method: 'GET',
                     headers: getAuthHeaders()
@@ -135,7 +140,8 @@ export const useDiaryApi = () => {
         };
 
         try {
-            const url = `/api/users/${user.userId}/diaries`;
+            // API_BASE_URL 적용
+            const url = `${API_BASE_URL}/api/users/${user.userId}/diaries`;
             const response = await fetch(
                 url,
                 {
@@ -199,8 +205,9 @@ export const useDiaryApi = () => {
         setError('');
 
         try {
+            // API_BASE_URL 적용
             const response = await fetch(
-                `/api/users/${user.userId}/diaries/${diaryId}`,
+                `${API_BASE_URL}/api/users/${user.userId}/diaries/${diaryId}`,
                 {
                     method: 'PUT',
                     headers: getAuthHeaders(),
@@ -256,8 +263,9 @@ export const useDiaryApi = () => {
         setError('');
 
         try {
+            // API_BASE_URL 적용
             const response = await fetch(
-                `/api/users/${user.userId}/diaries/${diaryId}`,
+                `${API_BASE_URL}/api/users/${user.userId}/diaries/${diaryId}`,
                 {
                     method: 'DELETE',
                     headers: getAuthHeaders()

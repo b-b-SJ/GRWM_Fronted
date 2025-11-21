@@ -16,6 +16,8 @@ import { useLocation } from 'react-router-dom';
  * - 5분 기준 메시지 삭제 (REST API)
  */
 
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '';
+
 // 카테고리 매핑 상수
 const CATEGORY_MAP = {
     '일반': { id: 1, name: '일반' },
@@ -76,7 +78,7 @@ export const ChatStateProvider = ({ children }) => {
             return;
         }
         try {
-            const response = await fetch('/api/users/community/info', {
+            const response = await fetch(`${API_BASE_URL}/api/users/community/info`, {
                 method: 'GET',
                 headers: getAuthHeaders()
             });
@@ -98,7 +100,7 @@ export const ChatStateProvider = ({ children }) => {
         }
     }, [isAuthenticated, currentUser.userId, getAuthHeaders]);
 
-    // 토큰 유효성 확인
+    // 토큰 유효성 확인 (API 호출 없음)
     const checkTokenValidity = useCallback(async () => {
         const token = localStorage.getItem('accessToken');
         if (!token) return false;
@@ -135,7 +137,7 @@ export const ChatStateProvider = ({ children }) => {
         apiCallRef.current = true;
 
         try {
-            const response = await fetch(`/api/chat-room/show/${currentUser.userId}/joinlist`, {
+            const response = await fetch(`${API_BASE_URL}/api/chat-room/show/${currentUser.userId}/joinlist`, {
                 method: 'GET',
                 headers: {
                     ...getAuthHeaders(),
@@ -240,7 +242,7 @@ export const ChatStateProvider = ({ children }) => {
         try {
             console.log('채팅 히스토리 로드:', chatRoomId);
 
-            const response = await fetch(`/api/chatroom/${chatRoomId}/show`, {
+            const response = await fetch(`${API_BASE_URL}/api/chatroom/${chatRoomId}/show`, {
                 method: 'GET',
                 headers: getAuthHeaders()
             });
@@ -322,7 +324,7 @@ export const ChatStateProvider = ({ children }) => {
             maxMembers: roomData.maxMembers || 30
         };
 
-        const response = await fetch('/api/chat-room/create', {
+        const response = await fetch(`${API_BASE_URL}/api/chat-room/create`, {
             method: 'POST',
             headers: getAuthHeaders(),
             body: JSON.stringify(requestData)
@@ -343,7 +345,7 @@ export const ChatStateProvider = ({ children }) => {
             throw new Error('로그인이 필요합니다.');
         }
 
-        const response = await fetch(`/api/chat-room/${chatRoomId}/verify`, {
+        const response = await fetch(`${API_BASE_URL}/api/chat-room/${chatRoomId}/verify`, {
             method: 'POST',
             headers: getAuthHeaders(),
             body: JSON.stringify({ password })
@@ -375,7 +377,7 @@ export const ChatStateProvider = ({ children }) => {
         };
 
         console.log('JOIN API 호출');
-        console.log('URL:', `/api/chat-room/${chatRoomId}/join`);
+        console.log('URL:', `${API_BASE_URL}/api/chat-room/${chatRoomId}/join`);
         console.log('요청 데이터:', requestData);
 
         const headers = {
@@ -390,7 +392,7 @@ export const ChatStateProvider = ({ children }) => {
         };
 
         try {
-            const response = await fetch(`/api/chat-room/${chatRoomId}/join`, fetchOptions);
+            const response = await fetch(`${API_BASE_URL}/api/chat-room/${chatRoomId}/join`, fetchOptions);
 
             const responseText = await response.text();
             console.log('응답 상태:', response.status);
@@ -438,12 +440,12 @@ export const ChatStateProvider = ({ children }) => {
             throw new Error('로그인이 필요합니다.');
         }
 
-        console.log('Request URL:', `/api/chat-room/${chatRoomId}/leave`);
+        console.log('Request URL:', `${API_BASE_URL}/api/chat-room/${chatRoomId}/leave`);
         console.log('Headers:', getAuthHeaders());
 
         // 퇴장 메시지 백엔드에서 전송되므로 로컬 추가 코드 삭제
 
-        const response = await fetch(`/api/chat-room/${chatRoomId}/leave`, {
+        const response = await fetch(`${API_BASE_URL}/api/chat-room/${chatRoomId}/leave`, {
             method: 'DELETE',
             headers: getAuthHeaders()
         });
@@ -474,7 +476,7 @@ export const ChatStateProvider = ({ children }) => {
             throw new Error('로그인이 필요합니다.');
         }
 
-        const response = await fetch(`/api/chat-room/show/${chatRoomId}`, {
+        const response = await fetch(`${API_BASE_URL}/api/chat-room/show/${chatRoomId}`, {
             method: 'GET',
             headers: getAuthHeaders()
         });
@@ -499,7 +501,7 @@ export const ChatStateProvider = ({ children }) => {
             requestData.description = description.trim();
         }
 
-        const response = await fetch(`/api/chat-room/${chatRoomId}/edit`, {
+        const response = await fetch(`${API_BASE_URL}/api/chat-room/${chatRoomId}/edit`, {
             method: 'PATCH',
             headers: getAuthHeaders(),
             body: JSON.stringify(requestData)
@@ -528,7 +530,7 @@ export const ChatStateProvider = ({ children }) => {
             throw new Error('로그인이 필요합니다.');
         }
 
-        const response = await fetch(`/api/chat-room/${chatRoomId}/delete`, {
+        const response = await fetch(`${API_BASE_URL}/api/chat-room/${chatRoomId}/delete`, {
             method: 'DELETE',
             headers: getAuthHeaders()
         });
@@ -575,7 +577,7 @@ export const ChatStateProvider = ({ children }) => {
             content: content.trim()
         });
 
-        const response = await fetch(`/api/chat-room/${chatRoomId}/announcement/create`, {
+        const response = await fetch(`${API_BASE_URL}/api/chat-room/${chatRoomId}/announcement/create`, {
             method: 'POST',
             headers: getAuthHeaders(),
             body: JSON.stringify(requestData)
@@ -595,7 +597,7 @@ export const ChatStateProvider = ({ children }) => {
             throw new Error('로그인이 필요합니다.');
         }
 
-        const response = await fetch(`/api/chat-room/${chatRoomId}/announcement/show/main`, {
+        const response = await fetch(`${API_BASE_URL}/api/chat-room/${chatRoomId}/announcement/show/main`, {
             method: 'GET',
             headers: getAuthHeaders()
         });
@@ -616,7 +618,7 @@ export const ChatStateProvider = ({ children }) => {
         }
 
         try {
-            const response = await fetch(`/api/chat-room/${chatRoomId}/users`, {
+            const response = await fetch(`${API_BASE_URL}/api/chat-room/${chatRoomId}/users`, {
                 method: 'GET',
                 headers: getAuthHeaders()
             });

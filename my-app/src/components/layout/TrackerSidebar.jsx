@@ -5,11 +5,8 @@ import {
     X,
     CheckSquare,
     BookOpen,
-    Calendar,
-    BarChart3,
     RotateCcw,
     MessageCircle,
-    Hash,
     ChevronLeft,
     ChevronRight
 } from 'lucide-react';

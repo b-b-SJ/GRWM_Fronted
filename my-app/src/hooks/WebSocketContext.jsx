@@ -14,6 +14,8 @@ import { useAuth } from './AuthContext';
  * - 채팅방 입/퇴장 메시지 출력 (ing)
  */
 
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'; // 💡 API_BASE_URL 정의
+
 const WebSocketContext = createContext();
 
 // STOMP 메시지 파싱 유틸리티
@@ -196,12 +198,10 @@ export const WebSocketProvider = ({ children }) => {
         // 연결 플래그 설정
         isConnectingRef.current = true;
 
-        // WebSocket URL 설정
-        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsHost = process.env.NODE_ENV === 'production'
-            ? window.location.host
-            : 'localhost:8080';
-
+        // WebSocket URL 설정 (API_BASE_URL 기반으로 수정)
+        const urlObject = new URL(API_BASE_URL);
+        const wsProtocol = urlObject.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsHost = urlObject.host;
         const wsUrl = `${wsProtocol}//${wsHost}/ws/`;
         console.log('WebSocket 연결 URL:', wsUrl);
 
@@ -507,7 +507,7 @@ ${JSON.stringify(messageData)}\0`;
             console.error('메시지 전송 실패:', error);
             return false;
         }
-    }, [connectionStatus]);
+    }, [connectionStatus, reconnect]);
 
     // 메시지 삭제 (WebSocket 통신)
     const deleteMessage = useCallback((chatRoomId, messageId, userId) => {

@@ -2,6 +2,8 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '';
+
 export const useTomorrowMessageApi = () => {
     const { getAuthHeaders, user } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
@@ -19,7 +21,7 @@ export const useTomorrowMessageApi = () => {
 
         try {
             const response = await fetch(
-                `/api/users/${user.userId}/future-message`, // url 수정
+                `${API_BASE_URL}/api/users/${user.userId}/future-message`,
                 {
                     method: 'GET',
                     headers: getAuthHeaders()
@@ -62,7 +64,7 @@ export const useTomorrowMessageApi = () => {
 
         try {
             const response = await fetch(
-                `/api/users/${user.userId}/future-message`,
+                `${API_BASE_URL}/api/users/${user.userId}/future-message`,
                 {
                     method: 'POST',
                     headers: getAuthHeaders(),
@@ -114,7 +116,7 @@ export const useTomorrowMessageApi = () => {
 
         try {
             const response = await fetch(
-                `/api/users/${user.userId}/future-message`,
+                `${API_BASE_URL}/api/users/${user.userId}/future-message`,
                 {
                     method: 'PUT',
                     headers: getAuthHeaders(),
@@ -155,7 +157,7 @@ export const useTomorrowMessageApi = () => {
 
         try {
             const response = await fetch(
-                `/api/users/${user.userId}/future-message`,
+                `${API_BASE_URL}/api/users/${user.userId}/future-message`,
                 {
                     method: 'DELETE',
                     headers: getAuthHeaders()
