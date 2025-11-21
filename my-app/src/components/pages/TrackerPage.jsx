@@ -207,7 +207,7 @@ const TrackerPage = ({ todoApi, user }) => {
                 {/* 오버레이: 사이드바 바깥 클릭 시 닫힘 */}
                 {sidebarOpen && (
                     <div
-                        className="fixed inset-0 z-10 bg-black bg-opacity-0"
+                        className="fixed inset-0 z-[5] bg-black bg-opacity-0"
                         onClick={() => toggleSidebar()}
                     />
                 )}
