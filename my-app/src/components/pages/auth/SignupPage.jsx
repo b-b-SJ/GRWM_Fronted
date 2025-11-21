@@ -225,7 +225,10 @@ const SignupPage = ({
                             {formData.password &&
                                 formData.confirmPassword &&
                                 formData.password !== formData.confirmPassword && (
-                                    <p className="text-red-500 text-sm mt-1">비밀번호가 일치하지 않습니다.</p>
+                                    <div className="mt-2 flex items-center space-x-2 text-sm text-red-600">
+                                        <X size={16}/>
+                                        <span>비밀번호가 일치하지 않습니다.</span>
+                                    </div>
                                 )}
                         </div>
 
