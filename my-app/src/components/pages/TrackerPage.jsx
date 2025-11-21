@@ -1,9 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-    BarChart3,
     BookOpen,
-    Plus,
     Hash,
 } from 'lucide-react';
 import TrackerSidebar from '../layout/TrackerSidebar';
@@ -30,11 +28,6 @@ const TrackerPage = ({ todoApi, user }) => {
 
     const toggleSidebar = () => {
         setSidebarOpen(!sidebarOpen);
-    };
-
-    // 새 일기 작성 버튼 클릭 핸들러
-    const handleWriteNewDiary = () => {
-        setWriteMode(true);
     };
 
     // URL 파라미터 변경 감지하여 모드 업데이트

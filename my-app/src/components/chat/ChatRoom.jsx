@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { MoreVertical, Users, ArrowLeft, Edit, Trash2, MessageSquare, LogOut, RefreshCw, AlertCircle } from 'lucide-react';
 import { useChatState } from '../../hooks/useChatState';
 import ChatMessages from './ChatMessages';
@@ -14,7 +14,6 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
         requestDeleteMessage,
         replyTo,
         setReplyTo,
-        setMessages,
         leaveChatRoom,
         editChatRoomName,
         deleteChatRoom,
@@ -40,7 +39,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
     const menuRef = useRef(null);
 
     const currentRoom = chatRooms.find(room =>
-        room.roomId == chatRoomId || room.chatRoomId == chatRoomId
+        room.roomId === chatRoomId || room.chatRoomId === chatRoomId
     );
 
     const isManager = currentRoom?.isManager === true;
@@ -111,7 +110,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
         }
     };
 
-    const loadMainAnnouncement = async () => {
+    const loadMainAnnouncement = useCallback(async () => {
         try {
             const announcement = await getMainAnnouncement(chatRoomId);
             setMainAnnouncement(announcement);
@@ -119,7 +118,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
             console.error('공지 조회 실패:', error);
             setMainAnnouncement(null);
         }
-    };
+    }, [chatRoomId, getMainAnnouncement]);
 
     const loadMembers = async () => {
         setLoadingMembers(true);
@@ -154,7 +153,7 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
             const timer = setTimeout(() => setLoading(false), 2000);
             return () => clearTimeout(timer);
         }
-    }, [chatRoomId]);
+    }, [chatRoomId, loadMainAnnouncement]);
 
     useEffect(() => {
         if (connectionStatus === 'connected' || connectionStatus === 'error') {

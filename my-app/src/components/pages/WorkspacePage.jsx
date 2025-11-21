@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useOutletContext, useLocation, useSearchParams } from 'react-router-dom';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 import WorkspaceSidebar from '../layout/WorkspaceSidebar';
 import ChatRoom from '../chat/ChatRoom';
 import StudyRoom from '../studyroom/StudyRoom';
@@ -317,7 +317,6 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
 
 // 메인 WorkspacePage 컴포넌트
 const WorkspacePage = () => {
-    const location = useLocation();
     const [searchParams] = useSearchParams();
     const { workspaceSidebarOpen, toggleWorkspaceSidebar } = useOutletContext();
 
@@ -348,10 +347,8 @@ const WorkspacePage = () => {
     } = useChatState();
 
     const {
-        studyRooms,
         joinedStudyRoom,
         loading: isLoadingStudyRooms,
-        fetchStudyRooms,
         fetchJoinedStudyRoom,
         joinStudyRoom,
     } = useStudyRoomState();

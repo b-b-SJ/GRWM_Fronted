@@ -4,14 +4,11 @@ import {
     Settings,
     HelpCircle,
     Bell,
-    Moon,
-    Sun,
     LogOut,
     Edit3,
     Users,
     RefreshCw,
     X,
-    Check
 } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
 import { useNotificationAPI } from '../../hooks/notificationAPI';
@@ -120,7 +117,7 @@ const tabTypeMap = {
 /**
  * NotificationMenu 컴포넌트 - 알림 메뉴
  */
-const NotificationMenu = ({ notificationAPI, onClose }) => {
+const NotificationMenu = ({ notificationAPI, }) => {
     const [activeTab, setActiveTab] = useState('전체');
     const [allNotifications, setAllNotifications] = useState([]);
     const [filteredNotifications, setFilteredNotifications] = useState([]);
@@ -159,7 +156,7 @@ const NotificationMenu = ({ notificationAPI, onClose }) => {
             const filtered = allNotifications.filter(notification => notification.type === type);
             setFilteredNotifications(filtered);
         }
-    }, [allNotifications, tabTypeMap]);
+    }, [allNotifications]);
 
     // 개별 알림 읽음 처리 (현재 API 없음 - 주석처리)
     const handleMarkAsRead = useCallback(async (notificationId) => {
@@ -555,7 +552,7 @@ const SettingsModal = ({ settings, onSettingChange, onSave, onClose }) => {
  * FixedSidebar 메인 컴포넌트
  */
 const FixedSidebar = ({ currentUser }) => {
-    const [darkMode, setDarkMode] = useState(false);
+    // const [darkMode, setDarkMode] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
     const [showNotificationMenu, setShowNotificationMenu] = useState(false);
     const [showSettingsModal, setShowSettingsModal] = useState(false);
