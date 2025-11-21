@@ -64,10 +64,17 @@ const CategoryManager = ({ isOpen, onClose, plannerId }) => {
     }
 
     try {
-      await updateCategory(plannerId, categoryId, {
-        name: editingName,
-        color: editingColor, // 수정된 색상도 함께 전송
-      });
+      if (plannerType === "shared") {
+        await updateCategory(plannerId, categoryId, {
+          categoryName: editingName,
+          color: editingColor, // 수정된 색상도 함께 전송
+        });
+      } else {
+        await updateCategory(plannerId, categoryId, {
+          name: editingName,
+          color: editingColor, // 수정된 색상도 함께 전송
+        });
+      }
 
       // 수정 완료 후 초기화
       setEditingId(null);
@@ -95,6 +102,7 @@ const CategoryManager = ({ isOpen, onClose, plannerId }) => {
   // 수정 모드 진입
   const startEditing = (category) => {
     setEditingId(category.categoryId);
+
     setEditingName(category.categoryName);
     setEditingColor(category.color); // 현재 색상도 함께 설정
   };
@@ -239,6 +247,7 @@ const CategoryManager = ({ isOpen, onClose, plannerId }) => {
                       />
 
                       {/* 카테고리 이름 */}
+
                       <span className="flex-1 font-medium">
                         {category.categoryName}
                       </span>
