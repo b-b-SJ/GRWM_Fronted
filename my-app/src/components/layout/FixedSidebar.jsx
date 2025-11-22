@@ -21,7 +21,6 @@ import { useAuth } from '../../hooks/AuthContext';
  * - API 연동 가능한 알림 시스템
  */
 
-
 /**
  * NotificationItem 컴포넌트 - 알림 메뉴 아이템
  */
@@ -104,7 +103,6 @@ const NotificationItem = ({ notification, onMarkAsRead }) => {
         </div>
     );
 };
-
 
 // NotificationType 매핑
 const tabTypeMap = {
@@ -317,235 +315,265 @@ const NotificationMenu = ({ notificationAPI, }) => {
  * ProfileMenu 컴포넌트 - 프로필 드롭다운
  */
 const ProfileMenu = ({ currentUser, onLogout }) => {
-    const navigate = useNavigate();
-
-    return (
-        <div className="absolute left-16 top-0 ml-2 bg-white rounded-lg shadow-xl border py-3 w-72 z-50">
-            {/* 기본 프로필 */}
-            <div className="px-4 py-3 border-b">
-                <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">기본 프로필</h3>
-                    <button className="p-1 hover:bg-gray-100 rounded">
-                        <Edit3 size={14} className="text-gray-500" />
-                    </button>
-                </div>
-                <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-                        <User size={20} className="text-white" />
-                    </div>
-                    <div className="flex-1">
-                        <p className="font-medium text-gray-800">{currentUser?.username || '사용자'}</p>
-                    </div>
-                </div>
-            </div>
-
-            {/* 커뮤니티 프로필 */}
-            <div className="px-4 py-3 border-b">
-                <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">커뮤니티 프로필</h3>
-                    <button className="p-1 hover:bg-gray-100 rounded">
-                        <Edit3 size={14} className="text-gray-500" />
-                    </button>
-                </div>
-                <div
-                    className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 rounded p-2"
-                    onClick={() => navigate('/profile/:communityId')}
-                >
-                    <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                        <Users size={20} className="text-white" />
-                    </div>
-                    <div className="flex-1">
-                        <p className="font-medium text-gray-800">
-                            {currentUser?.communityNickname || '무명'}
-                        </p>
-                        <p className="text-sm text-gray-500">커뮤니티 활동 중</p>
-                    </div>
-                </div>
-            </div>
-
-            <hr className="my-2" />
-            <div className="px-2">
-                {/* 로그아웃 버튼 */}
-                <button
-                    onClick={onLogout}
-                    className="w-full px-4 py-2 text-left hover:bg-red-50 rounded-lg flex items-center space-x-2 text-red-600"
-                >
-                    <LogOut size={16} />
-                    <span>로그아웃</span>
-                </button>
-            </div>
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  return (
+    <div className="absolute left-16 top-0 ml-2 bg-white rounded-lg shadow-xl border py-3 w-72 z-50">
+      {/* 기본 프로필 */}
+      <div className="px-4 py-3 border-b">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">
+            기본 프로필
+          </h3>
+          <button className="p-1 hover:bg-gray-100 rounded">
+            <Edit3 size={14} className="text-gray-500" />
+          </button>
         </div>
-    );
+        <div className="flex items-center space-x-3">
+          <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+            <User size={20} className="text-white" />
+          </div>
+          <div className="flex-1">
+            <p className="font-medium text-gray-800">
+              {currentUser?.username || "사용자"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* 커뮤니티 프로필 */}
+      <div className="px-4 py-3 border-b">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">
+            커뮤니티 프로필
+          </h3>
+          <button className="p-1 hover:bg-gray-100 rounded">
+            <Edit3 size={14} className="text-gray-500" />
+          </button>
+        </div>
+        <div
+          className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 rounded p-2"
+          onClick={() => navigate(`/community/profile/${user.userId}`)}
+        >
+          <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+            <Users size={20} className="text-white" />
+          </div>
+          <div className="flex-1">
+            <p className="font-medium text-gray-800">
+              {currentUser?.communityNickname || "무명"}
+            </p>
+            <p className="text-sm text-gray-500">커뮤니티 활동 중</p>
+          </div>
+        </div>
+      </div>
+
+      <hr className="my-2" />
+      <div className="px-2">
+        {/* 로그아웃 버튼 */}
+        <button
+          onClick={onLogout}
+          className="w-full px-4 py-2 text-left hover:bg-red-50 rounded-lg flex items-center space-x-2 text-red-600"
+        >
+          <LogOut size={16} />
+          <span>로그아웃</span>
+        </button>
+      </div>
+    </div>
+  );
 };
 
 /**
  * SettingsModal 컴포넌트 - 설정 모달
  */
 const SettingsModal = ({ settings, onSettingChange, onSave, onClose }) => {
-    const ToggleSetting = ({ label, description, checked, onChange }) => (
-        <div className="flex items-center justify-between py-3 border-b">
-            <div className="flex-1">
-                <p className="font-medium text-gray-800">{label}</p>
-                <p className="text-sm text-gray-500 mt-1">{description}</p>
-            </div>
-            <button
-                onClick={() => onChange(!checked)}
-                className={`relative w-12 h-6 rounded-full transition-colors ${
-                    checked ? 'bg-blue-500' : 'bg-gray-300'
-                }`}
-            >
-                <div
-                    className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform ${
-                        checked ? 'transform translate-x-6' : ''
-                    }`}
+  const ToggleSetting = ({ label, description, checked, onChange }) => (
+    <div className="flex items-center justify-between py-3 border-b">
+      <div className="flex-1">
+        <p className="font-medium text-gray-800">{label}</p>
+        <p className="text-sm text-gray-500 mt-1">{description}</p>
+      </div>
+      <button
+        onClick={() => onChange(!checked)}
+        className={`relative w-12 h-6 rounded-full transition-colors ${
+          checked ? "bg-blue-500" : "bg-gray-300"
+        }`}
+      >
+        <div
+          className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform ${
+            checked ? "transform translate-x-6" : ""
+          }`}
+        />
+      </button>
+    </div>
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* 배경 오버레이 */}
+      <div
+        className="absolute inset-0 bg-black bg-opacity-50"
+        onClick={onClose}
+      ></div>
+
+      {/* 모달 컨텐츠 */}
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
+        {/* 헤더 */}
+        <div className="flex items-center justify-between p-6 border-b">
+          <h2 className="text-xl font-bold text-gray-800">설정</h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X size={20} className="text-gray-600" />
+          </button>
+        </div>
+
+        {/* 설정 내용 */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {/* 계정 설정 */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              계정 정보
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  사용자 이름
+                </label>
+                <input
+                  type="text"
+                  value={settings.username}
+                  onChange={(e) => onSettingChange("username", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-            </button>
-        </div>
-    );
+              </div>
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-            {/* 배경 오버레이 */}
-            <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  이메일
+                </label>
+                <input
+                  type="email"
+                  value={settings.email}
+                  onChange={(e) => onSettingChange("email", e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
 
-            {/* 모달 컨텐츠 */}
-            <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
-                {/* 헤더 */}
-                <div className="flex items-center justify-between p-6 border-b">
-                    <h2 className="text-xl font-bold text-gray-800">설정</h2>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                        <X size={20} className="text-gray-600" />
-                    </button>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  커뮤니티 닉네임
+                </label>
+                <input
+                  type="text"
+                  value={settings.communityNickname}
+                  onChange={(e) =>
+                    onSettingChange("communityNickname", e.target.value)
+                  }
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="커뮤니티에서 사용할 닉네임"
+                />
+              </div>
 
-                {/* 설정 내용 */}
-                <div className="flex-1 overflow-y-auto p-6">
-                    {/* 계정 설정 */}
-                    <div className="mb-8">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">계정 정보</h3>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    사용자 이름
-                                </label>
-                                <input
-                                    type="text"
-                                    value={settings.username}
-                                    onChange={(e) => onSettingChange('username', e.target.value)}
-                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    이메일
-                                </label>
-                                <input
-                                    type="email"
-                                    value={settings.email}
-                                    onChange={(e) => onSettingChange('email', e.target.value)}
-                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    커뮤니티 닉네임
-                                </label>
-                                <input
-                                    type="text"
-                                    value={settings.communityNickname}
-                                    onChange={(e) => onSettingChange('communityNickname', e.target.value)}
-                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    placeholder="커뮤니티에서 사용할 닉네임"
-                                />
-                            </div>
-
-                            <div className="pt-2">
-                                <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                                    비밀번호 변경
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* 알림 설정 */}
-                    <div className="mb-8">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">알림 설정</h3>
-                        <div className="space-y-1">
-                            <ToggleSetting
-                                label="공유 플래너 알림"
-                                description="공유 플래너 관련 알림 받기"
-                                checked={settings.plannerNotifications}
-                                onChange={(checked) => onSettingChange('plannerNotifications', checked)}
-                            />
-                            <ToggleSetting
-                                label="트래커 알림"
-                                description="내일의 나에게 메시지 도착 시 알림 받기"
-                                checked={settings.trackerNotifications}
-                                onChange={(checked) => onSettingChange('trackerNotifications', checked)}
-                            />
-                            <ToggleSetting
-                                label="커뮤니티 알림"
-                                description="커뮤니티 활동 관련 알림 받기"
-                                checked={settings.communityNotifications}
-                                onChange={(checked) => onSettingChange('communityNotifications', checked)}
-                            />
-                            <ToggleSetting
-                                label="이메일 알림"
-                                description="중요한 알림을 이메일로 받기"
-                                checked={settings.emailNotifications}
-                                onChange={(checked) => onSettingChange('emailNotifications', checked)}
-                            />
-                        </div>
-                    </div>
-
-                    {/* 개인정보 설정 */}
-                    <div>
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">개인정보 보호</h3>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    프로필 공개 범위
-                                </label>
-                                <select
-                                    value={settings.profileVisibility}
-                                    onChange={(e) => onSettingChange('profileVisibility', e.target.value)}
-                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                >
-                                    <option value="public">전체 공개</option>
-                                    <option value="friends">친구만</option>
-                                    <option value="private">비공개</option>
-                                </select>
-                            </div>
-
-                            <div className="pt-4 border-t">
-                                <button className="text-sm text-red-600 hover:text-red-800 font-medium">
-                                    계정 삭제
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* 푸터 */}
-                <div className="flex items-center justify-end space-x-3 p-6 border-t bg-gray-50">
-                    <button
-                        onClick={onClose}
-                        className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
-                    >
-                        취소
-                    </button>
-                    <button
-                        onClick={onSave}
-                        className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                    >
-                        저장
-                    </button>
-                </div>
+              <div className="pt-2">
+                <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                  비밀번호 변경
+                </button>
+              </div>
             </div>
+          </div>
+
+          {/* 알림 설정 */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              알림 설정
+            </h3>
+            <div className="space-y-1">
+              <ToggleSetting
+                label="공유 플래너 알림"
+                description="공유 플래너 관련 알림 받기"
+                checked={settings.plannerNotifications}
+                onChange={(checked) =>
+                  onSettingChange("plannerNotifications", checked)
+                }
+              />
+              <ToggleSetting
+                label="트래커 알림"
+                description="내일의 나에게 메시지 도착 시 알림 받기"
+                checked={settings.trackerNotifications}
+                onChange={(checked) =>
+                  onSettingChange("trackerNotifications", checked)
+                }
+              />
+              <ToggleSetting
+                label="커뮤니티 알림"
+                description="커뮤니티 활동 관련 알림 받기"
+                checked={settings.communityNotifications}
+                onChange={(checked) =>
+                  onSettingChange("communityNotifications", checked)
+                }
+              />
+              <ToggleSetting
+                label="이메일 알림"
+                description="중요한 알림을 이메일로 받기"
+                checked={settings.emailNotifications}
+                onChange={(checked) =>
+                  onSettingChange("emailNotifications", checked)
+                }
+              />
+            </div>
+          </div>
+
+          {/* 개인정보 설정 */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              개인정보 보호
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  프로필 공개 범위
+                </label>
+                <select
+                  value={settings.profileVisibility}
+                  onChange={(e) =>
+                    onSettingChange("profileVisibility", e.target.value)
+                  }
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="public">전체 공개</option>
+                  <option value="friends">친구만</option>
+                  <option value="private">비공개</option>
+                </select>
+              </div>
+
+              <div className="pt-4 border-t">
+                <button className="text-sm text-red-600 hover:text-red-800 font-medium">
+                  계정 삭제
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-    );
+
+        {/* 푸터 */}
+        <div className="flex items-center justify-end space-x-3 p-6 border-t bg-gray-50">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+          >
+            취소
+          </button>
+          <button
+            onClick={onSave}
+            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            저장
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 /**

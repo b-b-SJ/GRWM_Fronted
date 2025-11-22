@@ -1,52 +1,31 @@
-import React, { useState, useEffect } from "react";
-import { useScheduleFilter } from "../../hooks/useScheduleFilter";
-import { Clock, MapPin } from "lucide-react";
+import React, { useState } from "react";
+import { Clock, MapPin, Trash, Loader2 } from "lucide-react";
+import { useCurrentPlanner } from "../../hooks/useCurrentPlanner";
+import { usePlannerContext } from "../../hooks/PlannerContext";
 const ScheduleListSidebar = ({
   className = "",
-  openScModal,
-  setOpenScModal,
-  selectedSc,
-  setSelectedSc,
-  filtering,
+
+  todaySc,
+  onScheduleDeleted, //  삭제 후 콜백
 }) => {
-  const todaySc = filtering.scTodayFiltered;
-  console.log("사이드바용 오늘 스케쥴", todaySc);
-  //null값-> 일정 없는 경우.에 대해서도 코딩 필요함
+  const [deletingId, setDeletingId] = useState(null); // 삭제 중인 일정 ID
+  const {
+    nowPlanner,
+    openScModal,
+    setOpenScModal,
+    selectedSc,
+    setSelectedSc,
+    plannerType,
+  } = usePlannerContext();
+  const { deleteSchedule, loading } = useCurrentPlanner(plannerType);
 
-  //1. 사이드바
-  //2. 월간
-  //3. 주간
-  //4. 일간
-
-  {
-    /**
-     *
-     * {date: '2025-08-06', schedules: Array(1)} 이런 구조의 객체임
-     *
-     * -> array안에는 id, title,시작 시간, 끝나는 시간이 있음
-     * 21일 12시 시작
-     * 지금 시각 -> 21일 9시
-     * 21일 0시 >21일 12시-> 아님
-     * 21일 0시 <=
-     * 시작 시간이랑 저장된 date 비교(날짜 비교)-> 시작날짜보다 현재날짜가 늦으면 바로 2번으로.
-     * 1. 현재 시각과 비교 -> 현재시각<= 배열시각 --> 시작 시간 보여줌
-     * 2. 현재시각 > 배열시각 --> 끝나는 시간 보여줌-> 끝나는 날짜가 현재 date와 불일치 시
-     * 2-1. 오늘 하루 종일
-     * 2-2. 내일 **시까지
-     * 2-3. **일 **시까지.
-     * 이 중에서 골라서 넣자
-     * 근데 2-3은 어차피 먼슬리에 시각화하면 문제 없으니 2-1이나 바로 바로 다음날이면 2-2로 표기해줘도 될듯
-     * 시작 시간을 뒤에서 slice해서 보여줌
-     *
-     */
-  }
-
+  //  시간 라벨 생성 함수
   const getLabelStartEnd = (sc) => {
-    const now = new Date(); //혹시나 재활용할 수 있을까 싶어서 new Date()대신에 new Date(sc.date)를 넣었었는데
-    //기본이 9시로 설정 되어있어서 계속 안되더라
+    if (!sc || !Array.isArray(sc)) return [];
 
-    return sc.schedules.map((schedule) => {
-      //기존에서 label을 추가한 객체 생성
+    const now = new Date();
+
+    return sc.map((schedule) => {
       const sdt = new Date(schedule.startDateTime);
       const edt = new Date(schedule.finishDateTime);
 
@@ -71,44 +50,98 @@ const ScheduleListSidebar = ({
       }
 
       return {
-        ...schedule, // 원래 schedule 정보
-        label, // 추가된 시간 정보
+        ...schedule,
+        label,
       };
     });
   };
 
-  // null여부 확인
-  const todayScheSideTime = todaySc ? getLabelStartEnd(todaySc) : [];
+  //  일정 삭제 핸들러
+  const handleDelete = async (scheduleId) => {
+    if (!window.confirm("이 일정을 삭제하시겠습니까?")) {
+      return;
+    }
+
+    setDeletingId(scheduleId);
+
+    try {
+      console.log(`일정 ${scheduleId} 삭제 시작...`);
+      await deleteSchedule(nowPlanner, scheduleId);
+      console.log("일정 삭제 성공!");
+
+      // ✅ 부모 컴포넌트에 삭제 완료 알림
+      if (onScheduleDeleted) {
+        onScheduleDeleted(scheduleId);
+      }
+    } catch (error) {
+      console.error("일정 삭제 실패:", error);
+      alert("일정 삭제에 실패했습니다");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const todayScheSideTime = getLabelStartEnd(todaySc);
 
   return (
-    //일단은 사이드바전용이라고 생각하고 코드 짜기
-    <div className="rounded-2xl ">
+    <div className="rounded-2xl">
+      {/* 일정 영역 */}
       <div className={`p-3 overflow-y-auto ${className} space-y-3`}>
-        {todayScheSideTime && todayScheSideTime.length > 0 ? (
+        {/*일정 로딩 */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+            <Loader2 className="w-8 h-8 animate-spin mb-2" />
+            <p className="text-sm">일정 불러오는 중...</p>
+          </div>
+        ) : todayScheSideTime && todayScheSideTime.length > 0 ? (
           todayScheSideTime.map((schedule) => (
             <div
-              key={schedule.id}
-              className="p-3 grid-rows-2  bg-rose-300 rounded-xl"
-              onClick={() => {
-                setOpenScModal(true);
-                setSelectedSc(schedule.id);
+              key={schedule.scheduleId}
+              className={`p-3 rounded-xl relative ${
+                deletingId === schedule.scheduleId ? "opacity-50" : ""
+              }`}
+              style={{
+                backgroundColor: schedule.category?.color || "#F3F4F6",
               }}
             >
-              <h3 className="text-md font-medium  mb-2">{schedule.title}</h3>
-              <h3 className="flex text-xs text-gray-900 gap-2">
-                <div className="flex gap-1">
-                  <Clock size={14} />
-                  {schedule.label}
+              <div
+                className="cursor-pointer"
+                onClick={() => {
+                  setOpenScModal(true);
+                  setSelectedSc(schedule.scheduleId);
+                }}
+              >
+                <h3 className="text-md font-medium mb-2">{schedule.title}</h3>
+                <div className="flex text-xs text-gray-900 gap-2">
+                  <div className="flex gap-1 items-center">
+                    <Clock size={14} />
+                    {schedule.label}
+                  </div>
+                  {schedule.location && (
+                    <div className="flex gap-1 items-center">
+                      <MapPin size={14} />
+                      {schedule.location}
+                    </div>
+                  )}
                 </div>
-                <div className="flex gap-1">
-                  <MapPin size={14} />
-                  {schedule.location}
-                </div>
-              </h3>
+              </div>
+
+              {/* ✅ 삭제 버튼 */}
+              <button
+                className="absolute top-2 right-2 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation(); // 부모의 onClick 이벤트 방지
+                  handleDelete(schedule.scheduleId);
+                }}
+                disabled={deletingId === schedule.scheduleId}
+                title="일정 삭제"
+              >
+                <Trash size={16} />
+              </button>
             </div>
           ))
         ) : (
-          <div className="text-center text-gray-400">
+          <div className="text-center text-gray-400 py-8">
             <div>오늘 일정이 없습니다.</div>
           </div>
         )}
@@ -118,9 +151,3 @@ const ScheduleListSidebar = ({
 };
 
 export default ScheduleListSidebar;
-{
-  /**
-  
-   
-    */
-}

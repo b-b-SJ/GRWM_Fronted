@@ -1,32 +1,63 @@
-import React from "react";
-import { useCalendar } from "../../hooks/useCalendar";
-import { useScheduleFilter } from "../../hooks/useScheduleFilter";
+import React, { useMemo } from "react";
 import { Clock, MapPin } from "lucide-react";
+import { usePlannerContext } from "../../hooks/PlannerContext";
 
 const WeeklyPlanner = ({
-  weeks,
-  weekFound,
-  setViewMode,
   onDateClick,
-  openScModal,
-  setOpenScModal,
-  setSelectedSc,
-  selectedSc,
-  scFilter,
+  schedules, // props로 받기
 }) => {
-  // 주간 날짜 배열 확인
+  const {
+    weeks,
+    weekFound,
+    weekNames,
+    openScModal,
+    setOpenScModal,
+    setSelectedSc,
+  } = usePlannerContext();
 
   const thisweeks = weeks[weekFound];
-  const calendar = useCalendar();
 
-  console.log("듀부김밥", scFilter.groupedDate);
-  //시작 시간, 끝나는 시간 필요
-  //
-  const getLabelStartEnd = (groupedArr) => {
-    return groupedArr.map((dayObj) => ({
+  // 날짜별로 그룹화하고 라벨 추가 (useMemo로 최적화)
+  const weekScheTime = useMemo(() => {
+    if (!Array.isArray(schedules) || schedules.length === 0) {
+      return [];
+    }
+
+    // 1. 날짜별로 그룹화
+    const grouped = {};
+
+    schedules.forEach((schedule) => {
+      const startDate = schedule.startDateTime.slice(0, 10);
+      const endDate = schedule.finishDateTime.slice(0, 10);
+
+      for (
+        let date = new Date(startDate);
+        date <= new Date(endDate);
+        date.setDate(date.getDate() + 1)
+      ) {
+        const dateKey = date.toISOString().slice(0, 10);
+
+        if (!grouped[dateKey]) {
+          grouped[dateKey] = [];
+        }
+        grouped[dateKey].push(schedule);
+      }
+    });
+
+    // 2. 배열로 변환하고 정렬
+    const groupedArray = Object.keys(grouped)
+      .sort()
+      .map((date) => ({
+        date,
+        schedules: grouped[date].sort((a, b) =>
+          a.startDateTime.localeCompare(b.startDateTime)
+        ),
+      }));
+
+    // 3. 라벨 추가
+    return groupedArray.map((dayObj) => ({
       ...dayObj,
       schedules: dayObj.schedules.map((schedule) => {
-        // label 만드는 로직 (예시)
         const now = dayObj.date;
         const sdt = schedule.startDateTime;
         const edt = schedule.finishDateTime;
@@ -47,51 +78,46 @@ const WeeklyPlanner = ({
         };
       }),
     }));
-  };
-
-  const weekScheTime = scFilter.groupedDate
-    ? getLabelStartEnd(scFilter.groupedDate)
-    : [];
-  console.log("화깅ㄴ슨", weekScheTime);
+  }, [schedules]);
 
   return (
     <div className="mt-4 mx-8">
-      {/* 전체에 대한 거 - 공백 만들기 */}
-      <div className=" grid-cols-7 grid p-2 ">
-        {calendar.weekNames.map((wn, k) => (
-          <div key={k} className=" text-gray-900 font-semibold text-center">
-            {/* 스타일 필요 -> 요일 이름들 나오는 거 */}
+      <div className="grid-cols-7 grid p-2">
+        {/* 요일 헤더 */}
+        {weekNames.map((wn, k) => (
+          <div key={k} className="text-gray-900 font-semibold text-center mb-2">
             {wn}
           </div>
         ))}
 
+        {/* 날짜별 일정 표시 */}
         {thisweeks.map((day, d) => {
           const dateKey = `${day.getFullYear()}-${String(
-            //자꾸 밀려서 toISOString을 쓸 수가 없음요
             day.getMonth() + 1
-          ).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`; //2023-02-23 형태로 반환
+          ).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
 
-          const dayObj = Array.isArray(weekScheTime) //오류 방지
-            ? weekScheTime.find((d) => d.date === dateKey)
-            : undefined;
+          const dayObj = weekScheTime.find((d) => d.date === dateKey);
           const daySchedules = dayObj ? dayObj.schedules : [];
-          console.log("우우우우ㅜ우웅ㅇ", daySchedules);
+
           return (
             <div
               key={d}
-              onClick={() => onDateClick(day)}
-              className="p-3 border border-gray-200 min-h-[600px]  hover:bg-gray-50 "
+              // onClick={() => onDateClick(day)}
+              className="bg-white p-3 border border-gray-200 min-h-[600px] hover:bg-gray-50"
             >
               <div>{day instanceof Date ? day.getDate() : day}</div>
               <div className="flex flex-col gap-2 mt-2">
                 {daySchedules.map((sc, idx) => (
                   <button
-                    key={idx}
-                    className="text-sm px-2 py-1 bg-rose-100 text-rose-700 rounded truncate text-left"
+                    key={sc.scheduleId || sc.id || idx}
+                    className="text-sm px-2 py-1 rounded truncate text-left"
+                    style={{
+                      backgroundColor: sc.category?.color || "#E5E7EB",
+                    }}
                     onClick={(e) => {
-                      e.stopPropagation(); //데일리로 이동안되게끔
+                      e.stopPropagation();
                       setOpenScModal(true);
-                      setSelectedSc(sc.id);
+                      setSelectedSc(sc.scheduleId || sc.id);
                     }}
                   >
                     {sc.title}
@@ -100,11 +126,13 @@ const WeeklyPlanner = ({
                       <div className="flex gap-1 align-middle">
                         <Clock size={14} />
                         {sc.label}
-                      </div>
-                      <div className="flex gap-1 mt-1">
-                        <MapPin size={14} />
-                        {sc.location}
-                      </div>
+                      </div>{" "}
+                      {sc.location && (
+                        <div className="flex gap-1 mt-1">
+                          <MapPin size={14} />
+                          {sc.location}
+                        </div>
+                      )}
                     </h3>
                   </button>
                 ))}
@@ -112,18 +140,6 @@ const WeeklyPlanner = ({
             </div>
           );
         })}
-        {/*<div>
-        {weeks.map((week, wi) => (
-        <div key={wi} style={{ border: "1px solid red" }}>
-          {week.map((day, di) => (
-            <span key={di} style={{ marginRight: "10px" }}>
-              {day instanceof Date ? day.getDate() : day}
-            </span>
-          ))}
-        </div>
-      ))}
-    </div>*/}
-        <div>{/* 투두 자리 */}</div>
       </div>
     </div>
   );

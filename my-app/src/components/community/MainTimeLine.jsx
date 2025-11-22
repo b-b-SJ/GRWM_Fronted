@@ -1,21 +1,54 @@
-//메인 탐라
-import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
 import { usePost } from "../../hooks/usePost";
+import PostList from "./PostList";
 
 const MainTimeLine = () => {
-  //들어간 유저 프로필 = 본인 프로필이면 편집 권한 제공?
+  const { posts, loading, error, getPostList } = usePost();
+
+  useEffect(() => {
+    const loadTimeLine = async () => {
+      try {
+        await getPostList();
+      } catch (error) {
+        console.error("타임라인 로드 실패:", error);
+      }
+    };
+    loadTimeLine();
+  }, []);
+
+  // 변경 사항 있으면 재렌더
+  const handlePostsChange = async (mode, data) => {
+    console.log(`타임라인 게시물 ${mode}됨:`, data);
+
+    // create나 delete는 목록 새로고침
+    if (mode === "create" || mode === "delete") {
+      await getPostList();
+    }
+    // edit는 PostList가 이미 처리함
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-lg text-gray-500">로딩 중...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-lg text-red-500">에러: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div>
-      <h1 className="bg-blue-400">장래희망: 듀...아리파</h1>
-
-      <Link to="/community/profile">
-        <button>
-          {/* 링크에 profile붙는 식으로 만들어야될듯 */}
-          프로필로 가자긔
-        </button>
-      </Link>
+      <PostList
+        posts={posts?.postList || []}
+        onPostsChange={handlePostsChange} // ✅ 콜백 전달
+      />
     </div>
   );
 };

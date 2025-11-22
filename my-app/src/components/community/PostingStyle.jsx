@@ -1,119 +1,257 @@
-import React from "react";
-import { usePost } from "../../hooks/usePost";
-import { Link } from "react-router-dom";
-import { Heart, MessageSquare, EllipsisVertical } from "lucide-react";
-const PostingStyle = ({ communityId, postId }) => {
-  const posts = usePost();
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import PostingModal from "./PostingModal";
+import ControlPosting from "./ControlPosting";
+import {
+  Heart,
+  MessageSquare,
+  UserRound,
+  EllipsisVertical,
+  Users,
+  Lock,
+} from "lucide-react";
 
-  //지금으로부터 얼마 경과했는지
-  const postWriterData = posts.getUserSimpProfile(communityId);
-  const postContentData = posts.getContent(postId);
+const PostingStyle = ({
+  post,
+  onDelete,
+  isDeleting,
+  onPostChanged,
+  likePost,
+  cancelLike,
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [manageModal, setManageModal] = useState(false);
+  const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
+  const [isLiked, setIsLiked] = useState(false);
 
-  console.log("ㅇ", postContentData, postWriterData);
+  const navigate = useNavigate();
 
-  return (
-    <div className="cursor-pointer ">
-      {/* 작성자 정보 */}
-      <div className="p-5 flex items-center gap-3">
-        <Link
-          to={`/community/profile/${postWriterData.communityId}`}
-          onClick={(e) => e.stopPropagation()} // 상세 페이지 이동 방지
-        >
-          <img
-            src={postWriterData.profileImage}
-            alt={`${postWriterData.nickName}의 프로필 사진`}
-            className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-          />
-        </Link>
-        <img src=""></img>
-        <div className="flex flex-col">
-          <span className="font-semibold text-base">
-            {postWriterData.nickName}
-          </span>
-          <span className=" text-gray-700 text-sm">몇분전인지 표시</span>
-        </div>
-        <button className="flex ml-auto">
-          <EllipsisVertical />
-        </button>
+  if (!post) {
+    return <div className="text-center py-4">게시물 데이터가 없습니다.</div>;
+  }
+
+  if (isDeleting) {
+    return (
+      <div className="bg-white border-b text-center py-4 text-gray-500">
+        삭제 중...
       </div>
+    );
+  }
+  const renderVisibilityIcon = () => {
+    if (post.visibility === "private") {
+      return <Lock size={16} className="text-gray-500" />;
+    } else if (post.visibility === "friends") {
+      return <Users size={16} className="text-gray-500" />;
+    }
+    return null; // public은 아이콘 없음
+  };
+  const handleMenuClick = (e) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
 
-      {/* 컨텐츠 부분 - 텍스트와 이미지를 세로로 배치 */}
-      <div className="px-5 pb-3 gap-y=8">
-        {/* 이미지들 */}
-        {postContentData.content.images &&
-          postContentData.content.images.length > 0 && (
+    setModalPosition({
+      x: rect.right - 10 + window.scrollX,
+      y: rect.bottom + 1 + window.scrollY,
+    });
+
+    setManageModal(!manageModal);
+  };
+
+  // 시간 차이 계산 함수
+  const getTimeAgo = (createdAt) => {
+    if (!createdAt) return "방금 전";
+
+    const now = new Date(); // 현재 시간
+    const postTime = new Date(createdAt); // 게시물 작성 시간
+    const diffInMs = now - postTime; // 밀리초 단위 차이
+
+    // 밀리초 변환
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60)); // 분
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60)); // 시간
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24)); // 일
+
+    // 문자열 반환
+    if (diffInMinutes < 1) {
+      return "방금 전";
+    } else if (diffInMinutes < 60) {
+      return `${diffInMinutes}분 전`;
+    } else if (diffInHours < 24) {
+      return `${diffInHours}시간 전`;
+    } else if (diffInDays < 7) {
+      return `${diffInDays}일 전`;
+    } else {
+      // 7일 이상이면 날짜 형식으로 표시
+      return postTime.toLocaleDateString("ko-KR", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    }
+  };
+  return (
+    <>
+      <div
+        className="border-b bg-white hover:drop-shadow-md transition-colors"
+        onClick={() => {
+          navigate(`/community/post/${post.postId}`);
+        }}
+      >
+        {/* 작성자 정보 */}
+        <div className="p-5 flex items-center gap-3">
+          <Link
+            to={`/community/profile/${post.user.communityId}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {post.user.profileImage ? (
+              <img
+                src={post.user.profileImage}
+                alt={`${post.user.nickname}의 프로필`}
+                className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full border-2 bg-gray-200 flex items-center justify-center">
+                <UserRound className="w-6 h-6 text-gray-400" />
+              </div>
+            )}
+          </Link>
+
+          <Link
+            to={`/community/profile/${post.user.communityId}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-base ">
+                  {post.user.nickname}
+                </span>
+                {post.edited && (
+                  <span className="text-xs text-gray-400">• 수정됨</span>
+                )}
+                {
+                  //공개범위 아이콘
+                  renderVisibilityIcon()
+                }
+              </div>
+              <span className="text-gray-500 text-sm">
+                {getTimeAgo(post.createdAt)}
+              </span>
+            </div>
+          </Link>
+
+          <button
+            onClick={handleMenuClick}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors ml-auto"
+          >
+            <EllipsisVertical size={20} />
+          </button>
+        </div>
+
+        {/* 게시물 내용 */}
+        <div className="px-5 pb-3">
+          {post.content.images && post.content.images.length > 0 && (
             <div
               className={`grid gap-2 ${
-                postContentData.content.images.length === 1
-                  ? "grid-cols-1"
-                  : postContentData.content.images.length === 2
-                  ? "grid-cols-2"
-                  : postContentData.content.images.length === 3
-                  ? "grid-cols-2"
-                  : "grid-cols-2"
+                post.content.images.length === 1 ? "grid-cols-1" : "grid-cols-2"
               }`}
             >
-              {postContentData.content.images.slice(0, 4).map((img, idx) => (
-                <div
-                  key={idx}
-                  className={`relative overflow-hidden rounded-lg ${
-                    postContentData.content.images.length === 3 && idx === 0
-                      ? "col-span-2"
-                      : ""
-                  } ${
-                    postContentData.content.images.length === 1
-                      ? "aspect-[4/3]"
-                      : "aspect-square"
-                  }`}
-                >
-                  <img
-                    src={img}
-                    alt={`post image ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ))}
+              {post.content.images.slice(0, 4).map((img, idx) => {
+                return (
+                  <div
+                    key={idx}
+                    className={`relative overflow-hidden rounded-lg ${
+                      post.content.images.length === 3 && idx === 0
+                        ? "col-span-2"
+                        : ""
+                    } ${
+                      post.content.images.length === 1
+                        ? "aspect-[4/3]"
+                        : "aspect-square"
+                    }`}
+                  >
+                    <img
+                      src={img}
+                      alt={`게시물 이미지 ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                );
+              })}
             </div>
           )}
+          {post.content.text && (
+            <p className="my-3 whitespace-pre-wrap break-words text-gray-800">
+              {post.content.text}
+            </p>
+          )}
+        </div>
 
-        {/* 텍스트 */}
-        {postContentData.content.text && (
-          <p className="my-3 whitespace-pre-wrap break-words">
-            {postContentData.content.text}
-          </p>
+        {post.hashtags && post.hashtags.length > 0 && (
+          <div className="px-5 pb-3 flex flex-wrap gap-2">
+            {post.hashtags.map((tag, idx) => (
+              <span
+                key={idx}
+                className="text-blue-500 hover:underline cursor-pointer text-sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  console.log("해시태그 클릭:", tag);
+                  navigate(`/community/search/${tag}`);
+                }}
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
         )}
+
+        <div className="px-5 pb-4 flex gap-6 text-gray-500 text-sm">
+          <button className="flex items-center gap-2 hover:text-blue-500 transition-colors">
+            <MessageSquare size={18} />
+            <span>댓글 {post.commentCount}</span>
+          </button>
+          <button
+            className="flex items-center gap-2 hover:text-red-500 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              //현재 상태를 기준으로 판단
+              if (isLiked) {
+                cancelLike(post.postId);
+              } else {
+                likePost(post.postId);
+              }
+              // 그 다음 상태 변경
+              setIsLiked(!isLiked);
+            }}
+          >
+            <Heart
+              size={18}
+              fill={isLiked ? "red" : "none"} // 채움 여부
+              stroke={isLiked ? "red" : "currentColor"} // 테두리 색
+              className={isLiked ? "text-red-500" : "text-gray-500"}
+            />
+            <span> {post.likeCount} 좋아요</span>
+          </button>
+        </div>
       </div>
 
-      {/* 해시태그 */}
-      {postContentData.hashtags && postContentData.hashtags.length > 0 && (
-        <div className="px-5 py-5 flex flex-wrap gap-2">
-          {postContentData.hashtags.map((tag, idx) => (
-            <span
-              key={idx}
-              className="text-blue-500 hover:underline"
-              onClick={(e) => {
-                e.stopPropagation();
-                // 해시태그 클릭 이벤트 처리
-              }}
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
+      {manageModal && (
+        <ControlPosting
+          onDelete={onDelete}
+          setIsEditing={setIsEditing}
+          setManageModal={setManageModal}
+          post={post}
+          position={modalPosition}
+        />
       )}
 
-      {/* 좋아요/댓글 카운트 */}
-      <div className="px-5 pb-5 flex gap-6 text-gray-600 flex-row">
-        <span className="flex flex-row gap-2">
-          <Heart />
-          좋아요 {postContentData.likeCount}
-        </span>
-        <span className="flex flex-row gap-2">
-          <MessageSquare />
-          댓글 {postContentData.commentCount}
-        </span>
-      </div>
-    </div>
+      {isEditing && (
+        <PostingModal
+          setOpenPostModal={setIsEditing}
+          mode="edit"
+          existingPost={post}
+          onPostChanged={onPostChanged}
+        />
+      )}
+    </>
   );
 };
 

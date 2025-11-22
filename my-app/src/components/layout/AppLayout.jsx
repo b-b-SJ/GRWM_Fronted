@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
-import Navigation from './Navigation';
-import FixedSidebar from './FixedSidebar';
-import { useChatState } from '../../hooks/useChatState';
+import React, { useState } from "react";
+import { Outlet, useLocation } from "react-router-dom";
+import Navigation from "./Navigation";
+import FixedSidebar from "./FixedSidebar";
+import { useChatState } from "../../hooks/useChatState";
 
 /**
  * AppLayout 컴포넌트
@@ -12,52 +12,80 @@ import { useChatState } from '../../hooks/useChatState';
  */
 
 const AppLayout = () => {
-    // React Router의 현재 위치 정보를 가져옴
-    const location = useLocation();
-    // 커스텀 훅을 통해 현재 사용자 정보를 가져옴
-    const { currentUser } = useChatState();
+  // React Router의 현재 위치 정보를 가져옴
+  const location = useLocation();
+  // 커스텀 훅을 통해 현재 사용자 정보를 가져옴
+  const { currentUser } = useChatState();
 
-    // workspace 페이지의 사이드바 상태 관리
-    // 이후 다른 페이지들의 각각 사이드바 상태 관리 확장... 예정
-    const [workspaceSidebarOpen, setWorkspaceSidebarOpen] = useState(false);
-    // workspace 사이드바 토글 함수
-    const toggleWorkspaceSidebar = () => setWorkspaceSidebarOpen(!workspaceSidebarOpen);
+  // workspace 페이지의 사이드바 상태 관리
+  // 이후 다른 페이지들의 각각 사이드바 상태 관리 확장... 예정
+  const [workspaceSidebarOpen, setWorkspaceSidebarOpen] = useState(false);
+  // workspace 사이드바 토글 함수
+  const toggleWorkspaceSidebar = () =>
+    setWorkspaceSidebarOpen(!workspaceSidebarOpen);
 
-    // 현재 경로에 따른 페이지 결정
-    const getCurrentPage = () => {
-        // URL을 '/'로 분할해서 첫 번째 경로 추출
-        const path = location.pathname.split('/')[1];
-        // 경로가 없으면 'main'을 기본값으로 사용
-        return path || 'main';
-    };
+  //  플래너 사이드바
+  const [plannerSidebarOpen, setPlannerSidebarOpen] = useState(false); // 기본값 true (열림)
+  const togglePlannerSidebar = () => setPlannerSidebarOpen(!plannerSidebarOpen);
+  const [communitySidebarOpen, setCommunitySidebarOpen] = useState(false); // 기본값 true (열림)
+  const toggleCommunitySidebar = () =>
+    setCommunitySidebarOpen(!plannerSidebarOpen);
+  // 현재 경로에 따른 페이지 결정
+  const getCurrentPage = () => {
+    // URL을 '/'로 분할해서 첫 번째 경로 추출
+    const path = location.pathname.split("/")[1];
+    // 경로가 없으면 'main'을 기본값으로 사용
+    return path || "main";
+  };
 
-    // workspace 페이지인지 확인하고 WorkSpace 사이드바 제어 시 사용
-    const isWorkspacePage = location.pathname.startsWith('/workspace');
+  // workspace 페이지인지 확인하고 WorkSpace 사이드바 제어 시 사용
+  const isWorkspacePage = location.pathname.startsWith("/workspace");
 
-    return (
-        <div className="h-screen flex bg-gray-50">
-            {/* 고정 사이드바 */}
-            <FixedSidebar currentUser={currentUser} />
+  //플래너 사이드바 제어
+  const isPlannerPage = location.pathname.startsWith("/planner");
+  const isCommunityPage = location.pathname.startsWith("/community");
+  return (
+    <div className="h-screen flex bg-gray-50">
+      {/* 고정 사이드바 */}
+      <FixedSidebar currentUser={currentUser} />
 
-            {/* 메인 콘텐츠 영역 */}
-            <div className="flex-1 flex flex-col">
-                <Navigation
-                    toggleSidebar={isWorkspacePage ? toggleWorkspaceSidebar : null}
-                    currentUser={currentUser}
-                    currentPage={getCurrentPage()}
-                />
+      {/* 메인 콘텐츠 영역 */}
+      <div className="flex-1 flex flex-col">
+        <Navigation
+          toggleSidebar={
+            isWorkspacePage
+              ? toggleWorkspaceSidebar
+              : isPlannerPage
+              ? togglePlannerSidebar
+              : isCommunityPage
+              ? toggleCommunitySidebar
+              : null
+          }
+          currentUser={currentUser}
+          currentPage={getCurrentPage()}
+        />
 
-                {/* 페이지 콘텐츠 - React Router Outlet */}
-                <div className="flex-1 flex">
-                    <Outlet context={{
-                        workspaceSidebarOpen,
-                        setWorkspaceSidebarOpen,
-                        toggleWorkspaceSidebar
-                    }} />
-                </div>
-            </div>
+        {/* 페이지 콘텐츠 - React Router Outlet */}
+        <div className="flex-1 flex">
+          <Outlet
+            context={{
+              workspaceSidebarOpen,
+              setWorkspaceSidebarOpen,
+              toggleWorkspaceSidebar,
+              // 플래너 사이드바 상태 전달
+              plannerSidebarOpen,
+              setPlannerSidebarOpen,
+              togglePlannerSidebar,
+              //커뮤니티
+              communitySidebarOpen,
+              setCommunitySidebarOpen,
+              toggleCommunitySidebar,
+            }}
+          />
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
 export default AppLayout;

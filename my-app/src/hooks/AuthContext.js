@@ -14,9 +14,12 @@ export const AuthProvider = ({ children }) => {
 
     // 모든 저장소 정리
     const clearAllStorage = useCallback(() => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('userData');
-        localStorage.removeItem('currentStudyRoomId');
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("userData");
+        localStorage.removeItem("currentStudyRoomId");
+        localStorage.removeItem("planner_last_shared_id");
+        localStorage.removeItem("planner_last_personal_id");
+        localStorage.removeItem("lastPlannerType");
         setIsAuthenticated(false);
         setUser(null);
         setCurrentStudyRoomId(null);
@@ -141,7 +144,7 @@ export const AuthProvider = ({ children }) => {
                     username: username,
                     loginId: loginId,
                     communityNickname: communityNickname,
-                    communityId: userId
+                    communityId: userId,
                 };
 
                 localStorage.setItem('accessToken', accessToken);

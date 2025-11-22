@@ -4,33 +4,42 @@ import { useNavigate, Link } from "react-router-dom";
 import MainTimeLine from "../../community/MainTimeLine";
 import HashtagTimeLine from "../../community/HashtagTimeLine";
 import PostingStyle from "../../community/PostingStyle";
+
 const TimeLinePage = () => {
   const [timeLine, setTimeLine] = useState("main");
+
   return (
     <div>
-      <h1 className="bg-fuchsia-300 text-3xl p-4">
-        길길이 날뛰며 엉엉슨 울며 얘기했다, 여기라고, 여기가 타임라인
-        페이지라고- 헤더
-      </h1>
-      <nav className="flex gap-7 p-4 bg-fuchsia-400 w-fit">
+      <nav className="mt-5 grid grid-cols-2 bg-white border-b-2 border-gray-100">
         <button
-          className={`px-4 py-2 rounded-xl
-    ${timeLine === "main" ? "bg-blue-400 text-white" : "bg-white"}`}
+          className={`px-4 py-3 text-lg font-medium transition-all relative
+            ${
+              timeLine === "main"
+                ? "text-violet-400"
+                : "text-gray-400 hover:text-gray-700"
+            }`}
           onClick={() => setTimeLine("main")}
         >
           메인
+          {timeLine === "main" && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-violet-400 rounded-t-full" />
+          )}
         </button>
         <button
-          className={`px-4 py-2 rounded-xl
-    ${timeLine === "hash" ? "bg-blue-400 text-white" : "bg-white"}`}
+          className={`px-4 py-3 text-lg font-medium transition-all relative
+            ${
+              timeLine === "hash"
+                ? "text-violet-400"
+                : "text-gray-400 hover:text-gray-700"
+            }`}
           onClick={() => setTimeLine("hash")}
         >
           해시태그
+          {timeLine === "hash" && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-violet-400 rounded-t-full" />
+          )}
         </button>
       </nav>
-      <PostingStyle communityId={"youyousangjong"} postId={"12"} />
-      <PostingStyle communityId={"youyousangjong"} postId={"120"} />
-      <PostingStyle communityId={"gyudong"} postId={"21"} />
 
       {timeLine === "main" ? <MainTimeLine /> : <HashtagTimeLine />}
     </div>

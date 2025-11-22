@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import { Square, Check, EllipsisVertical, Plus } from "lucide-react";
 
 const TodoList = ({ className = "" }) => {
-  const [todos, setTodos] = useState([
+  {
+    /**
+    [
     {
       id: 1,
       title: "이거 구현을 끝내기..",
@@ -66,7 +68,10 @@ const TodoList = ({ className = "" }) => {
       category: "공부",
       priority: "mid",
     },
-  ]);
+  ]
+     */
+  }
+  const [todos, setTodos] = useState([]);
   const [todoActionMenuOpen, setTodoActionMenuOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const toggleTodo = (id) => {
@@ -118,10 +123,6 @@ const TodoList = ({ className = "" }) => {
           ))}
         </ul>
       </div>
-      <button className="text-sm font-normal justify-end">
-        <Plus size={16} className="inline mr-1" />
-        할일 추가하기
-      </button>
       <div>{/* AddTodo 팝업 열어야됨 */}</div>
     </div>
   );

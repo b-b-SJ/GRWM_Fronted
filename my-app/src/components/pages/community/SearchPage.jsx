@@ -1,0 +1,487 @@
+import React, { useState, useEffect } from "react";
+import { useCommunitySearch } from "../../../hooks/useCommunitySearch";
+import { Search, UserRound, X, Plus, Check } from "lucide-react";
+import PostList from "../../community/PostList";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useHashtag } from "../../../hooks/useHashtag";
+import { useAuth } from "../../../hooks/AuthContext";
+
+const SearchPage = () => {
+  const { keyword: urlKeyword } = useParams();
+  const [keyword, setKeyword] = useState("");
+  const [searchParams] = useSearchParams(); // 쿼리 파라미터 읽기용 (/search?keyword=동물의숲)
+  const queryKeyword = searchParams.get("keyword"); //  ?keyword=값 가져오기
+
+  const [searchType, setSearchType] = useState("post");
+  const [isUser, setIsUser] = useState(false);
+
+  const { user } = useAuth();
+
+  const {
+    getHashtagIdByKeyword,
+    subscribeHashtag,
+    unsubscribeHashtag,
+    getSubscribedHashtags,
+    hashtagList,
+    loading: hashtagLoading,
+  } = useHashtag();
+
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [currentHashtagId, setCurrentHashtagId] = useState(null);
+
+  const [postResults, setPostResults] = useState([]);
+  const [hashtagResults, setHashtagResults] = useState([]);
+  const [userResults, setUserResults] = useState([]);
+  const [postPage, setPostPage] = useState(0);
+  const [hashtagPage, setHashtagPage] = useState(0);
+  const [userPage, setUserPage] = useState(0);
+  const [postHasMore, setPostHasMore] = useState(false);
+  const [hashtagHasMore, setHashtagHasMore] = useState(false);
+  const [userHasMore, setUserHasMore] = useState(false);
+
+  const navigate = useNavigate();
+  const { searchHashtag, searchPost, searchUser, searched, loading, error } =
+    useCommunitySearch();
+
+  const currentResults = isUser
+    ? userResults
+    : searchType === "post"
+    ? postResults
+    : hashtagResults;
+
+  const currentHasMore = isUser
+    ? userHasMore
+    : searchType === "post"
+    ? postHasMore
+    : hashtagHasMore;
+
+  // 구독 목록 먼저 가져오기
+  useEffect(() => {
+    if (user && user.userId) {
+      getSubscribedHashtags();
+    }
+  }, [user]);
+
+  // 쿼리 파라미터 감지 - 일반 검색용
+  useEffect(() => {
+    if (queryKeyword) {
+      console.log(" 쿼리 파라미터로 일반 검색:", queryKeyword);
+
+      setKeyword(queryKeyword);
+      setSearchType("post"); // 게시글 검색으로 설정
+      setIsUser(false);
+      setPostResults([]);
+      setPostPage(0);
+
+      //  자동으로 게시글 검색 실행
+      executeSearch(queryKeyword, "post");
+    }
+  }, [queryKeyword]);
+
+  // URL 파라미터 감지 - 해시태그 검색용
+  useEffect(() => {
+    if (urlKeyword) {
+      console.log("🔄 URL 파라미터로 해시태그 검색:", urlKeyword);
+
+      setKeyword(urlKeyword);
+      setSearchType("hashtag");
+      setIsUser(false);
+      setCurrentHashtagId(null);
+      setIsSubscribed(false);
+      setHashtagResults([]);
+      setHashtagPage(0);
+
+      executeSearch(urlKeyword, "hashtag");
+    } else if (!queryKeyword) {
+      setSearchType("post");
+      setKeyword("");
+    }
+  }, [urlKeyword]);
+
+  useEffect(() => {
+    const checkSubscription = () => {
+      if (
+        !hashtagList ||
+        hashtagLoading ||
+        !keyword ||
+        searchType !== "hashtag"
+      )
+        return;
+
+      const isCurrentlySubscribed = hashtagList.some((hashtag) => {
+        const clean = hashtag.startsWith("#") ? hashtag.slice(1) : hashtag;
+        return clean === keyword || hashtag === `#${keyword}`;
+      });
+
+      console.log(" 구독 체크:", {
+        keyword,
+        isCurrentlySubscribed,
+        hashtagList,
+      });
+      setIsSubscribed(isCurrentlySubscribed);
+    };
+
+    checkSubscription();
+  }, [keyword, hashtagList, hashtagLoading, searchType]);
+
+  const executeSearch = async (
+    searchKeyword,
+    type = searchType,
+    hasMore = false
+  ) => {
+    if (!searchKeyword.trim()) {
+      alert("검색어를 입력해주세요!");
+      return;
+    }
+
+    let result;
+    let pageToLoad;
+
+    if (isUser) {
+      pageToLoad = hasMore ? userPage : 0;
+      result = await searchUser(searchKeyword, pageToLoad, 30);
+
+      if (result) {
+        if (hasMore) {
+          setUserResults((prev) => [...prev, ...(result.users || [])]);
+        } else {
+          setUserResults(result.users || []);
+          setUserPage(0);
+        }
+        setUserHasMore(result.hasMore);
+        setUserPage(pageToLoad + 1);
+      }
+    } else if (type === "post") {
+      pageToLoad = hasMore ? postPage : 0;
+      result = await searchPost(searchKeyword, pageToLoad, 30);
+
+      if (result) {
+        if (hasMore) {
+          setPostResults((prev) => [...prev, ...(result.postList || [])]);
+        } else {
+          setPostResults(result.postList || []);
+          setPostPage(0);
+        }
+        setPostHasMore(result.hasMore);
+        setPostPage(pageToLoad + 1);
+      }
+    } else if (type === "hashtag") {
+      pageToLoad = hasMore ? hashtagPage : 0;
+      result = await searchHashtag(searchKeyword, pageToLoad, 30);
+
+      if (result) {
+        if (hasMore) {
+          setHashtagResults((prev) => [...prev, ...(result.postList || [])]);
+        } else {
+          setHashtagResults(result.postList || []);
+          setHashtagPage(0);
+        }
+        setHashtagHasMore(result.hasMore);
+        setHashtagPage(pageToLoad + 1);
+      }
+    }
+  };
+
+  const handleSearch = async (hasMore = false) => {
+    // 일반 검색일 때 URL 업데이트
+    if (searchType === "post" && keyword && !hasMore) {
+      navigate(`/community/search?keyword=${encodeURIComponent(keyword)}`, {
+        replace: true,
+      });
+    }
+
+    // 해시태그 검색일 때 URL 업데이트
+    if (searchType === "hashtag" && keyword && !hasMore) {
+      navigate(`/community/search/${keyword}`, { replace: true });
+    }
+
+    executeSearch(keyword, searchType, hasMore);
+  };
+
+  //  구독/구독취소 처리
+  const handleSubscribe = async () => {
+    if (!user || !user.userId) {
+      alert("로그인이 필요합니다");
+      return;
+    }
+
+    if (!keyword.trim()) {
+      alert("검색어를 입력해주세요");
+      return;
+    }
+
+    try {
+      let tagId = currentHashtagId;
+
+      if (!tagId) {
+        console.log(" 해시태그 ID 조회 중...");
+        tagId = await getHashtagIdByKeyword(keyword);
+
+        if (!tagId) {
+          alert("해시태그 정보를 찾을 수 없습니다");
+          return;
+        }
+
+        setCurrentHashtagId(tagId);
+      }
+
+      if (isSubscribed) {
+        // 구독 취소
+        await unsubscribeHashtag(tagId);
+
+        //  성공 여부 상관없이 일단 상태 변경 & 목록 갱신
+        setIsSubscribed(false);
+        await getSubscribedHashtags();
+        window.dispatchEvent(new Event("hashtagSubscriptionChanged"));
+
+        alert("구독이 취소되었습니다");
+      } else {
+        //  구독
+        console.log("구독 요청:", { userId: user.userId, tagId });
+        const success = await subscribeHashtag(user.userId, tagId);
+
+        // 목록 갱신
+        setIsSubscribed(true);
+        await getSubscribedHashtags();
+        window.dispatchEvent(new Event("hashtagSubscriptionChanged"));
+
+        if (success) {
+          alert(`#${keyword} 해시태그를 구독했습니다!`);
+        } else {
+          alert("구독 요청을 보냈습니다 (에러 발생)");
+        }
+      }
+    } catch (error) {
+      console.error("구독 처리 실패:", error);
+      alert("구독 처리에 실패했습니다");
+    }
+  };
+
+  const handleLoadMore = () => {
+    handleSearch(true);
+  };
+
+  const handleClear = () => {
+    setKeyword("");
+    setPostResults([]);
+    setHashtagResults([]);
+    setUserResults([]);
+    setPostPage(0);
+    setHashtagPage(0);
+    setUserPage(0);
+    setPostHasMore(false);
+    setHashtagHasMore(false);
+    setUserHasMore(false);
+    setIsSubscribed(false);
+    setCurrentHashtagId(null);
+    navigate("/community/search", { replace: true });
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto p-6 bg-white">
+      {/* 검색 헤더 */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-2">검색</h1>
+        <p className="text-gray-600">게시글, 유저, 해시태그를 검색하세요</p>
+      </div>
+
+      {/* 검색창 */}
+      <div className="mb-4">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setIsUser(!isUser)}
+            className={`flex gap-2 px-3 py-2 rounded-lg items-center transition-colors ${
+              isUser
+                ? "bg-violet-100 border-2 border-violet-400"
+                : "bg-gray-100 border-2 border-gray-300"
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={isUser}
+              onChange={(e) => setIsUser(e.target.checked)}
+              onClick={(e) => e.stopPropagation()}
+            />
+            <UserRound
+              size={24}
+              className={isUser ? "text-violet-500" : "text-gray-600"}
+            />
+          </button>
+
+          <div className="relative flex-1 group">
+            <input
+              type="text"
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch(false)}
+              placeholder={
+                searchType === "hashtag"
+                  ? "#없이 입력하세요 (예: 일상)"
+                  : "검색어를 입력하세요"
+              }
+              className="w-full px-5 py-3 pr-10 border border-gray-300 rounded-3xl focus:outline-none focus:ring-2 focus:ring-violet-400"
+            />
+            {keyword && (
+              <button
+                onClick={handleClear}
+                className="absolute right-12 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            )}
+            <button
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-violet-500 transition-colors"
+              onClick={() => handleSearch(false)}
+              disabled={loading}
+            >
+              <Search size={20} />
+            </button>
+          </div>
+
+          {/* 해시태그 검색일 때만 구독 버튼 */}
+          {searchType === "hashtag" && !isUser ? (
+            <button
+              onClick={handleSubscribe}
+              disabled={loading || hashtagLoading}
+              className={`px-6 py-3 rounded-lg flex items-center gap-2 transition-colors font-medium ${
+                isSubscribed
+                  ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  : "bg-violet-500 text-white hover:bg-violet-600"
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {isSubscribed ? (
+                <>
+                  <Check size={20} />
+                  구독중
+                </>
+              ) : (
+                <>
+                  <Plus size={20} />
+                  구독
+                </>
+              )}
+            </button>
+          ) : (
+            <div className="w-24"></div>
+          )}
+        </div>
+      </div>
+
+      {/* 검색 타입 선택 탭 */}
+      {!isUser && (
+        <div className="flex gap-2 mb-6 border-b">
+          <button
+            onClick={() => setSearchType("post")}
+            className={`px-4 py-2 transition-colors ${
+              searchType === "post"
+                ? "border-b-2 border-violet-500 font-semibold text-violet-600"
+                : "text-gray-600 hover:text-gray-800"
+            }`}
+          >
+            게시글
+          </button>
+          <button
+            onClick={() => setSearchType("hashtag")}
+            className={`px-4 py-2 transition-colors ${
+              searchType === "hashtag"
+                ? "border-b-2 border-violet-500 font-semibold text-violet-600"
+                : "text-gray-600 hover:text-gray-800"
+            }`}
+          >
+            해시태그
+          </button>
+        </div>
+      )}
+
+      {/* 검색 결과 */}
+      {currentResults.length > 0 && (
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-bold">
+              검색 결과
+              {searched?.totalCount && (
+                <span className="text-gray-500 font-normal ml-2">
+                  ({searched.totalCount}개)
+                </span>
+              )}
+            </h2>
+          </div>
+
+          {!isUser && (searchType === "post" || searchType === "hashtag") && (
+            <PostList posts={currentResults} />
+          )}
+
+          {isUser && (
+            <div className="space-y-3">
+              {currentResults.map((user) => (
+                <div
+                  key={user.communityId}
+                  className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer flex items-center gap-4"
+                  onClick={() =>
+                    navigate(`/community/profile/${user.communityId}`)
+                  }
+                >
+                  {user.profileImage ? (
+                    <img
+                      src={user.profileImage}
+                      alt={user.nickname}
+                      className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full border-2 bg-gray-200 flex items-center justify-center">
+                      <UserRound className="w-6 h-6 text-gray-400" />
+                    </div>
+                  )}
+
+                  <div className="flex-1">
+                    <p className="font-bold text-lg">{user.nickname}</p>
+                    {user.description && (
+                      <p className="text-sm text-gray-500 mt-1">
+                        {user.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {currentHasMore && (
+            <button
+              onClick={handleLoadMore}
+              disabled={loading}
+              className="w-full mt-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:bg-gray-50 font-medium transition-colors"
+            >
+              {loading ? "로딩 중..." : "더보기"}
+            </button>
+          )}
+        </div>
+      )}
+
+      {currentResults.length === 0 && !loading && keyword && searched && (
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Search size={32} className="text-gray-400" />
+          </div>
+          <p className="text-gray-500 text-lg">검색 결과가 없습니다.</p>
+          <p className="text-gray-400 text-sm mt-2">
+            다른 검색어를 입력해보세요.
+          </p>
+        </div>
+      )}
+
+      {currentResults.length === 0 && !keyword && !loading && (
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Search size={32} className="text-violet-500" />
+          </div>
+          <p className="text-gray-600 text-lg">
+            검색어를 입력하고 검색해보세요!
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default SearchPage;
