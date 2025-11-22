@@ -9,30 +9,6 @@ const ControlPosting = ({
   position,
   setManageModal,
 }) => {
-  {
-    /**
-    
-    const modalRef = useRef(null);
-
-  // 바깥 클릭 시 닫기
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (modalRef.current && !modalRef.current.contains(event.target)) {
-        setManageModal(false);
-      }
-    };
-
-    setTimeout(() => {
-      document.addEventListener("mousedown", handleClickOutside);
-    }, 0);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [setManageModal]);
-
-    */
-  }
   const { user } = useAuth();
   const handleEdit = () => {
     setIsEditing(true);
@@ -47,7 +23,6 @@ const ControlPosting = ({
   if (user.userId === post.user.communityId) {
     return createPortal(
       <div
-        //ref={modalRef}
         className="absolute bg-white border rounded-lg shadow-lg z-[9999]"
         style={{
           top: `${position.y}px`,
@@ -69,7 +44,6 @@ const ControlPosting = ({
   } else {
     return createPortal(
       <div
-        //ref={modalRef}
         className="absolute bg-white border rounded-lg shadow-lg z-[9999]"
         style={{
           top: `${position.y}px`,

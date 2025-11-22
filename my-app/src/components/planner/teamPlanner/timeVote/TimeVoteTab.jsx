@@ -1,4 +1,3 @@
-// TimeVoteTab.jsx
 import React, { useState, useEffect } from "react";
 import { useTeamPlanner } from "../../../../hooks/TeamPlannerProvider";
 import { Clock, Plus, ChevronRight } from "lucide-react";
@@ -47,7 +46,6 @@ const TimeVoteTab = ({ plannerId }) => {
     setLoading(true);
     try {
       const detail = await fetchTimeVoteDetail(plannerId, voteId);
-      console.log("디테일을 줄게", detail);
       setCurrentVote(detail);
     } catch (error) {
       console.error("투표 상세 로드 실패:", error);
@@ -71,80 +69,59 @@ const TimeVoteTab = ({ plannerId }) => {
 
   // 투표 제출
   const handleSubmitVote = async (selectedSlots) => {
-    console.log("=== 투표 제출 시작 ===");
-    console.log("currentVote:", currentVote);
-    console.log("selectedSlots:", selectedSlots);
-
     if (!currentVote?.id) {
       alert("투표 정보를 찾을 수 없습니다.");
       return;
     }
 
     try {
-      // 1. 투표 제출
+      //  투표 제출
       await submitTimeVote(plannerId, currentVote.id, selectedSlots);
-      console.log("✅ 투표 제출 완료");
 
-      // 2. 타임테이블 다시 가져오기 (중요!)
       const updatedDetail = await fetchTimeVoteDetail(
         plannerId,
         currentVote.id
       );
-      console.log("✅ 업데이트된 투표 정보:", updatedDetail);
-      console.log("matrix 데이터:", updatedDetail?.matrix);
 
-      // 3. currentVote 업데이트
+      // currentVote 업데이트
       if (updatedDetail) {
         setCurrentVote(updatedDetail);
-        console.log("✅ currentVote 업데이트 완료");
       }
 
-      // 4. 결과 보기 모드로 전환
       setMode("view");
 
       alert("투표가 제출되었습니다!");
     } catch (error) {
-      console.error("❌ 투표 제출 실패:", error);
+      console.error(" 투표 제출 실패:", error);
       alert("투표 제출에 실패했습니다.");
     }
   };
 
   // 재투표
   const handleUpdateVote = async (selectedSlots) => {
-    console.log("=== 재투표 시작 ===");
-    console.log("currentVote:", currentVote);
-    console.log("selectedSlots:", selectedSlots);
-
     if (!currentVote?.id) {
       alert("투표 정보를 찾을 수 없습니다.");
       return;
     }
 
     try {
-      // 1. 재투표 제출
+      //  재투표 제출
       await updateTimeVote(plannerId, currentVote.id, selectedSlots);
-      console.log("✅ 재투표 완료");
 
-      // 2. 타임테이블 다시 가져오기
       const updatedDetail = await fetchTimeVoteDetail(
         plannerId,
         currentVote.id
       );
-      console.log("✅ 업데이트된 투표 정보:", updatedDetail);
-      console.log("matrix 데이터:", updatedDetail?.matrix);
 
-      // 3. currentVote 업데이트
       if (updatedDetail) {
         setCurrentVote(updatedDetail);
-        console.log("✅ currentVote 업데이트 완료");
       }
 
-      // 4. 결과 보기 모드로 전환
       setMode("view");
 
       alert("투표가 수정되었습니다!");
     } catch (error) {
-      console.error("❌ 재투표 실패:", error);
+      console.error("재투표 실패:", error);
       alert("재투표에 실패했습니다.");
     }
   };

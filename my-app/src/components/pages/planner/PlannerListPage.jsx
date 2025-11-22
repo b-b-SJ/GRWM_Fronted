@@ -1,4 +1,3 @@
-// src/components/planner/PlannerListPage.jsx
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useCurrentPlanner } from "../../../hooks/useCurrentPlanner";
@@ -26,8 +25,6 @@ const PlannerListPage = () => {
 
   // 공유 플래너 목록 불러오기
   useEffect(() => {
-    console.log(`플래너 목록 로딩 시작 (type: ${type})`);
-    console.log("뭐 저장?", localStorage);
     fetchPlanners();
   }, [type, fetchPlanners]);
 

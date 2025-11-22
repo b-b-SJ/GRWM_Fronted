@@ -31,13 +31,11 @@ const PlannerHeaderWM = () => {
     plannerType,
     selectedCategory,
     setSelectedCategory,
-    selectedMember,
-    setSelectedMember,
     memberFilteredSchedules,
-    searchedSchedules, // ✅ 추가
-    setSearchedSchedules, // ✅ 추가
-    searchKeyword, // ✅ 추가
-    setSearchKeyword, // ✅ 추가
+    searchedSchedules,
+    setSearchedSchedules,
+    searchKeyword,
+    setSearchKeyword,
   } = usePlannerContext();
 
   const {
@@ -55,7 +53,7 @@ const PlannerHeaderWM = () => {
   const nowPlanner = Number(plannerId);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
-  const [isSearching, setIsSearching] = useState(false); // ✅ 추가
+  const [isSearching, setIsSearching] = useState(false);
 
   const navigate = useNavigate();
 
@@ -70,8 +68,6 @@ const PlannerHeaderWM = () => {
   useEffect(() => {
     const loadData = async () => {
       if (!nowPlanner) return;
-
-      console.log("now뭐야", nowPlanner, viewMode);
 
       try {
         if (viewMode === "monthly") {
@@ -99,13 +95,11 @@ const PlannerHeaderWM = () => {
     return planners.find((planner) => planner.plannerId === nowPlanner);
   };
 
-  // ✅ 검색 → 멤버 필터 → 카테고리 필터 순차 적용
+  //  검색 → 멤버 필터 → 카테고리 필터 순차 적용
   const getFilteredSchedules = () => {
-    // 1. 검색 결과가 있으면 우선 사용
     let baseSchedules =
       searchedSchedules || memberFilteredSchedules || schedules;
 
-    // 2. 카테고리 필터 추가 적용
     if (selectedCategory) {
       return baseSchedules?.filter(
         (schedule) => schedule.category?.categoryId === selectedCategory
@@ -144,7 +138,7 @@ const PlannerHeaderWM = () => {
 
   const selectedCategoryInfo = getSelectedCategoryInfo();
 
-  // ✅ 검색 기능 구현
+  //  검색 기능 구현
   const handleSearch = async () => {
     if (!searchKeyword.trim()) {
       alert("검색어를 입력하세요");
@@ -153,11 +147,7 @@ const PlannerHeaderWM = () => {
 
     setIsSearching(true);
     try {
-      console.log("🔍 검색 시작:", searchKeyword);
-
       const results = await searchSchedulesByKeyword(nowPlanner, searchKeyword);
-
-      console.log("✅ 검색 결과:", results);
 
       setSearchedSchedules(results);
     } catch (error) {
@@ -172,17 +162,6 @@ const PlannerHeaderWM = () => {
     if (e.key === "Enter") {
       handleSearch();
     }
-  };
-
-  // ✅ 멤버 필터 초기화
-  const handleClearMemberFilter = () => {
-    setSelectedMember(null);
-  };
-
-  // ✅ 검색 초기화
-  const handleClearSearch = () => {
-    setSearchKeyword("");
-    setSearchedSchedules(null);
   };
 
   return (

@@ -95,8 +95,6 @@ const CommentSection = ({ postId, postAuthorId }) => {
     return <div className="p-6 text-red-500">에러: {error}</div>;
   }
 
-  console.log(" 렌더링 - localComments 길이:", localComments.length);
-
   return (
     <div className="p-6 border-t bg-white">
       {/* 댓글 작성 */}

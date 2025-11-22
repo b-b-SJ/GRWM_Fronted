@@ -1,12 +1,9 @@
-// TimeVoteCreate.jsx
 import React, { useState } from "react";
 import { X, Calendar, Users, Clock } from "lucide-react";
 import { useTeamPlanner } from "../../../../hooks/TeamPlannerProvider";
 import { getTimeSlots } from "./timeVoteUtils";
 
-/**
- * 새로운 시간 투표를 생성하는 컴포넌트
- */
+//새로운 시간 투표를 생성하는 컴포넌트
 const TimeVoteCreate = ({ onSubmit, onCancel }) => {
   const { members } = useTeamPlanner();
 
@@ -117,10 +114,6 @@ const TimeVoteCreate = ({ onSubmit, onCancel }) => {
       endHour: formatToLocalTime(formData.endHour), // "18:00:00"
     };
 
-    // 디버깅 (테스트 후 삭제 가능)
-    console.log("=== 전송 데이터 ===");
-    console.log(JSON.stringify(requestData, null, 2));
-
     onSubmit(requestData);
   };
 
@@ -155,7 +148,7 @@ const TimeVoteCreate = ({ onSubmit, onCancel }) => {
 
         {/* 시간 범위 설정 */}
         <div>
-          <label className="block font-semibold mb-2 flex items-center gap-2">
+          <label className="block font-semibold mb-2  items-center gap-2">
             <Clock className="w-5 h-5" />
             투표 시간 범위
           </label>
@@ -203,7 +196,7 @@ const TimeVoteCreate = ({ onSubmit, onCancel }) => {
 
         {/* 날짜 선택 */}
         <div>
-          <label className="block font-semibold mb-2 flex items-center gap-2">
+          <label className="block font-semibold mb-2  items-center gap-2">
             <Calendar className="w-5 h-5" />
             투표 날짜 선택 (최대 5일) <span className="text-red-500">*</span>
           </label>
@@ -252,7 +245,7 @@ const TimeVoteCreate = ({ onSubmit, onCancel }) => {
 
         {/* 참여 멤버 선택 */}
         <div>
-          <label className="block font-semibold mb-2 flex items-center gap-2">
+          <label className="block font-semibold mb-2  items-center gap-2">
             <Users className="w-5 h-5" />
             참여 멤버 선택<span className="text-red-500">*</span>
           </label>

@@ -45,8 +45,6 @@ const ProfileEditModal = ({ isOpen, onClose, currentProfile, onSave }) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    console.log("배너 이미지 업로드 시작:", file.name);
-
     try {
       const uploadedUrl = await getImageUrl(file);
 
@@ -72,8 +70,6 @@ const ProfileEditModal = ({ isOpen, onClose, currentProfile, onSave }) => {
   const handleProfileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    console.log("프로필 이미지 업로드 시작:", file.name);
 
     try {
       const uploadedUrl = await getImageUrl(file);

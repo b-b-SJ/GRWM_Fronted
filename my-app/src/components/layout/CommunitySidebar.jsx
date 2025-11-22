@@ -1,4 +1,3 @@
-//사이드바
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, X, Hash } from "lucide-react";
@@ -19,10 +18,9 @@ const CommunitySidebar = ({ sidebarOpen }) => {
     }
   }, [user]);
 
-  //  커스텀 이벤트 리스너
+  // 커스텀 이벤트 리스너
   useEffect(() => {
     const handleSubscriptionChange = () => {
-      console.log("🔔 구독 변경 감지! 사이드바 업데이트 중...");
       if (user && user.userId) {
         getSubscribedHashtags();
       }

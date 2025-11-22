@@ -58,14 +58,12 @@ const PlannerSidebar = ({ sidebarOpen }) => {
   }, [plannerId, plannerType]);
 
   const handleScheduleCreated = async () => {
-    console.log("일정 생성 성공! 새로고침");
     if (!nowPlanner) return;
     await fetchTodaySchedules(nowPlanner, year, month + 1, today.getDate());
     await fetchMonthlySchedules(nowPlanner, year, month + 1);
   };
 
   const handleScheduleDeleted = async () => {
-    console.log("일정 삭제 성공! 새로고침");
     if (!nowPlanner) return;
     await fetchTodaySchedules(nowPlanner, year, month + 1, today.getDate());
   };

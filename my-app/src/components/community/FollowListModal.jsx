@@ -28,8 +28,6 @@ const FollowListModal = ({
         result = await getFollowingList(targetId);
       }
 
-      console.log("가져온 목록:", result);
-
       if (result) {
         setUserList(result.users);
         setCount(result.count);

@@ -103,14 +103,7 @@ const PostList = ({ posts, onPostsChange }) => {
       </div>
     );
   }
-  {
-    /**
-    
-              <p className="text-sm text-gray-500">
-            새로운 사람을 팔로우하거나 글을 작성해보세요!
-          </p>
-    */
-  }
+
   return (
     <div>
       {localPosts.map((post) => (

@@ -54,20 +54,16 @@ const CreatePlannerModal = ({ isOpen, onClose, onSuccess }) => {
     try {
       if (isShared) {
         // 공유 플래너 -생성 + 멤버 추가
-        console.log("1단계: 공유 플래너 생성 중...");
-        const plannerId = await createPlanner(formData);
 
-        console.log("2단계: 생성자를 관리자로 추가 중...");
+        const plannerId = await createPlanner(formData);
         await addMember(plannerId, user.userId, "manager");
-        console.log("✅ 공유 플래너 생성 완료!");
 
         alert("플래너가 생성되었습니다!");
         onSuccess(plannerId);
       } else {
         // 개인 플래너 -생성만
-        console.log("개인 플래너 생성 중...");
+
         const plannerId = await createPlanner(formData);
-        console.log("✅ 개인 플래너 생성 완료!");
 
         alert("플래너가 생성되었습니다!");
         onSuccess(plannerId);
