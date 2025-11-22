@@ -1,25 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { UserRound } from "lucide-react";
 import { useAuth } from "./AuthContext";
-// 목업 데이터
 
-const initialProfile = {
-  user: {
-    communityId: 0,
-    nickname: "유유상종수",
-    profileImage:
-      "https://i.ibb.co/FbWvz1bB/2025030118134100-02-CB906-EA538-A35643-C1-E1484-C4-B947-D.jpg",
-  },
-  description:
-    "안냥하세여, 저는 글라햄이구 동물의 숲 주민이에여..저는 느끼주민인데여...디게디게 기여우여ㅎㅎ",
-  bannerImage:
-    "https://static0.srcdn.com/wordpress/wp-content/uploads/2022/08/Every-Animal-Crossing-Villager-With-An-In-Game-Family.jpg",
-  postCount: 1,
-  followerCount: 0,
-  followingCount: 0,
-  achievedBadgeCount: 0,
-  pinnedPostId: null,
-};
+//api 주소 상대 경로
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "";
 
 export function useProfile() {
   const { user, getAuthHeaders, isAuthenticated } = useAuth();
@@ -41,13 +25,16 @@ export function useProfile() {
       setError(null);
 
       try {
-        const response = await fetch(`/api/users/${communityId}/profile`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...headers,
-          },
-        });
+        const response = await fetch(
+          `${API_BASE_URL}/api/users/${communityId}/profile`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              ...headers,
+            },
+          }
+        );
 
         if (response.ok) {
           const profileInfo = await response.json();
@@ -100,7 +87,7 @@ export function useProfile() {
         const headers = getAuthHeaders();
         console.log("헤더:", headers);
 
-        const response = await fetch(`/api/users/profile`, {
+        const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
           method: "PUT",
           headers: getAuthHeaders(),
           body: JSON.stringify(requestData),
@@ -140,7 +127,7 @@ export function useProfile() {
 
       try {
         const response = await fetch(
-          `http://localhost:8080/api/users/${targetId}/follow`,
+          `${API_BASE_URL}/api/users/${targetId}/follow`,
           {
             method: "POST",
             headers: {
@@ -182,7 +169,7 @@ export function useProfile() {
 
       try {
         const response = await fetch(
-          `http://localhost:8080/api/users/${targetId}/follow`,
+          `${API_BASE_URL}/api/users/${targetId}/follow`,
           {
             method: "DELETE",
             headers: {
@@ -216,13 +203,16 @@ export function useProfile() {
       setError(null);
       setLoadingProfile(true);
       try {
-        const response = await fetch(`/api/users/${targetId}/followers`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...getAuthHeaders(),
-          },
-        });
+        const response = await fetch(
+          `${API_BASE_URL}/api/users/${targetId}/followers`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              ...getAuthHeaders(),
+            },
+          }
+        );
         if (response.ok) {
           const data = await response.json();
           console.log("팔로워리스트 가져오기 성공", data);
@@ -244,13 +234,16 @@ export function useProfile() {
       setError(null);
       setLoadingProfile(true);
       try {
-        const response = await fetch(`/api/users/${targetId}/following`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...getAuthHeaders(),
-          },
-        });
+        const response = await fetch(
+          `${API_BASE_URL}/api/users/${targetId}/following`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              ...getAuthHeaders(),
+            },
+          }
+        );
         if (response.ok) {
           const data = await response.json();
           console.log("팔로잉리스트 가져오기 성공", data);
@@ -271,7 +264,7 @@ export function useProfile() {
     setError(null);
     try {
       const response = await fetch(
-        `http://localhost:8080/api/users/blocks/${targetId}`,
+        `${API_BASE_URL}/api/users/blocks/${targetId}`,
         {
           method: "POST",
           headers: {
@@ -309,7 +302,7 @@ export function useProfile() {
 
       try {
         const response = await fetch(
-          `http://localhost:8080/api/users/blocks/${targetId}`,
+          `${API_BASE_URL}/api/users/blocks/${targetId}`,
           {
             method: "DELETE",
             headers: {

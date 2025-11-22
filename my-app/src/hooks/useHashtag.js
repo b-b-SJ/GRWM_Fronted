@@ -9,6 +9,9 @@ export function useHashtag() {
   const [hashtagList, setHashtagList] = useState([]);
   const [hashtagPosts, setHashtagPosts] = useState(null); //hasMore도 같이 옴
 
+  //api 주소 상대 경로
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "";
+
   // ✅ keyword로 해시태그 ID 조회
   const getHashtagIdByKeyword = useCallback(
     async (keyword) => {
@@ -17,9 +20,7 @@ export function useHashtag() {
 
       try {
         const response = await fetch(
-          `http://localhost:8080/api/hashtag?keyword=${encodeURIComponent(
-            keyword
-          )}`,
+          `${API_BASE_URL}/api/hashtag?keyword=${encodeURIComponent(keyword)}`,
           {
             method: "GET",
             headers: {
@@ -57,7 +58,7 @@ export function useHashtag() {
 
       try {
         const response = await fetch(
-          `http://localhost:8080/api/users/${userId}/subscribed-hashtags/${tagId}`,
+          `${API_BASE_URL}/api/users/${userId}/subscribed-hashtags/${tagId}`,
           {
             method: "POST",
             headers: {
@@ -94,7 +95,7 @@ export function useHashtag() {
 
       try {
         const response = await fetch(
-          `http://localhost:8080/api/users/subscribed-hashtags/${tagId}`,
+          `${API_BASE_URL}/api/users/subscribed-hashtags/${tagId}`,
           {
             method: "DELETE",
             headers: {
@@ -126,7 +127,7 @@ export function useHashtag() {
     setError(null);
     try {
       const response = await fetch(
-        `http://localhost:8080/api/users/subscribed-hashtags/posts`,
+        `${API_BASE_URL}/api/users/subscribed-hashtags/posts`,
         {
           method: "GET",
           headers: {
@@ -157,7 +158,7 @@ export function useHashtag() {
     setError(null);
     try {
       const response = await fetch(
-        `http://localhost:8080/api/users/subscribed-hashtags`,
+        `${API_BASE_URL}/api/users/subscribed-hashtags`,
         {
           method: "GET",
           headers: {

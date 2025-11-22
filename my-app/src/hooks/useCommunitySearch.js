@@ -5,28 +5,17 @@ export function useCommunitySearch() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(null);
   const { getAuthHeaders } = useAuth();
-  {
-    /**
-searchHashtag 
-requestParam keyword(#없이 보내주세요) 
-Response: {List<Post> posts, boolean hasMore} 
 
-searchUser 
-requestParam keyword 
-Response: {List<User> users, int totalCount, boolean hasMore} 
+  //api 주소 상대 경로
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "";
 
-searchPost 
-requestParam keyword 
-Response: {List<Post> posts, int totalCount, boolean hasMore}
-     */
-  }
   const searchHashtag = useCallback(
     async (keyword, page = 0, size = 30) => {
       setLoading(true);
       setError(null);
       try {
         const response = await fetch(
-          `http://localhost:8080/api/search/hashtags?keyword=${encodeURIComponent(
+          `${API_BASE_URL}/api/search/hashtags?keyword=${encodeURIComponent(
             keyword
           )}&page=${page}&size=${size}`,
           {
@@ -64,7 +53,7 @@ Response: {List<Post> posts, int totalCount, boolean hasMore}
       setError(null);
       try {
         const response = await fetch(
-          `/api/search/users?keyword=${encodeURIComponent(
+          `${API_BASE_URL}/api/search/users?keyword=${encodeURIComponent(
             keyword
           )}&page=${page}&size=${size}`,
           {
@@ -102,7 +91,7 @@ Response: {List<Post> posts, int totalCount, boolean hasMore}
       setError(null);
       try {
         const response = await fetch(
-          `/api/search/posts?keyword=${encodeURIComponent(
+          `${API_BASE_URL}/api/search/posts?keyword=${encodeURIComponent(
             keyword
           )}&page=${page}&size=${size}`,
           {
