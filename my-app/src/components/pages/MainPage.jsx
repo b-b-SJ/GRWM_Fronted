@@ -12,7 +12,7 @@ const MainPage = () => {
     const { user } = useAuth();
 
     const quickActions = [
-        { icon: Calendar, label: '플래너', path: '/planner', color: 'from-blue-400 to-cyan-400', description: '일정과 할 일을 관리하세요' },
+        { icon: Calendar, label: '플래너', path: '/planner/list/personal', color: 'from-blue-400 to-cyan-400', description: '일정과 할 일을 관리하세요' },
         { icon: BarChart3, label: '트래커', path: '/tracker?mode=todo', color: 'from-emerald-400 to-teal-400', description: '하루를 기록하세요' },
         { icon: Users, label: '협업공간', path: '/workspace', color: 'from-violet-400 to-purple-400', description: '다른 사용자와 함께 작업하세요' },
         { icon: MessageSquare, label: '커뮤니티', path: '/community', color: 'from-pink-400 to-rose-400', description: '다른 사용자와 소통하세요' }
