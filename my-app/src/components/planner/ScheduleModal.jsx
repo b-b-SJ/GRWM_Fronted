@@ -1,4 +1,3 @@
-// src/components/planner/ScheduleModal.jsx
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { usePlannerContext } from "../../hooks/PlannerContext";
@@ -26,7 +25,6 @@ const ScheduleModal = () => {
     selectedSc,
     setSelectedSc,
     plannerType,
-    currentDate,
   } = usePlannerContext();
 
   const { plannerId } = useParams();
@@ -56,17 +54,10 @@ const ScheduleModal = () => {
       setError(null);
 
       try {
-        console.log("✅ 일정 상세 로딩:", {
-          plannerId: nowPlanner,
-          scheduleId: selectedSc,
-          plannerType,
-        });
-
         //  일정 상세 조회
         const detail = await fetchScheduleDetail(nowPlanner, selectedSc);
 
         if (detail) {
-          console.log(" 일정 상세 로드 성공:", detail);
           setScheduleDetail(detail);
         } else {
           throw new Error("일정을 찾을 수 없습니다.");
@@ -95,16 +86,9 @@ const ScheduleModal = () => {
 
     setParticipantLoading(true);
     try {
-      console.log(" 일정 참여 시도:", {
-        plannerId: nowPlanner,
-        scheduleId: selectedSc,
-      });
-
       const updatedMembers = await addScheduleMember(nowPlanner, selectedSc);
 
       if (updatedMembers) {
-        console.log("참여 성공! 업데이트된 멤버:", updatedMembers);
-
         // 일정 상세 다시 불러오기
         const detail = await fetchScheduleDetail(nowPlanner, selectedSc);
         setScheduleDetail(detail);
@@ -125,14 +109,7 @@ const ScheduleModal = () => {
 
     setParticipantLoading(true);
     try {
-      console.log(" 일정 나가기 시도:", {
-        plannerId: nowPlanner,
-        scheduleId: selectedSc,
-      });
-
       await removeScheduleMember(nowPlanner, selectedSc);
-
-      console.log("나가기 성공!");
 
       // 일정 상세 다시 불러오기
       const detail = await fetchScheduleDetail(nowPlanner, selectedSc);
@@ -164,9 +141,7 @@ const ScheduleModal = () => {
   };
 
   const handleScheduleUpdated = async () => {
-    console.log("✅ 일정 수정 성공!");
-
-    // ✅ 일정 다시 불러오기
+    //  일정 다시 불러오기
     if (selectedSc && nowPlanner) {
       const detail = await fetchScheduleDetail(nowPlanner, selectedSc);
       setScheduleDetail(detail);
@@ -235,7 +210,7 @@ const ScheduleModal = () => {
       </div>
     );
   }
-  console.log("카테고리 디테일", scheduleDetail);
+
   // ==================== Render ====================
   return (
     <>

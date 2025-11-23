@@ -20,10 +20,7 @@ const DetailedPostPage = () => {
       setError(null);
 
       try {
-        console.log("가져올 postId:", postId);
         const data = await showPostDetail(postId);
-
-        console.log("받은 데이터:", data);
 
         if (data) {
           setPost(data);

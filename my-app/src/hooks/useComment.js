@@ -6,6 +6,10 @@ export function useComment() {
   const { getAuthHeaders } = useAuth();
   const [commentsCount, setCommentsCount] = useState(null);
   const [comments, setComments] = useState([]);
+
+  //api 주소 상대 경로
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "";
+
   //댓글 생성
   const createComment = useCallback(
     async (postId, commentData) => {
@@ -15,7 +19,7 @@ export function useComment() {
       console.log("JSON:", JSON.stringify(commentData)); // 실제 전송 데이터
       try {
         const response = await fetch(
-          `/api/community-posts/${postId}/comments`,
+          `${API_BASE_URL}/api/community-posts/${postId}/comments`,
           {
             method: "POST",
             headers: {
@@ -58,7 +62,7 @@ export function useComment() {
 
     try {
       const response = await fetch(
-        `/api/community-posts/${postId}/comments/${commentId}`,
+        `${API_BASE_URL}/api/community-posts/${postId}/comments/${commentId}`,
         {
           method: "DELETE",
           headers: {
@@ -90,7 +94,7 @@ export function useComment() {
 
     try {
       const response = await fetch(
-        `/api/community-posts/${postId}/comments/${commentId}`,
+        `${API_BASE_URL}/api/community-posts/${postId}/comments/${commentId}`,
         {
           method: "PUT",
           headers: {
@@ -126,7 +130,7 @@ export function useComment() {
       setError(null);
 
       try {
-        const url = `/api/community-posts/${postId}/comments`;
+        const url = `${API_BASE_URL}/api/community-posts/${postId}/comments`;
 
         const response = await fetch(url, {
           method: "GET",
@@ -172,7 +176,7 @@ export function useComment() {
       setError(null);
 
       try {
-        const url = `/api/community-posts/${postId}/comments/comment-count`;
+        const url = `${API_BASE_URL}/api/community-posts/${postId}/comments/comment-count`;
 
         const response = await fetch(url, {
           method: "GET",

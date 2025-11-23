@@ -27,8 +27,8 @@ const Navigation = ({ toggleSidebar }) => {
       label: "플래너",
       path: "/planner",
       subMenus: [
-        { label: "개인 플래너", path: "/planner/list/personal" },
-        { label: "공유 플래너", path: "/planner/list/shared" },
+        { label: "개인 플래너", path: "/planner/personal" },
+        { label: "공유 플래너", path: "/planner/shared" },
       ],
     },
     {

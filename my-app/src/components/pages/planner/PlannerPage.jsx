@@ -76,12 +76,6 @@ const DefaultPlannerRedirect = () => {
     const lastSharedId = localStorage.getItem("planner_last_shared_id");
     const lastPersonalId = localStorage.getItem("planner_last_personal_id");
 
-    console.log(" DefaultRedirect 체크:", {
-      lastType,
-      lastSharedId,
-      lastPersonalId,
-    });
-
     if (lastType === "shared" && lastSharedId) {
       navigate(`/planner/shared/${lastSharedId}`, { replace: true });
     } else if (lastType === "personal" && lastPersonalId) {
@@ -109,8 +103,6 @@ const PersonalPlannerRedirect = () => {
   useEffect(() => {
     const lastPersonalId = localStorage.getItem("planner_last_personal_id");
 
-    console.log(" PersonalRedirect:", lastPersonalId);
-
     if (lastPersonalId) {
       navigate(`/planner/personal/${lastPersonalId}`, { replace: true });
     } else {
@@ -130,8 +122,6 @@ const SharedPlannerRedirect = () => {
 
   useEffect(() => {
     const lastSharedId = localStorage.getItem("planner_last_shared_id");
-
-    console.log(" SharedRedirect:", lastSharedId);
 
     if (lastSharedId) {
       navigate(`/planner/shared/${lastSharedId}`, { replace: true });

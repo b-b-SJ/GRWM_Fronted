@@ -40,7 +40,7 @@ const TimeVoteGrid = ({
     return 0;
   };
 
-  // ✅ 현재 사용자가 참여 멤버인지 확인
+  //  현재 사용자가 참여 멤버인지 확인
   const isMember = vote.members?.some(
     (member) => member.userId === user?.userId
   );
@@ -109,15 +109,9 @@ const TimeVoteGrid = ({
 
     const availableDateTimes = convertSlotsToDto(selectedSlots);
 
-    console.log("=== 투표 제출 데이터 ===");
-    console.log("selectedSlots:", selectedSlots);
-    console.log("변환 결과:", JSON.stringify(availableDateTimes, null, 2));
-
     if (mode === "vote" && !isEdited) {
-      console.log("첫 투표 드가자");
       onSubmitVote(availableDateTimes);
     } else if (mode === "vote" && isEdited) {
-      console.log("투표 수정을 드가자");
       onUpdateVote(availableDateTimes);
     }
   };

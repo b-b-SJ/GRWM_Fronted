@@ -6,6 +6,9 @@ export function useImgConverter() {
   const [isUploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
 
+  //api 주소 상대 경로
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "";
+
   // 이미지 1개 업로드
   const getImageUrl = useCallback(
     async (imageFile) => {
@@ -20,13 +23,16 @@ export function useImgConverter() {
           // Content-Type 제외
         };
 
-        const response = await fetch(`/api/profile/upload-image`, {
-          method: "POST",
-          mode: "cors",
-          credentials: "include",
-          headers: headersForFormData, //수정된 헤더 사용
-          body: formData,
-        });
+        const response = await fetch(
+          `${API_BASE_URL}/api/profile/upload-image`,
+          {
+            method: "POST",
+            mode: "cors",
+            credentials: "include",
+            headers: headersForFormData, //수정된 헤더 사용
+            body: formData,
+          }
+        );
 
         if (response.ok) {
           const imageUrl = await response.text();

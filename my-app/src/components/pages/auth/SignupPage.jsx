@@ -90,7 +90,7 @@ const SignupPage = ({
                                         name="loginId"
                                         value={formData.loginId}
                                         onChange={handleInputChange}
-                                        placeholder="영문 5자 이상"
+                                        placeholder="영문, 숫자 5자 이상"
                                         className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                         disabled={isLoading}
                                     />
@@ -104,10 +104,10 @@ const SignupPage = ({
                                 </button>
                             </div>
                             {/* ID 형식 검증 */}
-                            {formData.loginId && !/^[a-zA-Z]{5,}$/.test(formData.loginId) && (
+                            {formData.loginId && !/^[a-zA-Z0-9]{5,}$/.test(formData.loginId) && ( // <-- 여기 변경
                                 <div className="mt-2 flex items-center space-x-2 text-sm text-red-600">
                                     <X size={16} />
-                                    <span>영문 5자 이상 입력해주세요.</span>
+                                    <span>영문, 숫자 5자 이상 입력해주세요.</span>
                                 </div>
                             )}
 
@@ -118,7 +118,7 @@ const SignupPage = ({
                                         loginIdAvailable ? 'text-green-600' : 'text-red-600'
                                     }`}
                                 >
-                                    {loginIdAvailable ? <Check size={16} /> : <X size={16} />}
+                                    {loginIdAvailable ? <Check size={16}/> : <X size={16}/>}
                                     <span>
                     {loginIdAvailable
                         ? '사용 가능한 ID입니다.'

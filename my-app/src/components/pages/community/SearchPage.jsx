@@ -65,8 +65,6 @@ const SearchPage = () => {
   // 쿼리 파라미터 감지 - 일반 검색용
   useEffect(() => {
     if (queryKeyword) {
-      console.log(" 쿼리 파라미터로 일반 검색:", queryKeyword);
-
       setKeyword(queryKeyword);
       setSearchType("post"); // 게시글 검색으로 설정
       setIsUser(false);
@@ -81,8 +79,6 @@ const SearchPage = () => {
   // URL 파라미터 감지 - 해시태그 검색용
   useEffect(() => {
     if (urlKeyword) {
-      console.log("🔄 URL 파라미터로 해시태그 검색:", urlKeyword);
-
       setKeyword(urlKeyword);
       setSearchType("hashtag");
       setIsUser(false);
@@ -113,11 +109,6 @@ const SearchPage = () => {
         return clean === keyword || hashtag === `#${keyword}`;
       });
 
-      console.log(" 구독 체크:", {
-        keyword,
-        isCurrentlySubscribed,
-        hashtagList,
-      });
       setIsSubscribed(isCurrentlySubscribed);
     };
 
@@ -214,7 +205,6 @@ const SearchPage = () => {
       let tagId = currentHashtagId;
 
       if (!tagId) {
-        console.log(" 해시태그 ID 조회 중...");
         tagId = await getHashtagIdByKeyword(keyword);
 
         if (!tagId) {

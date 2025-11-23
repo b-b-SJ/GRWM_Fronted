@@ -2,11 +2,12 @@ import React, { useState } from "react";
 import { Trash2, Edit2, Lock, UserRound } from "lucide-react";
 import { useAuth } from "../../hooks/AuthContext";
 import { useNavigate } from "react-router-dom";
+
 const CommentItem = ({ comment, postId, onUpdate, onDelete, postAuthorId }) => {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
-  const [editIsPrivate, setEditIsPrivate] = useState(comment.private); //private
+  const [editIsPrivate, setEditIsPrivate] = useState(comment.private);
   const navigate = useNavigate();
 
   // 본인 댓글인지 확인
@@ -32,7 +33,6 @@ const CommentItem = ({ comment, postId, onUpdate, onDelete, postAuthorId }) => {
       return;
     }
 
-    console.log("나 비밀?", editIsPrivate);
     await onUpdate(comment.commentId, editContent, editIsPrivate);
     setIsEditing(false);
   };

@@ -8,6 +8,9 @@ export function usePost() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  //api 주소 상대 경로
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "";
+
   //기본 타임라인에 뜰 게시글 부르는 거
   const getPostList = useCallback(
     async (page = 0, size = 30) => {
@@ -16,7 +19,7 @@ export function usePost() {
 
       try {
         const response = await fetch(
-          `http://localhost:8080/api/community-posts?page=${page}&size=${size}`,
+          `${API_BASE_URL}/api/community-posts?page=${page}&size=${size}`,
           {
             method: "GET",
             headers: {
@@ -48,17 +51,14 @@ export function usePost() {
   const createPost = useCallback(
     async (postData) => {
       try {
-        const response = await fetch(
-          `http://localhost:8080/api/community-posts`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              ...getAuthHeaders(),
-            },
-            body: JSON.stringify(postData),
-          }
-        );
+        const response = await fetch(`${API_BASE_URL}/api/community-posts`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeaders(),
+          },
+          body: JSON.stringify(postData),
+        });
         if (response.ok) {
           const newPost = await response.json();
 
@@ -85,13 +85,16 @@ export function usePost() {
       setError(null);
 
       try {
-        const response = await fetch(`/api/community-posts/${postId}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...getAuthHeaders(),
-          },
-        });
+        const response = await fetch(
+          `${API_BASE_URL}/api/community-posts/${postId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              ...getAuthHeaders(),
+            },
+          }
+        );
 
         if (response.ok) {
           const data = await response.json();
@@ -122,7 +125,7 @@ export function usePost() {
 
       try {
         const response = await fetch(
-          `http://localhost:8080/api/community-posts/user/${communityId}?page=${page}&size=${size}`,
+          `${API_BASE_URL}/api/community-posts/user/${communityId}?page=${page}&size=${size}`,
           {
             method: "GET",
             headers: {
@@ -155,7 +158,7 @@ export function usePost() {
 
       try {
         const response = await fetch(
-          `http://localhost:8080/api/community-posts/${postId}`,
+          `${API_BASE_URL}/api/community-posts/${postId}`,
           {
             method: "PUT",
             headers: {
@@ -195,7 +198,7 @@ export function usePost() {
 
       try {
         const response = await fetch(
-          `http://localhost:8080/api/community-posts/${postId}`,
+          `${API_BASE_URL}/api/community-posts/${postId}`,
           {
             method: "DELETE",
             headers: {
@@ -231,7 +234,7 @@ export function usePost() {
 
       try {
         const response = await fetch(
-          `http://localhost:8080/api/community-posts/${postId}/like`,
+          `${API_BASE_URL}/api/community-posts/${postId}/like`,
           {
             method: "POST",
             headers: {
@@ -266,7 +269,7 @@ export function usePost() {
 
       try {
         const response = await fetch(
-          `http://localhost:8080/api/community-posts/${postId}/like`,
+          `${API_BASE_URL}/api/community-posts/${postId}/like`,
           {
             method: "DELETE",
             headers: {
@@ -300,7 +303,7 @@ export function usePost() {
       setError(null);
       try {
         const response = await fetch(
-          `http://localhost:8080/api/community-posts/${postId}/likes`,
+          `${API_BASE_URL}/api/community-posts/${postId}/likes`,
           {
             method: "GET",
             headers: {

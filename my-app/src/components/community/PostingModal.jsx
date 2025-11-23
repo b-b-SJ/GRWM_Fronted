@@ -102,10 +102,7 @@ const PostingModal = ({
       const previews = files.map((file) => URL.createObjectURL(file));
       setPreviewImages([...previewImages, ...previews]);
 
-      console.log("서버에 업로드 시작...");
       const uploadedUrls = await getMultipleImageUrls(files);
-
-      console.log("업로드된 URL:", uploadedUrls);
 
       if (uploadedUrls && uploadedUrls.length > 0) {
         setImagesUrl([...imagesUrl, ...uploadedUrls]);

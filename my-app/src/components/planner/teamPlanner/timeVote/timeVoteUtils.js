@@ -1,5 +1,3 @@
-// timeVoteUtils.js
-
 /**
  * 특정 시간 범위의 슬롯만 생성 (30분 단위)
  * @param {number} startHour - 시작 시간 (기본: 0)

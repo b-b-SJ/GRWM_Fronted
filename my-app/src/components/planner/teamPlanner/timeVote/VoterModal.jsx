@@ -1,4 +1,3 @@
-// VoterModal.jsx
 import React from "react";
 import { X, Users } from "lucide-react";
 

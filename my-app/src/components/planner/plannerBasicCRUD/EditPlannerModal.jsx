@@ -1,4 +1,3 @@
-// src/components/planner/groupPlanner/EditPlannerModal.jsx
 import React, { useState, useEffect } from "react";
 import { X, Users, Upload, Images, Trash2 } from "lucide-react";
 import { useCurrentPlanner } from "../../../hooks/useCurrentPlanner";
@@ -8,7 +7,7 @@ const EditPlannerModal = ({ isOpen, onClose, planner, onSuccess }) => {
   const { type } = useParams();
   const { updatePlanner, deletePlanner, loading } = useCurrentPlanner(type);
   const { getImageUrl, isUploading } = useImgConverter();
-  console.log("plannerId 확인", planner, type);
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",

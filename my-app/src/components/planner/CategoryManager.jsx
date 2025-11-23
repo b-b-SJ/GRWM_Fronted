@@ -1,4 +1,3 @@
-// src/components/planner/CategoryManager.jsx
 import React, { useState, useEffect } from "react";
 import { X, Plus, Edit2, Trash2, Check } from "lucide-react";
 import { usePlannerContext } from "../../hooks/PlannerContext";

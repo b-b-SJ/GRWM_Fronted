@@ -1,4 +1,3 @@
-// src/components/planner/schedule/ScheduleFormModal.jsx
 import React, { useState, useEffect } from "react";
 import { X, Calendar, Clock, MapPin, FileText, Users } from "lucide-react";
 import { useCurrentPlanner } from "../../hooks/useCurrentPlanner";
@@ -9,9 +8,8 @@ const ScheduleFormModal = ({
   isOpen,
   onClose,
   mode = "create", // 'create' | 'edit'
-  //plannerId,
   scheduleId = null, // edit 모드일 때 필요
-  initialData = null, // edit 모드일 때 필요
+  initialData = null, // edit 모드일 때
   selectedDate = null, // 날짜 클릭해서 열었을 때 자동 입력
   onSuccess = null, // 성공 후 콜백
 }) => {
@@ -93,9 +91,6 @@ const ScheduleFormModal = ({
     return `${year}-${month}-${day}`;
   };
 
-  /**
-   * 입력값 변경 핸들러
-   */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -113,7 +108,6 @@ const ScheduleFormModal = ({
   };
 
   // 유효성 검사
-
   const validate = () => {
     const newErrors = {};
 
@@ -145,9 +139,7 @@ const ScheduleFormModal = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  /**
-   * 폼 제출 핸들러 (생성 또는 수정)
-   */
+  // 폼 제출 (생성 또는 수정)
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -172,7 +164,6 @@ const ScheduleFormModal = ({
           editorRange: formData.editorRange,
         };
 
-        console.log("일정 생성 요청:", scheduleData);
         const scheduleId = await createSchedule(nowPlanner, scheduleData);
 
         if (scheduleId) {
@@ -205,7 +196,6 @@ const ScheduleFormModal = ({
           editorRange: formData.editorRange,
         };
 
-        console.log("일정 수정 요청:", updateData);
         const updatedSchedule = await updateSchedule(
           nowPlanner,
           scheduleId,
@@ -250,9 +240,7 @@ const ScheduleFormModal = ({
     setErrors({});
   };
 
-  /**
-   * 모달 닫기 (초기화 포함)
-   */
+  //모달 닫기
   const handleClose = () => {
     resetForm();
     onClose();
@@ -267,7 +255,7 @@ const ScheduleFormModal = ({
         className="bg-white rounded-lg w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()} // 모달 내부 클릭 시 닫히지 않게
       >
-        {/* ==================== 헤더 ==================== */}
+        {/*  헤더  */}
         <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between">
           <h2 className="text-xl font-bold">
             {mode === "create" ? "새 일정 만들기" : "일정 수정하기"}
@@ -280,7 +268,7 @@ const ScheduleFormModal = ({
           </button>
         </div>
 
-        {/* ==================== 폼 본문 ==================== */}
+        {/*  폼 본문  */}
         <form onSubmit={handleSubmit}>
           <div className="p-6 space-y-4">
             {/* 제목 입력 */}
@@ -437,7 +425,7 @@ const ScheduleFormModal = ({
             */}
           </div>
 
-          {/* ==================== 하단 버튼 ==================== */}
+          {/* 하단 버튼 */}
           <div className="sticky bottom-0 bg-white border-t p-4 flex gap-3 justify-end">
             <button
               type="button"

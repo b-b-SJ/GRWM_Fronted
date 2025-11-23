@@ -1,4 +1,3 @@
-// src/components/pages/planner/PlannerMain.jsx
 import React, { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { usePlannerContext } from "../../../hooks/PlannerContext";
@@ -22,7 +21,6 @@ const PlannerMain = ({ sidebarOpen }) => {
     if (!plannerId) return;
 
     const plannerIdNum = Number(plannerId);
-    console.log(`🔄 [${plannerType}] URL → Context 동기화:`, plannerIdNum);
 
     setNowPlanner(plannerIdNum); //  이게 빠졌었음!
   }, [plannerId, plannerType, setNowPlanner]);
@@ -33,14 +31,12 @@ const PlannerMain = ({ sidebarOpen }) => {
       if (!plannerId) return;
 
       const plannerIdNum = Number(plannerId);
-      console.log(`📋 [${plannerType}] 플래너 로딩:`, plannerIdNum);
 
       await fetchPlanners();
 
       const planner = planners.find((p) => p.plannerId === plannerIdNum);
 
       if (planner) {
-        console.log(`✅ [${plannerType}] 플래너 찾음:`, planner.title);
         setCurrentPlanner(planner);
       }
     };

@@ -52,7 +52,6 @@ const TeamManagementTab = ({ plannerId }) => {
     setApplyLoading(true);
     try {
       const result = await searchSchedulesByUser(plannerId, selectedMember);
-      console.log("멤버별 일정 원본 데이터:", result);
 
       // 합치다
       const { createdSchedules = [], joinedSchedules = [] } = result;
@@ -68,7 +67,6 @@ const TeamManagementTab = ({ plannerId }) => {
         })),
       ].sort((a, b) => new Date(a.startDateTime) - new Date(b.startDateTime));
 
-      console.log("합쳐진 일정:", combinedSchedules);
       setMemberFilteredSchedules(combinedSchedules);
     } catch (err) {
       console.error("멤버별 일정 검색 실패:", err);

@@ -193,7 +193,6 @@ const PostingStyle = ({
                 className="text-blue-500 hover:underline cursor-pointer text-sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log("해시태그 클릭:", tag);
                   navigate(`/community/search/${tag}`);
                 }}
               >

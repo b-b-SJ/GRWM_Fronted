@@ -64,7 +64,6 @@ const MemberCard = ({
     }
   };
 
-  // ✅ 카드 클릭 핸들러
   const handleCardClick = () => {
     if (showRadio && onSelect) {
       onSelect();
@@ -81,7 +80,7 @@ const MemberCard = ({
       } ${isSelected ? "bg-blue-50 border-blue-400" : ""}`}
     >
       <div className="flex items-start gap-3">
-        {/* ✅ 라디오 버튼을 프로필 이미지 왼쪽으로 이동 */}
+        {/*  라디오 버튼을 프로필 이미지 왼쪽으로 이동 */}
         {showRadio && (
           <input
             type="radio"

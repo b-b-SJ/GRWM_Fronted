@@ -1,4 +1,3 @@
-//구독중인 해시태그 탐라
 import React, { useState, useEffect } from "react";
 import PostList from "./PostList";
 import { useHashtag } from "../../hooks/useHashtag";
@@ -20,15 +19,13 @@ const HashtagTimeLine = () => {
     loadHashtagPosts();
   }, []);
 
-  // ✅ 게시물 변경 핸들러
+  // 게시물 변경 핸들러
   const handlePostsChange = async (mode, data) => {
     console.log(`해시태그 타임라인 게시물 ${mode}됨:`, data);
 
-    // create나 delete는 목록 새로고침
     if (mode === "create" || mode === "delete") {
       await getSubscribedHashtagPosts();
     }
-    // edit는 PostList가 이미 처리
   };
 
   // 로딩 상태
