@@ -337,7 +337,7 @@ const DiaryView = ({ showHeader = false}) => {
 
     // emotion 값을 이모지로 변환
     const getEmojiFromEmotion = (emotion) => {
-        const found = emotionOptions.find(opt => opt.value === emotion?.toLowerCase());
+        const found = emotionOptions.find(opt => opt.value === emotion);
         return found ? found.emoji : '😊';
     };
 

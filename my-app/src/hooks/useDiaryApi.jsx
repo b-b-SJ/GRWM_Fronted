@@ -27,7 +27,7 @@ export const useDiaryApi = () => {
 
             // API_BASE_URL 적용
             const url = `${API_BASE_URL}/api/users/${user.userId}/diaries/default?${queryParams.toString()}`;
-            console.log('API_LOG: [GET] 전체 일기 목록 (default) 조회 요청 URL:', url);
+            console.log('API_LOG: [GET] 전체 일기 목록 조회 요청 URL:', url);
 
             const response = await fetch(url, {
                 method: 'GET',
@@ -216,7 +216,7 @@ export const useDiaryApi = () => {
                         title,
                         content,
                         tags: tags || [],
-                        emotion: emotion === 'default' ? 'Default' : (emotion || 'default').toLowerCase()
+                        emotion: emotion === 'Default' ? 'Default' : (emotion || 'default').toLowerCase()
                     })
                 }
             );
