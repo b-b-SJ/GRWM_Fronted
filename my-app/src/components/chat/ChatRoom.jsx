@@ -3,24 +3,31 @@ import { MoreVertical, Users, ArrowLeft, Edit, Trash2, MessageSquare, LogOut, Re
 import { useChatState } from '../../hooks/useChatState';
 import ChatMessages from './ChatMessages';
 import MessageInput from './MessageInput';
+// import { useWebSocket } from '../../hooks/WebSocketContext';  // 추가
+import { useAuth } from '../../hooks/AuthContext';  // 추가
 
 const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
+    const { isAuthenticated } = useAuth();
+
     const {
         messages,
-        connectionStatus,
+        connectionStatus,  // useChatState의 connectionStatus
         reconnectAttempts,
         currentUser,
         sendMessage,
         requestDeleteMessage,
         replyTo,
         setReplyTo,
-        leaveChatRoom,
+        leaveChatRoom: leaveChatRoomServer,
         editChatRoomName,
         deleteChatRoom,
         createAnnouncement,
         getMainAnnouncement,
         getChatRoomMembers,
-        reconnectWebSocket
+        reconnectWebSocket,
+        connectToRoom,
+        joinRoom, // useChatState의 joinRoom 함수 사용
+        leaveRoom: leaveRoomUI // useChatState의 leaveRoom 함수 사용 (UI 정리용)
     } = useChatState();
 
     const [loading, setLoading] = useState(true);
@@ -45,6 +52,25 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
     const isManager = currentRoom?.isManager === true;
     const roomMessages = messages[chatRoomId] || [];
 
+    //  WebSocket 연결 useEffect
+    useEffect(() => {
+        console.log('[ChatRoom] ===== WebSocket/History 연결 useEffect =====');
+
+        if (!chatRoomId || !isAuthenticated) { // isAuthenticated는 useAuth 대신 useChatState의 context에서 제공하는 user 정보로 판단하거나,
+            // ChatStateProvider에서 user를 받아오고 있으므로,
+            // 여기서는 user가 유효한지 여부만 체크해도 됨.
+            return;
+        }
+
+        connectToRoom(chatRoomId);
+
+        return () => {
+            console.log('[ChatRoom] 컴포넌트 언마운트 - leaveRoom (UI 정리) 호출');
+            leaveRoomUI(); // UI 상태 정리용 leaveRoom 호출
+        };
+    }, [chatRoomId, joinRoom, leaveRoomUI, currentUser.userId]); // 의존성 목록 정리
+
+    // 외부 클릭 감지
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -85,10 +111,11 @@ const ChatRoom = ({ chatRoomId, chatRooms, onBack }) => {
         setShowMenu(false);
     };
 
+    // 채팅방 나가기 (서버) 함수 수정
     const handleLeaveRoom = async () => {
         if (window.confirm('이 채팅방을 나가시겠습니까?')) {
             try {
-                await leaveChatRoom(chatRoomId);
+                await leaveChatRoomServer(chatRoomId); // ✅ leaveChatRoomServer 사용
                 alert('채팅방에서 나갔습니다.');
                 onBack();
             } catch (error) {

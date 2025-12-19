@@ -10,7 +10,8 @@ import { useAuth } from './AuthContext';
  * - 참여자 입장/퇴장 알림
  */
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'; // 💡 API_BASE_URL 정의
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '';
+
 
 const StudyRoomWebSocketContext = createContext();
 

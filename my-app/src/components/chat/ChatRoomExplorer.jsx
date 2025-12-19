@@ -10,6 +10,8 @@ import {
     BookOpen
 } from 'lucide-react';
 
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '';
+
 // 비밀번호 입력 모달 컴포넌트
 const PasswordModal = ({ isOpen, onClose, onSubmit, roomName, isLoading }) => {
     const [password, setPassword] = useState('');
@@ -193,7 +195,7 @@ const ChatRoomExplorer = ({
                     throw new Error('로그인 토큰이 없습니다.');
                 }
 
-                const response = await fetch('http://localhost:8080/api/chat-room/show', {
+                const response = await fetch(`${API_BASE_URL}/api/chat-room/show`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -325,7 +327,7 @@ const ChatRoomExplorer = ({
             }
 
             const verifyResponse = await fetch(
-                `http://localhost:8080/api/chat-room/${passwordModal.room.id}/verify`,
+                `${API_BASE_URL}/api/chat-room/${passwordModal.room.id}/verify`,
                 {
                     method: 'POST',
                     headers: {

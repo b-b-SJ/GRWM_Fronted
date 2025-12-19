@@ -586,7 +586,7 @@ const FixedSidebar = ({ currentUser }) => {
     const [showSettingsModal, setShowSettingsModal] = useState(false);
     const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
 
-    const { clearAllStorage } = useAuth();
+    const { clearAllStorage, logout } = useAuth();
     const navigate = useNavigate();
     const notificationAPI = useNotificationAPI();
 
@@ -666,8 +666,12 @@ const FixedSidebar = ({ currentUser }) => {
     };
 
     const handleLogout = () => {
-        clearAllStorage();
-        console.log('로그아웃');
+        console.log('[FixedSidebar] 로그아웃 버튼 클릭');
+
+        // AuthContext의 logout 함수 호출 (WebSocket 연결 해제 포함)
+        logout();
+
+        console.log('[FixedSidebar] 로그아웃 완료, 로그인 페이지로 이동');
         navigate('/auth');
     };
 

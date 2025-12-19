@@ -747,44 +747,76 @@ export const ChatStateProvider = ({ children }) => {
         }
     }, [currentUser.userId, isAuthenticated, wsDeleteMessage]);
 
-    // 채팅방 입장 (WebSocket 연결 + 히스토리 로드)
+
+    // joinRoom 함수에 로그 추가
     const joinRoom = useCallback(async (chatRoomId) => {
-        if (!isAuthenticated || !currentUser.userId) {
-            console.error('로그인 필요');
+        console.log('[useChatState] ===== joinRoom 호출 =====');
+        console.log('[useChatState] chatRoomId:', chatRoomId);
+        console.log('[useChatState] typeof chatRoomId:', typeof chatRoomId);
+        console.log('[useChatState] isAuthenticated:', isAuthenticated);
+        console.log('[useChatState] user:', user);
+        console.log('[useChatState] connect 함수 존재:', !!connect);
+
+        if (!chatRoomId || !isAuthenticated) {
+            console.error('[useChatState] 연결 불가: chatRoomId 또는 인증 정보 없음');
             return;
         }
 
-        console.log('방 입장:', chatRoomId);
-        setSelectedRoom(chatRoomId);
-        setReplyTo(null);
-
-        setMessages(prev => ({
-            ...prev,
-            [chatRoomId]: prev[chatRoomId] || []
-        }));
-
-        // WebSocket 연결
-        connect(chatRoomId);
-
-        // 히스토리 로드
-        await fetchChatHistory(chatRoomId);
-
-        // 채팅방 목록 갱신
         try {
-            const isTokenValid = await checkTokenValidity();
-            if (isTokenValid) {
-                await fetchChatRooms(true);
-            }
-        } catch (err) {
-            console.warn('목록 갱신 실패:', err);
+            // 1. WebSocket 연결 요청 및 구독 (WS SUBSCRIBE)
+            console.log('[useChatState] 1. WebSocket connect 호출 (구독 시작)');
+            connect(chatRoomId);
+
+            // 잠시 대기: 구독이 완료(CONNECTED 프레임 수신)되기를 기다리는 것이 더 안전하지만,
+            // 현재 connect 함수 내부에서 500ms 이후에 처리하고 있으므로, 이어서 진행합니다.
+
+            // 2.  HTTP JOIN API 호출 (DB에 멤버 등록)
+            console.log('[useChatState] 2. HTTP joinChatRoom 호출 (멤버 입장)');
+            await joinChatRoom(chatRoomId);
+
+            // 3. 채팅 히스토리 로드 (REST API)
+            console.log('[useChatState] 3. 채팅 히스토리 로드 시작');
+            await fetchChatHistory(chatRoomId);
+
+            // 4. 현재 선택된 방 설정
+            setSelectedRoom(chatRoomId);
+        } catch (error) {
+            console.error('[useChatState] joinRoom 처리 중 오류 발생:', error);
+            // 오류 처리 로직 추가
         }
-    }, [connect, isAuthenticated, currentUser.userId, fetchChatHistory, checkTokenValidity, fetchChatRooms]);
+
+    }, [connect, isAuthenticated, user, fetchChatHistory, joinChatRoom]);
 
     // WebSocket 재연결 함수 (외부 노출용)
     const reconnectWebSocket = useCallback(() => {
         console.log('WebSocket 재연결 요청 (useChatState)');
         wsReconnect();
     }, [wsReconnect]);
+
+    // DB 등록을 제외한 순수 접속/연결 로직
+    const connectToRoom = useCallback(async (chatRoomId) => {
+        if (!chatRoomId || !isAuthenticated) {
+            console.error('[useChatState] 연결 불가: chatRoomId 또는 인증 정보 없음');
+            return;
+        }
+
+        try {
+            // 1. WebSocket 연결 요청 및 구독
+            console.log('[useChatState] 1. WebSocket connect 호출 (구독 시작)');
+            connect(chatRoomId);
+
+            // 2. HTTP JOIN API 호출 (DB에 멤버 등록) 로직 제거!
+
+            // 3. 채팅 히스토리 로드 (REST API)
+            console.log('[useChatState] 2. 채팅 히스토리 로드 시작');
+            await fetchChatHistory(chatRoomId);
+
+            // 4. 현재 선택된 방 설정
+            setSelectedRoom(chatRoomId);
+        } catch (error) {
+            console.error('[useChatState] connectToRoom 처리 중 오류 발생:', error);
+        }
+    }, [connect, isAuthenticated, fetchChatHistory]);
 
     // WebSocket 메시지 핸들러 등록
     useEffect(() => {
@@ -897,7 +929,8 @@ export const ChatStateProvider = ({ children }) => {
         leaveRoom,
         fetchCommunityNickname,
         reconnectWebSocket,
-        handleDeletedMessage
+        handleDeletedMessage,
+        connectToRoom,
     };
 
     return (

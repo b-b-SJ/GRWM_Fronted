@@ -14,7 +14,7 @@ import { useAuth } from './AuthContext';
  * - 채팅방 입/퇴장 메시지 출력 (ing)
  */
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'; // API_BASE_URL 정의
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '';
 
 const WebSocketContext = createContext();
 
@@ -40,7 +40,7 @@ const parseStompMessage = (data) => {
 };
 
 export const WebSocketProvider = ({ children }) => {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, registerWebSocketDisconnect } = useAuth();
 
     const [connectionStatus, setConnectionStatus] = useState('disconnected');
     const [currentChatRoomId, setCurrentChatRoomId] = useState(null);
@@ -179,20 +179,38 @@ export const WebSocketProvider = ({ children }) => {
 
     // WebSocket 연결
     const connect = useCallback((chatRoomId, isManualReconnect = false) => {
+        console.log('[WebSocket] ===== 연결 시작 =====');
+        console.log('[WebSocket] chatRoomId:', chatRoomId);
+        console.log('[WebSocket] isAuthenticated:', isAuthenticated);
+        console.log('[WebSocket] 현재 연결 상태:', connectionStatus);
+        console.log('[WebSocket] isConnectingRef:', isConnectingRef.current);
+        console.log('[WebSocket] websocketRef 존재:', !!websocketRef.current);
+        console.log('[WebSocket] websocketRef.readyState:', websocketRef.current?.readyState);
+
         if (!chatRoomId || !isAuthenticated) {
-            console.error('WebSocket 연결 불가: chatRoomId 또는 인증 정보 없음');
+            console.error('[WebSocket] 연결 불가: chatRoomId 또는 인증 정보 없음');
             return;
         }
 
         // 이미 연결 중이면 중복 연결 방지
         if (isConnectingRef.current && websocketRef.current?.readyState === WebSocket.CONNECTING) {
-            console.warn('이미 연결 시도 중입니다.');
+            console.warn('[WebSocket] 이미 연결 시도 중 - 중복 방지');
             return;
         }
 
-        console.log('WebSocket 연결 시작:', chatRoomId, isManualReconnect ? '(수동 재연결)' : '');
+        // 추가: 토큰 확인
+        const accessToken = localStorage.getItem('accessToken');
+        console.log('[Auth] accessToken 존재:', !!accessToken);
+        console.log('[Auth] accessToken 길이:', accessToken?.length);
+
+        if (!accessToken) {
+            console.error('[Auth] accessToken이 없습니다!');
+            setConnectionStatus('error');
+            return;
+        }
 
         // 기존 연결 완전히 정리
+        console.log('[WebSocket] 기존 연결 정리 시작');
         cleanupConnection();
 
         // 연결 플래그 설정
@@ -203,14 +221,61 @@ export const WebSocketProvider = ({ children }) => {
         const wsProtocol = urlObject.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsHost = urlObject.host;
         const wsUrl = `${wsProtocol}//${wsHost}/ws/`;
-        console.log('WebSocket 연결 URL:', wsUrl);
+
+        console.log('[WebSocket] URL 생성 정보:');
+        console.log('  - Protocol:', urlObject.protocol);
+        console.log('  - Host:', urlObject.host);
+        console.log('  - WS Protocol:', wsProtocol);
+        console.log('  - 최종 WebSocket URL:', wsUrl);
 
         setConnectionStatus('connecting');
         setCurrentChatRoomId(chatRoomId);
 
         try {
+            console.log('[WebSocket] WebSocket 객체 생성 시도:', wsUrl);
             const ws = new WebSocket(wsUrl);
             websocketRef.current = ws;
+            console.log('[WebSocket] WebSocket 객체 생성 완료, readyState:', ws.readyState);
+
+            // connect() 내부 - CONNECTED 처리 부분
+            setTimeout(async () => {
+                console.log('[STOMP] 구독 완료');
+                setConnectionStatus('connected');
+                isConnectingRef.current = false;
+                setReconnectAttempts(0);
+
+                // 채팅 히스토리 로드
+                if (historyLoadCallbackRef.current) {
+                    console.log('[History] 히스토리 로드 시작 - chatRoomId:', chatRoomId);
+                    try {
+                        await historyLoadCallbackRef.current(chatRoomId);
+                        console.log('[History] 히스토리 로드 완료');
+                    } catch (error) {
+                        console.error('[History] 히스토리 로드 실패:', error);
+                    }
+                } else {
+                    console.warn('[History] historyLoadCallback이 등록되지 않음!');
+                }
+
+                // 토큰 유효성 확인 및 채팅방 목록 갱신
+                try {
+                    if (tokenValidityCallbackRef.current && roomListRefreshCallbackRef.current) {
+                        console.log('[Token] 토큰 유효성 확인 시작');
+                        const isTokenValid = await tokenValidityCallbackRef.current();
+                        console.log('[Token] 토큰 유효:', isTokenValid);
+
+                        if (isTokenValid) {
+                            console.log('[RoomList] 채팅방 목록 갱신 시작');
+                            await roomListRefreshCallbackRef.current(true);
+                            console.log('[RoomList] 채팅방 목록 갱신 완료');
+                        }
+                    } else {
+                        console.warn('[Callback] tokenValidity 또는 roomListRefresh 콜백 미등록');
+                    }
+                } catch (err) {
+                    console.error('[Callback] 콜백 실행 실패:', err);
+                }
+            }, 500);
 
             // WebSocket 연결 성공
             ws.onopen = () => {
@@ -459,8 +524,32 @@ id:${subscriptionIdRef.current}
         setCurrentChatRoomId(null);
         setReconnectAttempts(0);
 
+        // 모든 핸들러 및 콜백 초기화
+        messageHandlersRef.current = [];
+        deleteHandlersRef.current = [];
+        historyLoadCallbackRef.current = null;
+        roomListRefreshCallbackRef.current = null;
+        tokenValidityCallbackRef.current = null;
+
         console.log('WebSocket 연결 해제 완료');
     }, [cleanupConnection]);
+
+    // AuthContext에 disconnect 함수 등록
+    useEffect(() => {
+        if (registerWebSocketDisconnect) {
+            console.log('[WebSocket] AuthContext에 disconnect 함수 등록');
+            registerWebSocketDisconnect(disconnect);
+        }
+    }, [registerWebSocketDisconnect, disconnect]);
+
+    // 컴포넌트 언마운트 시 정리
+    useEffect(() => {
+        return () => {
+            console.log('[WebSocket] WebSocketProvider 언마운트');
+            cleanupConnection();
+        };
+    }, [cleanupConnection]);
+
 
     // 메시지 전송
     const sendMessage = useCallback((chatRoomId, content, userId, replyMessageId = null) => {
@@ -547,13 +636,6 @@ ${JSON.stringify(deleteData)}\0`;
             return false;
         }
     }, [connectionStatus]);
-
-    // 컴포넌트 언마운트 시 정리
-    useEffect(() => {
-        return () => {
-            cleanupConnection();
-        };
-    }, [cleanupConnection]);
 
     const value = {
         connectionStatus,

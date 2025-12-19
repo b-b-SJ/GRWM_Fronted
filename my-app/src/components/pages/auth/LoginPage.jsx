@@ -1,6 +1,9 @@
 import React from 'react';
 import { ArrowLeft, Eye, EyeOff, Lock, User } from 'lucide-react';
 
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
+
 const LoginPage = ({
                        formData,
                        handleInputChange,
@@ -132,7 +135,7 @@ const LoginPage = ({
                     <div className="space-y-3 mb-6">
                         {/* Google Login */}
                         <a
-                            href="http://localhost:8080/oauth2/authorization/google" // 주소 수정
+                            href={`${API_BASE_URL}/oauth2/authorization/google`} // 주소 수정
                             className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             aria-disabled={isLoading}
                         >

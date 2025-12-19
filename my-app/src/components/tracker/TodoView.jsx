@@ -7,10 +7,10 @@ import useTodoApi from "../../hooks/useTodoApi";
 import { useAuth } from "../../hooks/AuthContext";
 
 // 날짜 유틸리티
-export function getDateString(daysOffset) {
+export function getLocalDateString(daysOffset = 0) {
     const date = new Date();
     date.setDate(date.getDate() + daysOffset);
-    return date.toISOString().split('T')[0];
+    return date.toLocaleDateString('en-CA');
 }
 
 export const formatDate = (date) => {
@@ -85,7 +85,7 @@ export const TodoModal = ({ todo, onSave, onCancel, weekDates = null }) => {
                         >
                             <option value="">날짜 선택 (기본: 오늘)</option>
                             {weekDates.map((date) => {
-                                const dateString = date.toISOString().split('T')[0];
+                                const dateString = date.toLocaleDateString('en-CA');
                                 return (
                                     <option key={dateString} value={dateString}>
                                         {formatDate(date)}
@@ -142,8 +142,8 @@ const TodoView = ({ showHeader = true, selectedDateProp = null }) => {
     const [modalState, setModalState] = useState({ isOpen: false, todo: null, weekDates: null });
     const [postponingTodo, setPostponingTodo] = useState(null);
 
-    const todayString = new Date().toISOString().split('T')[0];
-    const currentDateString = selectedDate.toISOString().split('T')[0];
+    const todayString = new Date().toLocaleDateString('en-CA');
+    const currentDateString = selectedDate.toLocaleDateString('en-CA');
 
     // to-do 목록 조회 함수
     const fetchTodos = useCallback(async (date) => {
@@ -153,7 +153,7 @@ const TodoView = ({ showHeader = true, selectedDateProp = null }) => {
         }
 
         try {
-            const dateString = date ? date.toISOString().split('T')[0] : null;
+            const dateString = date ? date.toLocaleDateString('en-CA') : null;
             if (!dateString) {
                 console.error("조회 대상 날짜가 설정되지 않았습니다.");
                 return;
@@ -167,9 +167,8 @@ const TodoView = ({ showHeader = true, selectedDateProp = null }) => {
                 const normalizedTodos = Array.isArray(fetchedTodos) ? fetchedTodos.map(todo => ({
                     ...todo,
                     id: todo.todoId,
-                    date: new Date(todo.date).toISOString().split('T')[0]
+                    date: todo.date
                 })) : [];
-
                 setTodos(normalizedTodos);
             }
         } catch (e) {
@@ -213,7 +212,7 @@ const TodoView = ({ showHeader = true, selectedDateProp = null }) => {
                 // 수정
                 await updateTodo(currentUserId, modalState.todo.id, formData);
             } else {
-                const todayDate = new Date().toISOString().split('T')[0];
+                const todayDate = getLocalDateString();
                 // 추가
                 const newTodoData = {
                     title: formData.title,
@@ -287,7 +286,7 @@ const TodoView = ({ showHeader = true, selectedDateProp = null }) => {
 
             const newDate = new Date(todo.date);
             newDate.setDate(newDate.getDate() + days);
-            const newDateString = newDate.toISOString().split('T')[0];
+            const newDateString = newDate.toLocaleDateString('en-CA');
 
             // 1. 기존 todo를 postponed=true로 업데이트
             await updateTodo(currentUserId, todoId, {

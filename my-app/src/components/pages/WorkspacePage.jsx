@@ -341,9 +341,9 @@ const WorkspacePage = () => {
         isLoadingRooms,
         fetchChatRooms,
         joinRoom,
-        joinChatRoom,
         verifyRoomPassword,
-        unreadCounts
+        unreadCounts,
+        connectToRoom
     } = useChatState();
 
     const {
@@ -404,7 +404,6 @@ const WorkspacePage = () => {
         console.log('[WorkspacePage] 채팅방 생성 완료:', chatRoomId);
 
         try {
-            joinRoom(chatRoomId);
             setSelectedChatRoom(chatRoomId);
             setSelectedStudyRoom(null); // 다른 모드 ID 클리어
             setCurrentView('chat');
@@ -465,7 +464,7 @@ const WorkspacePage = () => {
                 await verifyRoomPassword(chatRoomId, password);
             }
 
-            await joinChatRoom(chatRoomId);
+            // await joinChatRoom(chatRoomId);
 
             setTimeout(() => {
                 setSelectedChatRoom(chatRoomId);

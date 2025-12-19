@@ -30,6 +30,16 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         throw new Error(errorMessage);
     };
 
+    // 로컬 날짜를 'YYYY-MM-DD' 형식으로 안전하게 변환하는 함수
+    const formatLocalIdDate = (date) => {
+        if (!date) return null;
+        const d = new Date(date);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     // ==================== 개인 To-Do CRUD ====================
 
     /**
@@ -79,6 +89,12 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         setLoading(true);
         setError(null);
 
+        const processedData = {
+            ...todoData,
+            // 만약 todoData.date가 Date 객체라면 문자열로 변환
+            date: todoData.date instanceof Date ? formatLocalIdDate(todoData.date) : todoData.date
+        };
+
         try {
             const response = await fetch(`${API_BASE_URL}/api/users/${userId}/todos`, {
                 method: 'POST',
@@ -86,9 +102,9 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
                     ...getAuthHeaders(),
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(todoData),
+                body: JSON.stringify(processedData),
             });
-            console.log(todoData);
+            console.log(processedData);
 
             return await response.json();
         } catch (err) {
@@ -238,7 +254,9 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         const { recurrenceType, recurrenceConfig, startDate, ...rest } = recurringTodoData;
 
         const processedStartDate =
-            startDate instanceof Date ? startDate.toISOString().split('T')[0] : startDate;
+            startDate instanceof Date
+                ? formatLocalIdDate(startDate)
+                : startDate;
 
         let processedRecurrenceConfig = {
             interval: 0,
@@ -299,10 +317,13 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         setLoading(true);
         setError(null);
 
+        const rawDate = recurringTodoData.startDate || recurringTodoData.date;
+        const processedDate = rawDate instanceof Date ? formatLocalIdDate(rawDate) : rawDate;
+
         const dataToSend = {
             title: recurringTodoData.title,
             description: recurringTodoData.description,
-            startDate: recurringTodoData.startDate || recurringTodoData.date,
+            startDate: processedDate,
             active: recurringTodoData.active,
             repeatRange: recurringTodoData.repeatRange || recurringTodoData.recurrenceType,
             // 개별 필드로 전송
@@ -378,8 +399,9 @@ export const useTodoApi = (user, isAuthenticated, getAuthHeaders) => {
         // targetDate가 Date 객체라면 문자열로 변환
         const processedParams = { ...params };
         if (processedParams.targetDate && processedParams.targetDate instanceof Date) {
-            processedParams.targetDate = processedParams.targetDate.toISOString().split('T')[0]; // "YYYY-MM-DD"
+            processedParams.targetDate = formatLocalIdDate(processedParams.targetDate);
         }
+
         try {
             const response = await fetch(`${API_BASE_URL}/api/users/${userId}/recurring-todos/generate`, {
                 method: 'POST',

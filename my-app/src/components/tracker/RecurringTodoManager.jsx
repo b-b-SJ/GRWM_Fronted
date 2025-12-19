@@ -8,6 +8,12 @@ import { useAuth } from "../../hooks/AuthContext";
  * - isRecurring 필드를 활용한 구분
  * - 데이터 구조 디버깅 개선
  */
+
+const getSafeLocalDate = (date = new Date()) => {
+    // 사용자의 로컬 시간을 YYYY-MM-DD 문자열로 반환 (시차 방지 핵심)
+    return new Date(date).toLocaleDateString('en-CA');
+};
+
 const RecurringTodoManager = () => {
     const { user, isAuthenticated, getAuthHeaders } = useAuth();
 
@@ -29,7 +35,7 @@ const RecurringTodoManager = () => {
         description: '',
         recurrenceType: 'daily',
         recurrenceConfig: {},
-        startDate: new Date().toISOString().split('T')[0],
+        startDate: getSafeLocalDate(),
         active : true,
     });
     const [filterStatus, setFilterStatus] = useState('active');
@@ -112,14 +118,12 @@ const RecurringTodoManager = () => {
     const resetForm = () => {
         // 로컬 날짜 문자열 생성 (YYYY-MM-DD)
         const today = new Date();
-        const localDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-
         setFormData({
             title: '',
             description: '',
             recurrenceType: 'daily',
             recurrenceConfig: { interval: 1 },
-            startDate: localDate,
+            startDate: getSafeLocalDate(),
             active : true,
         });
         setSelectedTodo(null);
@@ -158,27 +162,15 @@ const RecurringTodoManager = () => {
         setSelectedTodo(todo);
 
         // 날짜 처리: ISO 문자열이나 Date 객체를 YYYY-MM-DD로 변환
-        let dateStr = '';
-        if (todo.date) {
-            if (typeof todo.date === 'string') {
-                dateStr = todo.date.split('T')[0];
-            } else if (todo.date instanceof Date) {
-                const d = todo.date;
-                dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-            }
-        }
-
-        if (!dateStr) {
-            const today = new Date();
-            dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-        }
+        const targetDate = todo.date ? new Date(todo.date) : new Date();
+        const dateStr = targetDate.toLocaleDateString('en-CA');
 
         setFormData({
             title: todo.title || '',
             description: todo.description || '',
             recurrenceType: recurrenceType,
             recurrenceConfig: config,
-            startDate: dateStr,
+            startDate: dateStr, // 안전하게 변환된 "YYYY-MM-DD" 문자열
             active : todo.active,
         });
         setIsCreating(true);

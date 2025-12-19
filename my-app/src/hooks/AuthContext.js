@@ -18,6 +18,8 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [currentStudyRoomId, setCurrentStudyRoomId] = useState(null); // 현재 참여 중인 방 ID
 
+  const [websocketDisconnect, setWebsocketDisconnect] = useState(null);
+
   // 모든 저장소 정리
   const clearAllStorage = useCallback(() => {
     localStorage.removeItem("accessToken");
@@ -239,9 +241,32 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = useCallback(() => {
-    console.log("[Auth] 로그아웃 - 모든 데이터 정리");
+    console.log("[Auth] ===== 로그아웃 시작 =====");
+
+    // 1. WebSocket 연결 해제 (가장 먼저!)
+    if (websocketDisconnect) {
+      console.log('[Auth] WebSocket 연결 해제 호출');
+      try {
+        websocketDisconnect();
+        console.log('[Auth] WebSocket 연결 해제 완료');
+      } catch (error) {
+        console.error('[Auth] WebSocket 연결 해제 실패:', error);
+      }
+    } else {
+      console.warn('[Auth] WebSocket disconnect 함수가 등록되지 않음');
+    }
+
+    // 2. 모든 저장소 정리
     clearAllStorage();
-  }, [clearAllStorage]);
+
+    console.log("[Auth] ===== 로그아웃 완료 =====");
+  }, [clearAllStorage, websocketDisconnect]);
+
+  // 추가: WebSocket disconnect 함수를 등록하는 함수
+  const registerWebSocketDisconnect = useCallback((disconnectFn) => {
+    console.log('[Auth] WebSocket disconnect 함수 등록');
+    setWebsocketDisconnect(() => disconnectFn);
+  }, []);
 
   // 스터디룸 참여 정보 저장
   const setJoinedStudyRoom = useCallback((studyRoomId) => {
@@ -322,6 +347,7 @@ export const AuthProvider = ({ children }) => {
         setJoinedStudyRoom,
         clearJoinedStudyRoom,
         handleOAuthLogin, // OAuth 로그인 처리 함수 추가
+        registerWebSocketDisconnect,
       }}
     >
       {children}

@@ -24,7 +24,7 @@ const TodoWeekView = ({
 
     const getWeekStats = () => {
         const weekTodos = todos.filter(todo => {
-            return weekDates.some(d => d.toISOString().split('T')[0] === todo.date) && !todo.postponed;
+            return weekDates.some(d => d.toLocaleDateString('en-CA') === todo.date) && !todo.postponed;
         });
         const completed = weekTodos.filter(t => t.completed).length;
         return { total: weekTodos.length, completed };
@@ -90,7 +90,7 @@ const TodoWeekView = ({
             {/* 주간 그리드 */}
             <div className="grid grid-cols-7 gap-4 px-1">
                 {weekDates.map((date) => {
-                    const dateString = date.toISOString().split('T')[0];
+                    const dateString = date.toLocaleDateString('en-CA');
                     const dayTodos = getTodosForDate(dateString);
                     const completed = dayTodos.filter(t => t.completed).length;
                     const isToday = dateString === todayString;
