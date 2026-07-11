@@ -1,6 +1,9 @@
 import React from 'react';
 import { ArrowLeft, Eye, EyeOff, Lock, User } from 'lucide-react';
 
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
+
 const LoginPage = ({
                        formData,
                        handleInputChange,
@@ -11,6 +14,12 @@ const LoginPage = ({
                        error,
                        setCurrentPage,
                    }) => {
+
+    const handleSubmit = (event) => {
+        event.preventDefault(); // 새로고침 방지
+        handleLogin(); // 로그인 관리
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
             <div className="max-w-md w-full">
@@ -36,7 +45,7 @@ const LoginPage = ({
                         </div>
                     )}
 
-                    <div className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         {/* 아이디 입력 */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -55,6 +64,7 @@ const LoginPage = ({
                                     placeholder="아이디를 입력하세요"
                                     className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                     disabled={isLoading}
+                                    autoComplete="current-id"
                                 />
                             </div>
                         </div>
@@ -77,6 +87,7 @@ const LoginPage = ({
                                     placeholder="비밀번호를 입력하세요"
                                     className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                     disabled={isLoading}
+                                    autoComplete="current-password"
                                 />
                                 <button
                                     type="button"
@@ -100,15 +111,15 @@ const LoginPage = ({
                             </button>
                         </div>
 
-                        {/* 로그인 버튼 */}
+                        {/* 로그인 버튼 - submit으로 변경 (엔터 입력) */}
                         <button
-                            onClick={handleLogin}
+                            type="submit"
                             disabled={isLoading}
                             className="w-full bg-gradient-to-r from-blue-600 to-sky-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-blue-700 hover:to-sky-700 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isLoading ? '로그인 중...' : '로그인'}
                         </button>
-                    </div>
+                    </form>
 
                     {/* 구분선 */}
                     <div className="relative mt-6 mb-6">
@@ -120,13 +131,13 @@ const LoginPage = ({
                         </div>
                     </div>
 
-                    {/* 소셜 로그인 버튼들 */}
+                    {/* 소셜 로그인 버튼 */}
                     <div className="space-y-3 mb-6">
-                        {/* Google 로그인 */}
-                        <button
-                            // onClick={handleGoogleLogin}
-                            disabled={isLoading}
+                        {/* Google Login */}
+                        <a
+                            href={`${API_BASE_URL}/oauth2/authorization/google`} // 주소 수정
                             className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            aria-disabled={isLoading}
                         >
                             <svg className="w-5 h-5" viewBox="0 0 24 24">
                                 <path fill="#4285f4"
@@ -139,9 +150,9 @@ const LoginPage = ({
                                       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                             </svg>
                             <span className="text-gray-700 font-medium">Google로 로그인</span>
-                        </button>
+                        </a>
 
-                        {/* Kakao 로그인 */}
+                        {/* Kakao Login */}
                         <button
                             // onClick={handleKakaoLogin}
                             disabled={isLoading}
@@ -169,7 +180,6 @@ const LoginPage = ({
                 </div>
             </div>
         </div>
-
     );
 };
 

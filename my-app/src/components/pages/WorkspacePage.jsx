@@ -1,19 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { useOutletContext, useLocation, useSearchParams } from 'react-router-dom';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 import WorkspaceSidebar from '../layout/WorkspaceSidebar';
 import ChatRoom from '../chat/ChatRoom';
+import StudyRoom from '../studyroom/StudyRoom';
+import StudyRoomCreator from '../studyroom/StudyRoomCreator';
+import StudyRoomExplorer from '../studyroom/StudyRoomExplorer';
 import ChatRoomExplorer from '../chat/ChatRoomExplorer';
 import { useChatState } from '../../hooks/useChatState';
+import { useStudyRoomState } from '../../hooks/useStudyRoomState';
+import { useAuth } from '../../hooks/AuthContext';
 import { MessageCircle, BookOpen, Eye, EyeOff, Key } from 'lucide-react';
 
 /**
- * WorkSpacePage UI 및 기능
- * - 채팅방 : 채팅방 디테일 페이지, 채팅방 생성 페이지, 탐색 페이지를 관리
- * - 스터디룸 구현 시 위와 같은 페이지 관리
+ * WorkspacePage - 모드 구분 개선
+ * 주요 변경사항:
+ * 1. selectedChatRoom과 selectedStudyRoom을 분리하여 타입 안전성 확보
+ * 2. 모드 전환 시 선택 상태 자동 초기화
+ * 3. 사이드바와의 상호작용 개선
  */
 
 // 채팅방 생성 컴포넌트
 const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
+    const { user } = useAuth();
+    const { createAndJoinRoom, CATEGORY_MAP } = useChatState();
+
     const [formData, setFormData] = useState({
         roomName: '',
         category: '일반',
@@ -25,14 +35,19 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [loadingMessage, setLoadingMessage] = useState('');
 
-    const categories = ['일반', '프로젝트', '스터디', '취미', '기타'];
+    const categories = Object.keys(CATEGORY_MAP);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
-        // 유효성 검사
+        if (!user || !user.userId) {
+            setError('로그인이 필요합니다.');
+            return;
+        }
+
         if (!formData.roomName.trim()) {
             setError('채팅방 이름을 입력해주세요.');
             return;
@@ -48,48 +63,27 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
             return;
         }
 
-        if (formData.maxMembers !== 30) {
-            setError('최대 인원은 30명으로 고정됩니다.');
+        if (formData.isPrivate && formData.password.length !== 5) {
+            setError('비밀번호는 5자리여야 합니다.');
+            return;
+        }
+
+        if (formData.isPrivate && !/^\d{5}$/.test(formData.password)) {
+            setError('비밀번호는 5자리 숫자여야 합니다.');
             return;
         }
 
         setIsLoading(true);
 
         try {
-            const userId = 1; // TODO: 실제 사용자 ID로 변경
+            setLoadingMessage('채팅방을 생성하고 있습니다...');
 
-            const requestData = {
-                userId: userId,
-                roomName: formData.roomName.trim(),
-                category: formData.category,
-                description: formData.description.trim(),
-                isPrivate: formData.isPrivate,
-                password: formData.isPrivate ? formData.password.trim() : null,
-                maxMembers: formData.maxMembers
-            };
+            // createAndJoinRoom 사용 (생성 + 참여 + 목록 갱신까지 처리)
+            const result = await createAndJoinRoom(formData);
 
-            const response = await fetch('/api/chat-room/create', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestData)
-            });
+            console.log('Chat room creation successful, chatRoomId:', result.chatRoomId);
+            setLoadingMessage('채팅방 입장 중...');
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || '채팅방 생성에 실패했습니다.');
-            }
-
-            const chatRoomId = await response.json();
-            console.log('채팅방 생성 성공:', chatRoomId);
-
-            // 성공 시 부모 컴포넌트에 알림
-            if (onRoomCreated) {
-                onRoomCreated(chatRoomId);
-            }
-
-            // 폼 초기화
             setFormData({
                 roomName: '',
                 category: '일반',
@@ -99,17 +93,18 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
                 maxMembers: 30
             });
 
-            alert('채팅방이 성공적으로 생성되었습니다!');
+            alert('채팅방이 성공적으로 생성되고 입장되었습니다!');
 
-            if (onRoomCreated) {
-                onRoomCreated(chatRoomId); // 실제라면 chatRoomId
+            if (onRoomCreated && result.chatRoomId) {
+                onRoomCreated(result.chatRoomId);
             }
 
         } catch (error) {
-            console.error('채팅방 생성 오류:', error);
-            setError(error.message || '채팅방 생성 중 오류가 발생했습니다.');
+            console.error('Chat room creation error:', error);
+            setError(error.message || '채팅방 생성 및 입장 중 오류가 발생했습니다.');
         } finally {
             setIsLoading(false);
+            setLoadingMessage('');
         }
     };
 
@@ -119,7 +114,6 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
             [field]: value
         }));
 
-        // 에러 메시지 초기화
         if (error) {
             setError('');
         }
@@ -141,6 +135,16 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
             {error && (
                 <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
                     <p className="text-red-700 text-sm">{error}</p>
+                </div>
+            )}
+
+            {/* 로딩 메시지 */}
+            {loadingMessage && (
+                <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        <p className="text-blue-700 text-sm">{loadingMessage}</p>
+                    </div>
                 </div>
             )}
 
@@ -193,17 +197,16 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
                             value={formData.description}
                             onChange={(e) => handleChange('description', e.target.value)}
                             placeholder="채팅방에 대한 간단한 설명을 입력하세요"
-                            rows={2}
-                            className="w-full px-2 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                            rows={3}
+                            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                             disabled={isLoading}
-                            maxLength={50}
+                            maxLength={200}
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                            {formData.description.length}/50자
+                            {formData.description.length}/200자
                         </p>
                     </div>
 
-                    {/* 공개/비공개 설정 */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-3">
                             공개 설정 *
@@ -224,6 +227,7 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
                                         <Eye size={16} className="text-gray-500" />
                                         <span className="font-medium">공개 채팅방</span>
                                     </div>
+                                    <p className="text-sm text-gray-600">누구나 참여할 수 있습니다</p>
                                 </label>
                             </div>
                             <div className="flex items-start">
@@ -241,6 +245,7 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
                                         <EyeOff size={16} className="text-gray-500" />
                                         <span className="font-medium">비공개 채팅방</span>
                                     </div>
+                                    <p className="text-sm text-gray-600">비밀번호를 알아야 참여할 수 있습니다</p>
                                 </label>
                             </div>
                         </div>
@@ -259,16 +264,19 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
                                     required
                                     value={formData.password}
                                     onChange={(e) => handleChange('password', e.target.value)}
-                                    placeholder="채팅방 비밀번호를 입력하세요. 비밀번호는 숫자 5개입니다."
+                                    placeholder="5자리 숫자를 입력하세요"
                                     className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     disabled={isLoading}
-                                    maxLength={10}
+                                    maxLength={5}
+                                    pattern="[0-9]{5}"
                                 />
                             </div>
+                            <p className="text-xs text-gray-500 mt-1">
+                                비밀번호는 5자리 숫자여야 합니다. ({formData.password.length}/5자)
+                            </p>
                         </div>
                     )}
 
-                    {/* 생성 버튼 */}
                     <div className="pt-4 flex space-x-3">
                         {onCancel && (
                             <button
@@ -294,7 +302,7 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
                             {isLoading ? (
                                 <div className="flex items-center justify-center space-x-2">
                                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    <span>생성 중...</span>
+                                    <span>처리 중...</span>
                                 </div>
                             ) : (
                                 `${workspaceMode} 생성하기`
@@ -307,9 +315,8 @@ const ChatRoomCreator = ({ workspaceMode, onRoomCreated, onCancel }) => {
     );
 };
 
-// 채팅방 화면의 컨테이너 관리
+// 메인 WorkspacePage 컴포넌트
 const WorkspacePage = () => {
-    const location = useLocation();
     const [searchParams] = useSearchParams();
     const { workspaceSidebarOpen, toggleWorkspaceSidebar } = useOutletContext();
 
@@ -319,34 +326,62 @@ const WorkspacePage = () => {
         modeFromUrl === 'study' ? '스터디룸' : '채팅방'
     );
 
-    const [currentView, setCurrentView] = useState('rooms'); // 'rooms', 'explore', 'create', 'chat'
+    const [currentView, setCurrentView] = useState('rooms');
+
+    // 채팅방과 스터디룸 ID를 분리하여 관리
+    const [selectedChatRoom, setSelectedChatRoom] = useState(null);
+    const [selectedStudyRoom, setSelectedStudyRoom] = useState(null);
+
+    // 스터디룸 연장 시간
+    // Workspace.jsx 상단
+    const [studyRoomExtensions, setStudyRoomExtensions] = useState({});
 
     const {
-        selectedRoom,
-        setSelectedRoom,
-        chatRooms
+        chatRooms,
+        isLoadingRooms,
+        fetchChatRooms,
+        joinRoom,
+        verifyRoomPassword,
+        unreadCounts,
+        connectToRoom
     } = useChatState();
+
+    const {
+        joinedStudyRoom,
+        loading: isLoadingStudyRooms,
+        fetchJoinedStudyRoom,
+        joinStudyRoom,
+    } = useStudyRoomState();
+
+    // joinedStudyRoom 상태 변경 감지
+    useEffect(() => {
+        console.log('[WorkspacePage] joinedStudyRoom 상태 변경:', joinedStudyRoom);
+    }, [joinedStudyRoom]);
 
     const isStudyRoom = workspaceMode === '스터디룸';
 
     // URL 파라미터 변경 감지하여 모드 업데이트
     useEffect(() => {
         const modeParam = searchParams.get('mode');
-        if (modeParam === 'study') {
-            setWorkspaceMode('스터디룸');
-        } else {
-            setWorkspaceMode('채팅방');
+        const newMode = modeParam === 'study' ? '스터디룸' : '채팅방';
+
+        if (newMode !== workspaceMode) {
+            console.log('[WorkspacePage] 모드 전환:', workspaceMode, '->', newMode);
+            setWorkspaceMode(newMode);
+
+            // 모드 전환 시 선택 상태 초기화
+            setSelectedChatRoom(null);
+            setSelectedStudyRoom(null);
+            setCurrentView('rooms');
         }
     }, [searchParams]);
 
-    // Navigation의 toggleSidebar와 연결하기 위한 useEffect
+    // Navigation의 toggleSidebar와 연결
     useEffect(() => {
-        // 전역 이벤트 리스너로 네비게이션의 햄버거 버튼 클릭 감지
         const handleToggleSidebar = () => {
             toggleWorkspaceSidebar();
         };
 
-        // 커스텀 이벤트 리스너 등록
         window.addEventListener('toggleWorkspaceSidebar', handleToggleSidebar);
 
         return () => {
@@ -354,50 +389,208 @@ const WorkspacePage = () => {
         };
     }, [toggleWorkspaceSidebar]);
 
-    // 채팅방 생성 성공 시 호출되는 함수
-    const handleRoomCreated = (chatRoomId) => {
-        console.log('새 채팅방 생성됨:', chatRoomId);
+    // 초기 데이터 로드
+    useEffect(() => {
+        console.log('[WorkspacePage] 데이터 로드 - 모드:', workspaceMode);
+        if (isStudyRoom) {
+            fetchJoinedStudyRoom();
+        } else {
+            fetchChatRooms();
+        }
+    }, [isStudyRoom]);
 
-        // 새로 생성된 채팅방을 목록에 추가
-        // addChatRoom 함수가 useChatState에 있다고 가정
+    // 채팅방 생성 성공 시 처리
+    const handleChatRoomCreated = (chatRoomId) => {
+        console.log('[WorkspacePage] 채팅방 생성 완료:', chatRoomId);
 
-        // 생성 후 채팅방 목록 화면으로 돌아가기
-        setCurrentView('rooms');
-
-        // 선택적으로 생성된 채팅방으로 바로 이동
-        // setSelectedRoom(chatRoomId);
-        // setCurrentView('chat');
+        try {
+            setSelectedChatRoom(chatRoomId);
+            setSelectedStudyRoom(null); // 다른 모드 ID 클리어
+            setCurrentView('chat');
+        } catch (error) {
+            console.error('[WorkspacePage] 채팅방 입장 실패:', error);
+            alert(`채팅방 입장 실패: ${error.message}`);
+            setCurrentView('rooms');
+        }
     };
 
-    // 채팅방 입장 처리
-    const handleJoinRoom = (roomId) => {
-        console.log('채팅방 입장:', roomId);
-        setSelectedRoom(roomId);
-        setCurrentView('chat');
+
+// 스터디룸 생성 성공 시 처리
+    const handleStudyRoomCreated = async (studyRoomId) => {
+        console.log('[WorkspacePage] 스터디룸 생성 완료:', studyRoomId);
+
+        try {
+            handleRefreshRooms();
+            // joinStudyRoom에서 이미 모든 처리를 했으므로 바로 화면 전환
+            setTimeout(() => {
+                setSelectedStudyRoom(studyRoomId);
+                setSelectedChatRoom(null);
+                setCurrentView('study');
+            }, 300);
+        } catch (error) {
+            console.error('[WorkspacePage] 스터디룸 입장 실패:', error);
+            alert(`스터디룸 입장 실패: ${error.message}`);
+            setCurrentView('rooms');
+        }
     };
 
-    // 채팅방 생성 취소 시 호출되는 함수
+    // 사이드바에서 방 선택 시 처리 (모드별로 분리)
+    const handleSelectRoom = (roomId) => {
+        console.log('[WorkspacePage] 방 선택 - 모드:', workspaceMode, 'ID:', roomId);
+
+        try {
+            if (isStudyRoom) {
+                // 사이드바에서 선택한 방은 이미 참여한 방이므로 API 호출 없이 바로 전환
+                setSelectedStudyRoom(roomId);
+                setSelectedChatRoom(null);
+                setCurrentView('study');
+            } else {
+                setSelectedChatRoom(roomId);
+                setSelectedStudyRoom(null);
+                setCurrentView('chat');
+            }
+        } catch (error) {
+            console.error('[WorkspacePage] 방 선택 실패:', error);
+            alert(`방 입장 실패: ${error.message}`);
+        }
+    };
+
+    // 탐색 페이지에서 채팅방 참여
+    const handleJoinChatRoomFromExplorer = async (chatRoomId, isPrivate = false, password = null) => {
+        console.log('[WorkspacePage] 채팅방 참여 from explorer:', chatRoomId);
+
+        try {
+            if (isPrivate && password) {
+                await verifyRoomPassword(chatRoomId, password);
+            }
+
+            // await joinChatRoom(chatRoomId);
+
+            setTimeout(() => {
+                setSelectedChatRoom(chatRoomId);
+                joinRoom(chatRoomId);
+                setSelectedStudyRoom(null);
+                setCurrentView('chat');
+            }, 300);
+
+        } catch (error) {
+            console.error('[WorkspacePage] 채팅방 참여 실패:', error);
+            throw error;
+        }
+    };
+
+    // 탐색 페이지에서 스터디룸 참여
+    const handleJoinStudyRoomFromExplorer = async (studyRoomId, isPrivate = false, password = null) => {
+        console.log('[WorkspacePage] 스터디룸 참여 from explorer:', studyRoomId);
+
+        try {
+            // 이미 참여한 스터디룸인지 확인
+            const alreadyJoined = joinedStudyRoom && joinedStudyRoom.studyRoomId === studyRoomId;
+
+            if (alreadyJoined) {
+                console.log('[WorkspacePage] 이미 참여한 스터디룸입니다. 바로 입장합니다.');
+                // API 호출 없이 바로 화면 전환
+                setTimeout(() => {
+                    setSelectedStudyRoom(studyRoomId);
+                    setSelectedChatRoom(null);
+                    setCurrentView('study');
+                }, 100);
+                return;
+            }
+
+            // 새로운 스터디룸에 참여하는 경우에만 joinStudyRoom 호출
+            const success = await joinStudyRoom(studyRoomId);
+
+            if (!success) {
+                throw new Error('스터디룸 참여에 실패했습니다.');
+            }
+
+            console.log('[WorkspacePage] 스터디룸 참여 성공, 목록 갱신');
+
+            // 참여 중인 스터디룸 목록 새로고침
+            const updatedRooms = await fetchJoinedStudyRoom();
+            console.log('[WorkspacePage] 갱신된 스터디룸 목록:', updatedRooms);
+
+            // 약간 더 긴 지연으로 상태 전파 보장
+            setTimeout(() => {
+                setSelectedStudyRoom(studyRoomId);
+                setSelectedChatRoom(null);
+                setCurrentView('study');
+            }, 300);
+
+        } catch (error) {
+            console.error('[WorkspacePage] 스터디룸 참여 실패:', error);
+            alert(`스터디룸 참여 실패: ${error.message}`);
+            throw error;
+        }
+    };
+
+    // 생성 취소
     const handleCreateCancel = () => {
         setCurrentView('rooms');
     };
 
+    // 목록 새로고침
+    const handleRefreshRooms = () => {
+        console.log('[WorkspacePage] 목록 새로고침 - 모드:', workspaceMode);
+        if (isStudyRoom) {
+            fetchJoinedStudyRoom();
+        } else {
+            fetchChatRooms();
+        }
+    };
+
+    // 방에서 뒤로가기
+    const handleBackFromRoom = () => {
+        console.log('[WorkspacePage] 방에서 뒤로가기');
+        setSelectedChatRoom(null);
+        setSelectedStudyRoom(null);
+        setCurrentView('rooms');
+        handleRefreshRooms(); // 방 목록 새로고침
+    };
+
+    // 모드 전환 핸들러
+    const handleModeChange = (newMode) => {
+        console.log('[WorkspacePage] 모드 수동 전환:', workspaceMode, '->', newMode);
+
+        setWorkspaceMode(newMode);
+        setCurrentView('rooms');
+
+        // 선택 상태 초기화
+        setSelectedChatRoom(null);
+        setSelectedStudyRoom(null);
+    };
+
+    // 현재 모드에 따른 방 목록
+    const currentRooms = isStudyRoom
+        ? (joinedStudyRoom ? [joinedStudyRoom] : [])
+        : chatRooms;
+    const currentIsLoading = isStudyRoom ? isLoadingStudyRooms : isLoadingRooms;
+    const currentSelectedRoom = isStudyRoom ? selectedStudyRoom : selectedChatRoom;
+
     return (
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col overflow-hidden">
             <div className="flex flex-1 overflow-hidden">
-                {/* 사이드바 정보 */}
+                {/* 사이드바 */}
                 <WorkspaceSidebar
                     sidebarOpen={workspaceSidebarOpen}
                     toggleSidebar={toggleWorkspaceSidebar}
                     chatRooms={chatRooms}
-                    selectedRoom={selectedRoom}
-                    setSelectedRoom={setSelectedRoom}
+                    joinedStudyRoom={joinedStudyRoom ? [joinedStudyRoom] : []}
+                    selectedRoom={currentSelectedRoom}
+                    setSelectedRoom={handleSelectRoom}
                     workspaceMode={workspaceMode}
-                    setWorkspaceMode={setWorkspaceMode}
+                    setWorkspaceMode={handleModeChange}
                     currentView={currentView}
                     setCurrentView={setCurrentView}
+                    isLoadingRooms={currentIsLoading}
+                    onRefreshRooms={handleRefreshRooms}
+                    onRefreshStudyRooms={handleRefreshRooms}
+                    unreadCounts={unreadCounts}
+                    studyRoomExtensions={studyRoomExtensions}
                 />
 
-                {/* 오버레이: 사이드바 바깥 클릭 시 닫힘 */}
+                {/* 오버레이 */}
                 {workspaceSidebarOpen && (
                     <div
                         className="fixed inset-0 z-10 bg-black bg-opacity-0"
@@ -405,41 +598,86 @@ const WorkspacePage = () => {
                     />
                 )}
 
-                {/* 메인 컨텐츠 컨테이너 */}
-                <div className="flex-1 flex flex-col">
+                {/* 메인 컨텐츠 영역 */}
+                <div className="flex-1 flex flex-col overflow-hidden">
                     {currentView === 'create' ? (
-                        <ChatRoomCreator
-                            workspaceMode={workspaceMode}
-                            onRoomCreated={handleRoomCreated}
-                            onCancel={handleCreateCancel}
-                        />
+                        isStudyRoom ? (
+                            <StudyRoomCreator
+                                onRoomCreated={handleStudyRoomCreated}
+                                onCancel={handleCreateCancel}
+                            />
+                        ) : (
+                            <ChatRoomCreator
+                                workspaceMode={workspaceMode}
+                                onRoomCreated={handleChatRoomCreated}
+                                onCancel={handleCreateCancel}
+                            />
+                        )
                     ) : currentView === 'explore' ? (
-                        <ChatRoomExplorer
-                            workspaceMode={workspaceMode}
-                            onJoinRoom={handleJoinRoom}
-                        />
-                    ): selectedRoom ? (
+                        isStudyRoom ? (
+                            <StudyRoomExplorer
+                                onJoinRoom={handleJoinStudyRoomFromExplorer}
+                                joinedRoomIds={joinedStudyRoom ? [joinedStudyRoom.studyRoomId] : []}
+                            />
+                        ) : (
+                            <ChatRoomExplorer
+                                workspaceMode={workspaceMode}
+                                onJoinRoom={handleJoinChatRoomFromExplorer}
+                                joinedRoomIds={chatRooms.map(room => room.chatRoomId)}
+                            />
+                        )
+                    ) : currentView === 'chat' && selectedChatRoom ? (
                         <ChatRoom
-                            roomId={selectedRoom}
+                            chatRoomId={selectedChatRoom}
                             chatRooms={chatRooms}
+                            onBack={handleBackFromRoom}
+                        />
+                    ) : currentView === 'study' && selectedStudyRoom ? (
+                        <StudyRoom
+                            studyRoomId={selectedStudyRoom}
+                            onBack={handleBackFromRoom}
+                            onExtended={(roomId, minutes) => {
+                                setStudyRoomExtensions(prev => ({
+                                    ...prev,
+                                    [roomId]: (prev[roomId] || 0) + minutes
+                                }));
+                            }}
                         />
                     ) : (
+                        // 기본 화면
                         <div className="flex-1 flex items-center justify-center">
-                            <div className="text-center">
+                            <div className="text-center max-w-md mx-auto px-4">
                                 {isStudyRoom ? (
-                                    <BookOpen size={64} className="text-green-400 mx-auto mb-4" />
+                                    <BookOpen size={64} className="text-green-400 mx-auto mb-4"/>
                                 ) : (
-                                    <MessageCircle size={64} className="text-gray-400 mx-auto mb-4" />
+                                    <MessageCircle size={64} className="text-gray-400 mx-auto mb-4"/>
                                 )}
                                 <h2 className="text-xl font-semibold text-gray-600 mb-2">
                                     {isStudyRoom ? '스터디룸을 선택해주세요' : '채팅방을 선택해주세요'}
                                 </h2>
-                                <p className="text-gray-500">
+                                <p className="text-gray-500 mb-4">
                                     {isStudyRoom
                                         ? '좌측에서 참여중인 스터디룸을 선택하거나 새로운 스터디룸을 탐색해보세요.'
                                         : '좌측에서 참여중인 채팅방을 선택하거나 새로운 채팅방을 탐색해보세요.'
                                     }
                                 </p>
+
+                                {currentIsLoading && (
+                                    <div className="flex items-center justify-center space-x-2 text-blue-600">
+                                        <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                        <span className="text-sm">
+                                            {isStudyRoom ? '스터디룸' : '채팅방'} 목록 로딩 중...
+                                        </span>
+                                    </div>
+                                )}
+
+                                {!currentIsLoading && currentRooms.length === 0 && (
+                                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                                        <p className="text-gray-600 text-sm mb-3">
+                                            참여중인 {isStudyRoom ? '스터디룸' : '채팅방'}이 없습니다.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}

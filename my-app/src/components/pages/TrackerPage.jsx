@@ -1,19 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-    BarChart3,
     BookOpen,
-    Plus,
     Hash,
 } from 'lucide-react';
 import TrackerSidebar from '../layout/TrackerSidebar';
 import DiaryView from '../../components/tracker/DiaryView';
 import TomorrowMessage from '../../components/tracker/TomorrowMessage';
+import TodoView from '../../components/tracker/TodoView';
+import RecurringTodoManager from '../../components/tracker/RecurringTodoManager';
 
 /**
  * 트래커 페이지 - 회고일기 관리
  */
-const TrackerPage = () => {
+const TrackerPage = ({ todoApi, user }) => {
     const [searchParams] = useSearchParams();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [writeMode, setWriteMode] = useState(false);
@@ -28,11 +28,6 @@ const TrackerPage = () => {
 
     const toggleSidebar = () => {
         setSidebarOpen(!sidebarOpen);
-    };
-
-    // 새 일기 작성 버튼 클릭 핸들러
-    const handleWriteNewDiary = () => {
-        setWriteMode(true);
     };
 
     // URL 파라미터 변경 감지하여 모드 업데이트
@@ -58,17 +53,11 @@ const TrackerPage = () => {
         };
     }, []);
 
-    // To-do 빈 화면
-    const TodoEmptyView = () => (
-        <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-                <BarChart3 size={64} className="text-blue-400 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-gray-600 mb-2">
-                    To-do 기능 준비 중
-                </h2>
-                <p className="text-gray-500">
-                    곧 할일 관리 기능을 만나보실 수 있습니다.
-                </p>
+    // To-do 임시
+    const TodoCalendarView = () => (
+        <div className="flex-1 flex flex-col p-6">
+            <div className="flex-1 overflow-auto">
+                <TodoView showHeader={false} selectedDateProp={searchParams.get('date')} />
             </div>
         </div>
     );
@@ -94,9 +83,7 @@ const TrackerPage = () => {
                     <h3 className="text-lg font-semibold mb-4">자주 사용한 해시태그</h3>
                     <div className="flex flex-wrap gap-2">
                         {[
-                            { tag: '#성장', count: 25 },
-                            { tag: '#감사', count: 18 },
-                            { tag: '#도전', count: 15 },
+                            { tag: '#공부', count: 15 },
                             { tag: '#행복', count: 12 },
                             { tag: '#학습', count: 10 },
                             { tag: '#건강', count: 8 }
@@ -132,6 +119,13 @@ const TrackerPage = () => {
         </div>
     );
 
+    // To-do 반복 루틴 관리 뷰
+    const TodoRoutineView = () => (
+        <div className="flex-1 flex flex-col">
+            <RecurringTodoManager todoApi={todoApi} user={user} />
+        </div>
+    );
+
     // 일기 캘린더 뷰 (DiaryView 래퍼)
     const DiaryCalendarView = () => (
         <div className="flex-1 flex flex-col p-6">
@@ -151,9 +145,15 @@ const TrackerPage = () => {
     );
 
     const renderCurrentView = () => {
-        // trackerMode가 'todo'인 경우 빈 화면 표시
         if (trackerMode === 'todo') {
-            return <TodoEmptyView />;
+            switch (currentView) {
+                case 'todo-calendar':
+                    return <TodoCalendarView />;
+                case 'todo-routine':
+                    return <TodoRoutineView />;
+                default:
+                    return <TodoCalendarView />;
+            }
         }
 
         // diary 모드에서의 뷰 렌더링
@@ -200,7 +200,7 @@ const TrackerPage = () => {
                 {/* 오버레이: 사이드바 바깥 클릭 시 닫힘 */}
                 {sidebarOpen && (
                     <div
-                        className="fixed inset-0 z-10 bg-black bg-opacity-0"
+                        className="fixed inset-0 z-[5] bg-black bg-opacity-0"
                         onClick={() => toggleSidebar()}
                     />
                 )}
